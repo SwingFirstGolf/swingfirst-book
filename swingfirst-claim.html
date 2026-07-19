@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>SwingFirst — List Your Course</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --green-700:#15803d;
+  --green-600:#16a34a;
+  --green-100:#dcfce7;
+  --green-50 :#f0fdf4;
+  --teal-600 :#0d9488;
+  --teal-100 :#ccfbf1;
+  --teal-50  :#f0fdfa;
+  --amber-500:#f59e0b;
+  --slate-900:#0f172a;
+  --slate-800:#1e293b;
+  --slate-700:#334155;
+  --slate-600:#475569;
+  --slate-500:#64748b;
+  --slate-400:#94a3b8;
+  --slate-300:#cbd5e1;
+  --slate-200:#e2e8f0;
+  --slate-100:#f1f5f9;
+  --slate-50 :#f8fafc;
+  --red-500  :#ef4444;
+}
+body{font-family:'Inter',sans-serif;background:var(--slate-50);color:var(--slate-900);min-height:100vh;display:flex;flex-direction:column}
+
+/* ── HEADER ── */
+.site-header{background:#fff;border-bottom:1px solid var(--slate-200);padding:0 28px;height:50px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:100;flex-shrink:0}
+.logo{font-size:19px;font-weight:800;color:var(--green-700);letter-spacing:-.5px;text-decoration:none}
+.logo span{color:var(--slate-900)}
+.header-tag{font-size:11.5px;color:var(--slate-400);font-weight:500;border-left:1px solid var(--slate-200);padding-left:14px}
+.header-back{margin-left:auto;font-size:12.5px;color:var(--slate-500);text-decoration:none;font-weight:500}
+.header-back:hover{color:var(--green-700)}
+
+/* ── PROGRESS ── */
+.progress-wrap{background:#fff;border-bottom:1px solid var(--slate-200);padding:18px 28px}
+.progress-steps{display:flex;align-items:center;max-width:680px;margin:0 auto}
+.prog-step{display:flex;flex-direction:column;align-items:center;gap:5px;flex:1}
+.prog-circle{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;border:2px solid var(--slate-300);color:var(--slate-400);background:#fff;transition:all .25s;z-index:1}
+.prog-circle.done{background:var(--green-700);border-color:var(--green-700);color:#fff}
+.prog-circle.active{background:#fff;border-color:var(--green-700);color:var(--green-700)}
+.prog-label{font-size:10px;font-weight:600;color:var(--slate-400);white-space:nowrap;text-align:center}
+.prog-label.active{color:var(--green-700)}
+.prog-label.done{color:var(--slate-600)}
+.prog-line{flex:1;height:2px;background:var(--slate-200);margin-bottom:18px;transition:background .25s}
+.prog-line.done{background:var(--green-700)}
+
+/* ── MAIN ── */
+.main{flex:1;padding:32px 24px 60px;display:flex;flex-direction:column;align-items:center}
+.step{display:none;width:100%;max-width:580px;flex-direction:column}
+.step.active{display:flex}
+
+/* ── STEP HEADER ── */
+.step-header{margin-bottom:24px;text-align:center}
+.step-eyebrow{font-size:11px;font-weight:700;color:var(--green-700);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px}
+.step-title{font-size:24px;font-weight:800;color:var(--slate-900);letter-spacing:-.5px;margin-bottom:8px}
+.step-sub{font-size:14px;color:var(--slate-500);line-height:1.6;max-width:440px;margin:0 auto}
+
+/* ── CARDS & FIELDS ── */
+.card{background:#fff;border:1px solid var(--slate-200);border-radius:14px;padding:28px;margin-bottom:16px}
+.form-row{display:grid;gap:14px;margin-bottom:14px}
+.form-row:last-child{margin-bottom:0}
+.form-row.two{grid-template-columns:1fr 1fr}
+.form-row.one{grid-template-columns:1fr}
+.field label{display:block;font-size:11px;font-weight:700;color:var(--slate-600);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.field input,.field select,.field textarea{width:100%;padding:10px 13px;border:1.5px solid var(--slate-200);border-radius:8px;font-size:14px;font-family:inherit;color:var(--slate-900);background:#fff;outline:none;transition:border-color .18s}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--green-600)}
+.field input.error{border-color:var(--red-500)}
+.field textarea{resize:vertical;min-height:72px;line-height:1.5}
+.field-hint{font-size:11px;color:var(--slate-400);margin-top:5px;line-height:1.5}
+.field-hint.green{color:var(--green-700)}
+.err-msg{font-size:12px;color:var(--red-500);margin-top:5px;display:none}
+.err-msg.show{display:block}
+
+/* ── PATH SELECTOR ── */
+.path-label{font-size:11px;font-weight:700;color:var(--slate-600);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
+.path-options{display:flex;flex-direction:column;gap:8px}
+/* button reset so path-opt works as a <button> */
+.path-opt{display:flex;align-items:flex-start;gap:14px;padding:14px 16px;border:2px solid var(--slate-200);border-radius:10px;cursor:pointer;transition:all .18s;background:#fff;width:100%;text-align:left;font-family:inherit;font-size:inherit;color:inherit;-webkit-appearance:none;appearance:none}
+.path-opt:hover{border-color:var(--slate-400)}
+.path-opt.selected{border-color:var(--green-700);background:var(--green-50)}
+.path-opt-icon{font-size:20px;flex-shrink:0;margin-top:1px}
+.path-opt-body{flex:1}
+.path-opt-title{font-size:13px;font-weight:700;color:var(--slate-800);margin-bottom:2px}
+.path-opt-desc{font-size:12px;color:var(--slate-500);line-height:1.4}
+.path-radio{width:18px;height:18px;border-radius:50%;border:2px solid var(--slate-300);flex-shrink:0;margin-top:3px;display:flex;align-items:center;justify-content:center;transition:all .18s}
+.path-opt.selected .path-radio{border-color:var(--green-700);background:var(--green-700)}
+.path-opt.selected .path-radio::after{content:'';width:6px;height:6px;border-radius:50%;background:#fff}
+
+/* ── CODE INPUT ── */
+.code-wrap{display:flex;gap:10px;justify-content:center;margin:16px 0}
+.code-digit{width:52px;height:60px;border:2px solid var(--slate-200);border-radius:10px;font-size:24px;font-weight:700;text-align:center;font-family:inherit;color:var(--slate-900);outline:none;transition:border-color .18s}
+.code-digit:focus{border-color:var(--green-600)}
+.resend-row{font-size:12px;color:var(--slate-400);text-align:center;margin-top:6px}
+.resend-row a{color:var(--green-700);cursor:pointer;font-weight:600;text-decoration:none}
+.resend-row a:hover{text-decoration:underline}
+
+/* ── ATTESTATION ── */
+.attest-box{border:1.5px solid var(--slate-200);border-radius:10px;padding:16px;background:var(--slate-50)}
+.attest-check{display:flex;align-items:flex-start;gap:12px;cursor:pointer}
+.attest-check input[type=checkbox]{width:18px;height:18px;flex-shrink:0;margin-top:2px;accent-color:var(--green-700);cursor:pointer}
+.attest-text{font-size:12.5px;color:var(--slate-700);line-height:1.6}
+.attest-text strong{color:var(--slate-900)}
+
+/* ── TRACK CARDS ── */
+.track-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.track-card{border:2px solid var(--slate-200);border-radius:14px;padding:24px;cursor:pointer;transition:all .2s;position:relative;background:#fff}
+.track-card:hover{border-color:var(--slate-400)}
+.track-card.sel-green{border-color:var(--green-700);background:var(--green-50)}
+.track-card.sel-teal{border-color:var(--teal-600);background:var(--teal-50)}
+.track-card.recommended{border-color:var(--teal-600)}
+.track-badge{position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:var(--teal-600);color:#fff;font-size:9.5px;font-weight:700;padding:3px 10px;border-radius:100px;white-space:nowrap;letter-spacing:.3px}
+.track-icon{font-size:28px;margin-bottom:10px}
+.track-name{font-size:15px;font-weight:800;color:var(--slate-900);margin-bottom:4px}
+.track-price{font-size:13px;color:var(--slate-500);margin-bottom:14px;line-height:1.4}
+.track-price strong{font-size:20px;font-weight:800;color:var(--slate-900)}
+.track-features{list-style:none;display:flex;flex-direction:column;gap:7px}
+.track-features li{font-size:12px;color:var(--slate-600);display:flex;align-items:flex-start;gap:7px;line-height:1.4}
+.ck-green{color:var(--green-700);font-weight:700;flex-shrink:0;margin-top:1px}
+.ck-teal{color:var(--teal-600);font-weight:700;flex-shrink:0;margin-top:1px}
+.track-select-btn{margin-top:18px;width:100%;padding:10px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;border:2px solid;transition:all .18s}
+.track-select-btn.green{border-color:var(--green-700);color:var(--green-700);background:#fff}
+.track-card.sel-green .track-select-btn.green{background:var(--green-700);color:#fff}
+.track-select-btn.teal{border-color:var(--teal-600);color:var(--teal-600);background:#fff}
+.track-card.sel-teal .track-select-btn.teal{background:var(--teal-600);color:#fff}
+
+/* ── LISTING SETUP ── */
+.preview-label{font-size:10px;font-weight:700;color:var(--slate-400);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px}
+.listing-preview{border:1px solid var(--slate-200);border-radius:10px;overflow:hidden;background:#fff}
+.preview-inner{display:grid;grid-template-columns:100px 1fr;min-height:60px}
+.preview-thumb{background:linear-gradient(155deg,#0c3d22,#15803d);display:flex;align-items:center;justify-content:center;font-size:22px;overflow:hidden}
+.preview-info{padding:10px 14px;display:flex;flex-direction:column;gap:4px;justify-content:center}
+.preview-name{font-size:13px;font-weight:700;color:var(--slate-900)}
+.preview-badge{display:inline-flex;align-items:center;gap:3px;background:var(--green-100);color:var(--green-700);font-size:9px;font-weight:700;padding:2px 7px;border-radius:100px}
+.preview-meta{font-size:11px;color:var(--slate-500)}
+.preview-desc{font-size:11px;color:var(--slate-500);line-height:1.4;margin-top:2px}
+.upload-zone{border:2px dashed var(--slate-300);border-radius:10px;padding:28px;text-align:center;cursor:pointer;transition:all .18s;background:var(--slate-50)}
+.upload-zone:hover,.upload-zone.has-file{border-color:var(--green-600);background:var(--green-50)}
+.upload-filename{font-size:12px;font-weight:600;color:var(--green-700);margin-top:6px;display:none}
+.char-count{font-size:11px;color:var(--slate-400);text-align:right;margin-top:4px}
+.card-fields{background:var(--slate-50);border:1.5px solid var(--slate-200);border-radius:10px;overflow:hidden}
+.card-number{padding:12px 14px;border-bottom:1.5px solid var(--slate-200);display:flex;align-items:center;gap:10px}
+.card-number input{border:none;background:transparent;font-size:14px;font-family:inherit;flex:1;outline:none;color:var(--slate-900);letter-spacing:.5px}
+.card-logos{display:flex;gap:5px;flex-shrink:0}
+.card-logo{width:32px;height:20px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:800;color:#fff}
+.card-logo.visa{background:#1a1f71}
+.card-logo.mc{background:#eb001b}
+.card-row2{display:grid;grid-template-columns:1fr 1fr}
+.card-row2 input{padding:12px 14px;border:none;background:transparent;font-size:14px;font-family:inherit;outline:none;color:var(--slate-900)}
+.card-row2 input:first-child{border-right:1.5px solid var(--slate-200)}
+
+/* ── TEESHEET ── */
+.software-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
+.software-btn{padding:10px 14px;border:1.5px solid var(--slate-200);border-radius:8px;font-size:12.5px;font-weight:600;color:var(--slate-700);background:#fff;cursor:pointer;text-align:center;transition:all .15s}
+.software-btn:hover{border-color:var(--teal-600);color:var(--teal-600)}
+.software-btn.active{border-color:var(--teal-600);background:var(--teal-50);color:var(--teal-600)}
+.onboarding-card{background:linear-gradient(135deg,var(--teal-50),var(--green-50));border:1.5px solid var(--teal-100);border-radius:12px;padding:22px;text-align:center;margin-bottom:16px}
+.onboarding-card .icon{font-size:32px;margin-bottom:10px}
+.onboarding-card h3{font-size:15px;font-weight:800;color:var(--slate-900);margin-bottom:6px}
+.onboarding-card p{font-size:13px;color:var(--slate-600);line-height:1.6;margin-bottom:16px}
+.cal-btn{display:inline-flex;align-items:center;gap:7px;background:var(--teal-600);color:#fff;padding:12px 24px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;border:none;transition:background .18s}
+.cal-btn:hover{background:#0f766e}
+.cal-note{font-size:11px;color:var(--slate-400);margin-top:10px}
+
+/* ── SUCCESS ── */
+.success-wrap{text-align:center;padding:16px 0}
+.success-icon{font-size:56px;margin-bottom:16px;animation:pop .4s cubic-bezier(.36,.07,.19,.97)}
+@keyframes pop{0%{transform:scale(0)}70%{transform:scale(1.15)}100%{transform:scale(1)}}
+.success-title{font-size:26px;font-weight:800;letter-spacing:-.5px;margin-bottom:8px}
+.success-sub{font-size:14.5px;color:var(--slate-500);line-height:1.6;max-width:400px;margin:0 auto 28px}
+.next-steps{background:#fff;border:1px solid var(--slate-200);border-radius:14px;padding:24px;text-align:left;margin-bottom:20px}
+.next-steps h3{font-size:12px;font-weight:700;color:var(--slate-400);text-transform:uppercase;letter-spacing:.6px;margin-bottom:14px}
+.next-item{display:flex;gap:14px;padding:12px 0;border-bottom:1px solid var(--slate-100)}
+.next-item:last-child{border-bottom:none;padding-bottom:0}
+.next-num{width:24px;height:24px;border-radius:50%;background:var(--green-700);color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.next-num.teal{background:var(--teal-600)}
+.next-body strong{font-size:13px;font-weight:700;color:var(--slate-800);display:block;margin-bottom:2px}
+.next-body span{font-size:12px;color:var(--slate-500);line-height:1.5}
+
+/* ── BUTTONS ── */
+.btn-row{display:flex;align-items:center;gap:12px;margin-top:4px}
+.btn-primary{background:var(--green-700);color:#fff;border:none;border-radius:9px;padding:13px 28px;font-size:14px;font-weight:700;cursor:pointer;transition:background .18s;width:100%;display:flex;align-items:center;justify-content:center;gap:6px}
+.btn-primary:hover{background:var(--green-600)}
+.btn-primary.teal{background:var(--teal-600)}
+.btn-primary.teal:hover{background:#0f766e}
+.btn-back{background:none;border:1.5px solid var(--slate-200);border-radius:9px;padding:13px 20px;font-size:13px;font-weight:600;color:var(--slate-600);cursor:pointer;transition:all .18s;white-space:nowrap}
+.btn-back:hover{border-color:var(--slate-400)}
+.btn-link{background:none;border:none;color:var(--green-700);font-size:13px;font-weight:600;cursor:pointer;text-align:center;padding:8px;width:100%;margin-top:6px}
+.btn-link:hover{text-decoration:underline}
+.terms-note{font-size:11px;color:var(--slate-400);text-align:center;line-height:1.6;margin-top:10px}
+.terms-note a{color:var(--green-700);text-decoration:none}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a class="logo" href="swingfirst-v2.html">swing<span>first</span></a>
+  <div class="header-tag">List Your Course</div>
+  <a class="header-back" href="swingfirst-v2.html">← Back to search</a>
+</header>
+
+<div class="progress-wrap">
+  <div class="progress-steps" id="progress-steps">
+    <!-- rendered by JS -->
+  </div>
+</div>
+
+<main class="main">
+
+  <!-- ══════════════════════════════════════════════════════
+       STEP 1 — IDENTITY + PATH SELECTION
+  ══════════════════════════════════════════════════════ -->
+  <div class="step active" id="step1">
+    <div class="step-header">
+      <div class="step-eyebrow">Step 1 of 4</div>
+      <h1 class="step-title">Tell us about yourself</h1>
+      <p class="step-sub">We'll verify your authority to represent this course. Choose the method that fits your situation.</p>
+    </div>
+
+    <div class="card">
+      <div class="form-row two">
+        <div class="field">
+          <label>First name</label>
+          <input type="text" id="fname" placeholder="Dave">
+        </div>
+        <div class="field">
+          <label>Last name</label>
+          <input type="text" id="lname" placeholder="Sansom">
+        </div>
+      </div>
+      <div class="form-row two">
+        <div class="field">
+          <label>Your role</label>
+          <select id="role">
+            <option value="">Select your role…</option>
+            <option>Owner</option>
+            <option>General Manager</option>
+            <option>Director of Golf</option>
+            <option>Head Golf Professional</option>
+            <option>Marketing / Sales</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Your email</label>
+          <input type="email" id="work-email" placeholder="you@example.com">
+        </div>
+      </div>
+      <div class="form-row one">
+        <div class="field">
+          <label>Golf course name</label>
+          <input type="text" id="course-name" placeholder="e.g. Palmbrook Golf Club">
+        </div>
+      </div>
+    </div>
+
+    <!-- PATH SELECTOR -->
+    <div class="card">
+      <div class="path-label">How does your email relate to this course?</div>
+      <div class="path-options">
+
+        <button type="button" class="path-opt" id="path-opt-1" onclick="selectPath(1)">
+          <div class="path-radio" id="path-radio-1"></div>
+          <div class="path-opt-icon">✉️</div>
+          <div class="path-opt-body">
+            <div class="path-opt-title">My email matches the course's domain</div>
+            <div class="path-opt-desc">e.g. dave@palmbrookgolf.com → palmbrookgolf.com — we'll send a verification code to confirm.</div>
+          </div>
+        </button>
+
+        <button type="button" class="path-opt" id="path-opt-2" onclick="selectPath(2)">
+          <div class="path-radio" id="path-radio-2"></div>
+          <div class="path-opt-icon">🏢</div>
+          <div class="path-opt-body">
+            <div class="path-opt-title">My email is from a management company or holding group</div>
+            <div class="path-opt-desc">e.g. dave@swingfirst.co, staff@arcusgolf.com — you own or manage one or more courses under a parent organization.</div>
+          </div>
+        </button>
+
+        <button type="button" class="path-opt" id="path-opt-3" onclick="selectPath(3)">
+          <div class="path-radio" id="path-radio-3"></div>
+          <div class="path-opt-icon">📱</div>
+          <div class="path-opt-body">
+            <div class="path-opt-title">I use a personal email address</div>
+            <div class="path-opt-desc">We'll send a verification code to your course's publicly listed phone number instead.</div>
+          </div>
+        </button>
+
+      </div>
+      <div class="err-msg" id="path-err" style="margin-top:10px">Please select how your email relates to this course.</div>
+    </div>
+
+    <button class="btn-primary" onclick="step1Next()">Continue →</button>
+    <p class="terms-note">By continuing you agree to SwingFirst's <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.</p>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       STEP 2A — EMAIL CODE (Path 1)
+  ══════════════════════════════════════════════════════ -->
+  <div class="step" id="step2A">
+    <div class="step-header">
+      <div class="step-eyebrow">Step 2 of 4 · Domain verification</div>
+      <h1 class="step-title">Check your inbox</h1>
+      <p class="step-sub">We sent a 6-digit code to <strong id="email-display-a"></strong>. Enter it below to confirm you have access to this address.</p>
+    </div>
+    <div class="card" style="text-align:center">
+      <div style="font-size:40px;margin-bottom:12px">📬</div>
+      <div class="code-wrap">
+        <input class="code-digit" type="text" maxlength="1" oninput="codeInput(this,null,'ea2')" onkeydown="codeKey(event,this,null,'ea2')" id="ea1">
+        <input class="code-digit" type="text" maxlength="1" oninput="codeInput(this,'ea1','ea3')" onkeydown="codeKey(event,this,'ea1','ea3')" id="ea2">
+        <input class="code-digit" type="text" maxlength="1" oninput="codeInput(this,'ea2','ea4')" onkeydown="codeKey(event,this,'ea2','ea4')" id="ea3">
+        <input class="code-digit" type="text" maxlength="1" oninput="codeInput(this,'ea3','ea5')" onkeydown="codeKey(event,this,'ea3','ea5')" id="ea4">
+        <input class="code-digit" type="text" maxlength="1" oninput="codeInput(this,'ea4','ea6')" onkeydown="codeKey(event,this,'ea4','ea6')" id="ea5">
+        <input class="code-digit" type="text" maxlength="1" oninput="codeInput(this,'ea5',null)"  onkeydown="codeKey(event,this,'ea5',null)"  id="ea6">
+      </div>
+      <div class="resend-row">Didn't get it? <a onclick="alert('New code sent!')">Resend</a> · <a onclick="goStep('1')">Change email</a></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-back" onclick="goStep('1')">← Back</button>
+      <button class="btn-primary" onclick="step2ANext()" style="flex:1">Verify & continue →</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       STEP 2B — MANAGEMENT COMPANY (Path 2)
+  ══════════════════════════════════════════════════════ -->
+  <div class="step" id="step2B">
+    <div class="step-header">
+      <div class="step-eyebrow">Step 2 of 4 · Management group</div>
+      <h1 class="step-title">Tell us about your organization</h1>
+      <p class="step-sub">Let us know which courses fall under your management or ownership. You can add more courses to your account later.</p>
+    </div>
+    <div class="card">
+      <div class="form-row one">
+        <div class="field">
+          <label>Parent organization name</label>
+          <input type="text" id="parent-org" placeholder="e.g. SwingFirst Golf Group, Arcus Golf, Troon">
+          <div class="field-hint">The company or entity under which your courses operate.</div>
+        </div>
+      </div>
+      <div class="form-row one">
+        <div class="field">
+          <label>Courses you manage or own</label>
+          <textarea id="managed-courses" placeholder="List each course on its own line, e.g.&#10;Palmbrook Golf Club — Sun City, AZ&#10;Coyote Lakes Golf Club — Surprise, AZ&#10;Scottsdale Country Club — Scottsdale, AZ" style="min-height:110px"></textarea>
+          <div class="field-hint">One course per line. You can claim and set up each one individually after verification.</div>
+        </div>
+      </div>
+      <div class="form-row one">
+        <div class="field">
+          <label>Organization website</label>
+          <input type="url" id="org-website" placeholder="https://www.swingfirst.co">
+          <div class="field-hint">Your parent organization's website — used to confirm the relationship between your email domain and your courses.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="font-size:13px;font-weight:700;color:var(--slate-800);margin-bottom:12px">Legal attestation</div>
+      <div class="attest-box">
+        <label class="attest-check">
+          <input type="checkbox" id="attest-b">
+          <span class="attest-text">I attest that I am <strong>legally authorized</strong> to represent the courses listed above, that the information I have provided is accurate, and that I accept full responsibility for this listing under SwingFirst's <a href="#" style="color:var(--green-700)">Terms of Service</a>. I understand that falsely claiming a course may result in account termination and legal action.</span>
+        </label>
+      </div>
+      <div class="err-msg" id="attest-b-err" style="margin-top:8px">You must confirm authorization to continue.</div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-back" onclick="goStep('1')">← Back</button>
+      <button class="btn-primary" onclick="step2BNext()" style="flex:1">Continue →</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       STEP 2C — PHONE VERIFICATION (Path 3)
+  ══════════════════════════════════════════════════════ -->
+  <div class="step" id="step2C">
+    <div class="step-header">
+      <div class="step-eyebrow">Step 2 of 4 · Phone verification</div>
+      <h1 class="step-title">Verify via the course's phone</h1>
+      <p class="step-sub">We'll make an automated voice call to your course's listed phone number and speak a 6-digit code aloud. Anyone who answers can read it back to you.</p>
+    </div>
+
+    <div class="card">
+      <div class="form-row one">
+        <div class="field">
+          <label>Pro shop phone number</label>
+          <input type="tel" id="course-phone" placeholder="(602) 555-0100">
+          <div class="field-hint">Use the <strong>direct pro shop line</strong> if you have one — this bypasses any phone menu. Otherwise, the main course number is fine.</div>
+          <div class="err-msg" id="phone-err">Please enter a valid US phone number.</div>
+        </div>
+      </div>
+
+      <!-- Phone menu toggle -->
+      <div class="form-row one" style="margin-bottom:0">
+        <div class="field">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;text-transform:none;letter-spacing:0;font-size:13px;font-weight:600;color:var(--slate-700)">
+            <input type="checkbox" id="has-menu" onchange="toggleMenuDigit()" style="width:16px;height:16px;accent-color:var(--green-700);cursor:pointer">
+            This number goes through a phone menu first
+          </label>
+          <div class="field-hint" style="margin-top:6px">e.g. "Press 1 for the pro shop, press 2 for the restaurant…"</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Menu digit — shown only when checkbox checked -->
+    <div class="card" id="menu-digit-card" style="display:none;padding:20px">
+      <div class="field">
+        <label>Which button connects to the pro shop?</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px" id="digit-btns">
+          <!-- rendered by JS -->
+        </div>
+        <div class="field-hint" style="margin-top:10px">We'll press this automatically after the menu plays, then speak your code.</div>
+      </div>
+    </div>
+
+    <button class="btn-primary" id="send-phone-btn" onclick="sendPhoneCode()" style="margin-bottom:16px">Call the pro shop now →</button>
+
+    <!-- Code entry — hidden until code is sent -->
+    <div id="phone-code-section" style="display:none">
+      <div class="card" style="text-align:center">
+        <div style="font-size:14px;font-weight:600;color:var(--slate-700);margin-bottom:6px" id="phone-sent-msg"></div>
+        <div style="font-size:12px;color:var(--slate-400);margin-bottom:12px">Someone at the pro shop will hear the code spoken aloud — ask them to read it to you.</div>
+        <div class="code-wrap">
+          <input class="code-digit" type="text" maxlength="1" oninput="codeInput(this,null,'pc2')" onkeydown="codeKey(event,this,null,'pc2')" id="pc1">
+          <input class="code-digit" type="text" maxlength="1" oninput="codeInput(this,'pc1','pc3')" onkeydown="codeKey(event,this,'pc1','pc3')" id="pc2">
+          <input class="code-digit" type="text" maxlength="1" oninput="codeInput(this,'pc2','pc4')" onkeydown="codeKey(event,this,'pc2','pc4')" id="pc3">
+          <input class="code-digit" type="text" maxlength="1" oninput="codeInput(this,'pc3','pc5')" onkeydown="codeKey(event,this,'pc3','pc5')" id="pc4">
+          <input class="code-digit" type="text" maxlength="1" oninput="codeInput(this,'pc4','pc6')" onkeydown="codeKey(event,this,'pc4','pc6')" id="pc5">
+          <input class="code-digit" type="text" maxlength="1" oninput="codeInput(this,'pc5',null)"  onkeydown="codeKey(event,this,'pc5',null)"  id="pc6">
+        </div>
+        <div class="resend-row"><a onclick="sendPhoneCode()">Resend code</a> · <a onclick="document.getElementById('phone-code-section').style.display='none'">Change number</a></div>
+      </div>
+
+      <div class="card" style="padding:20px">
+        <div style="font-size:13px;font-weight:700;color:var(--slate-800);margin-bottom:12px">Legal attestation</div>
+        <div class="attest-box">
+          <label class="attest-check">
+            <input type="checkbox" id="attest-c">
+            <span class="attest-text">I attest that I am <strong>legally authorized</strong> to represent <span id="attest-course-name-c">this course</span>, that the phone number above is the course's published contact number, and that I accept responsibility for this listing under SwingFirst's <a href="#" style="color:var(--green-700)">Terms of Service</a>.</span>
+          </label>
+        </div>
+        <div class="err-msg" id="attest-c-err" style="margin-top:8px">You must confirm authorization to continue.</div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-back" onclick="goStep('1')">← Back</button>
+        <button class="btn-primary" onclick="step2CNext()" style="flex:1">Verify & continue →</button>
+      </div>
+    </div>
+
+    <div class="btn-row" id="phone-back-row">
+      <button class="btn-back" onclick="goStep('1')">← Back</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       STEP 3 — TRACK CHOICE
+  ══════════════════════════════════════════════════════ -->
+  <div class="step" id="step3">
+    <div class="step-header">
+      <div class="step-eyebrow">Step 3 of 4</div>
+      <h1 class="step-title">Choose how you'd like to list</h1>
+      <p class="step-sub">Both options give your course premium placement and a verified badge. The difference is how you pay.</p>
+    </div>
+
+    <div class="track-grid">
+      <div class="track-card" id="trackA-card">
+        <div class="track-icon">⭐</div>
+        <div class="track-name">Premium Listing</div>
+        <div class="track-price"><strong>$149</strong> / month<br><span style="font-size:11px">First 30 days free · Cancel anytime</span></div>
+        <ul class="track-features">
+          <li><span class="ck-green">✓</span>Featured placement in search</li>
+          <li><span class="ck-green">✓</span>Verified badge</li>
+          <li><span class="ck-green">✓</span>Upload your own course photos</li>
+          <li><span class="ck-green">✓</span>Description &amp; special offers</li>
+          <li><span class="ck-green">✓</span>Analytics dashboard</li>
+          <li><span class="ck-green">✓</span>Keep your existing booking system</li>
+        </ul>
+        <button class="track-select-btn green" id="trackA-btn">Select →</button>
+      </div>
+
+      <div class="track-card recommended" id="trackB-card">
+        <div class="track-badge">⭐ Recommended</div>
+        <div class="track-icon">🏌️</div>
+        <div class="track-name">SwingFirst Tee Sheet</div>
+        <div class="track-price"><strong style="color:var(--teal-600)">Free</strong> listing included<br><span style="font-size:11px">$1.50 per booking · No monthly fee</span></div>
+        <ul class="track-features">
+          <li><span class="ck-teal">✓</span>Everything in Premium Listing</li>
+          <li><span class="ck-teal">✓</span><strong>Live availability</strong> in search results</li>
+          <li><span class="ck-teal">✓</span>Booking engine for your website</li>
+          <li><span class="ck-teal">✓</span>Automated confirmations &amp; reminders</li>
+          <li><span class="ck-teal">✓</span>Waitlist &amp; repeat-customer tools</li>
+          <li><span class="ck-teal">✓</span>Pay only when golfers book</li>
+        </ul>
+        <button class="track-select-btn teal" id="trackB-btn">Select →</button>
+      </div>
+    </div>
+
+    <button class="btn-primary" id="track-next-btn" onclick="step3Next()" style="opacity:.4;pointer-events:none">Continue →</button>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       STEP 4A — PREMIUM LISTING SETUP
+  ══════════════════════════════════════════════════════ -->
+  <div class="step" id="step4A">
+    <div class="step-header">
+      <div class="step-eyebrow">Step 4 of 4 · Premium Listing</div>
+      <h1 class="step-title">Set up your listing</h1>
+      <p class="step-sub">This is exactly what golfers will see when your course appears in SwingFirst results.</p>
+    </div>
+
+    <div class="card" style="padding:20px">
+      <div class="preview-label">Live preview</div>
+      <div class="listing-preview">
+        <div class="preview-inner">
+          <div class="preview-thumb" id="preview-thumb-a">⛳</div>
+          <div class="preview-info">
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+              <div class="preview-name" id="preview-name-a">Your Course Name</div>
+              <div class="preview-badge">✓ Verified</div>
+            </div>
+            <div class="preview-meta">4.5 ★ · Verified listing</div>
+            <div class="preview-desc" id="preview-desc-a" style="display:none"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="form-row one">
+        <div class="field">
+          <label>Course photo</label>
+          <div class="upload-zone" id="upload-zone" onclick="document.getElementById('photo-input').click()">
+            <div style="font-size:28px;margin-bottom:8px">📷</div>
+            <div style="font-size:13px;color:var(--slate-500);margin-bottom:4px">Click to upload a photo</div>
+            <div style="font-size:11px;color:var(--slate-400)">JPEG or PNG · Landscape · Min 1200×800 px recommended</div>
+            <div class="upload-filename" id="upload-filename"></div>
+          </div>
+          <input type="file" id="photo-input" accept="image/*" style="display:none" onchange="handlePhoto(event)">
+        </div>
+      </div>
+      <div class="form-row one">
+        <div class="field">
+          <label>Description <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--slate-400)">(shown on hover)</span></label>
+          <textarea id="desc-input" placeholder="Describe what makes your course special — the setting, signature holes, conditions, experience…" maxlength="220" oninput="updatePreview()"></textarea>
+          <div class="char-count"><span id="desc-chars">0</span> / 220</div>
+        </div>
+      </div>
+      <div class="form-row one">
+        <div class="field">
+          <label>Special offer <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--slate-400)">(optional)</span></label>
+          <input type="text" id="offer-input" placeholder="e.g. 20% off twilight rounds this week">
+          <div class="field-hint">Shown as a green tag on your listing. Great for driving off-peak bookings.</div>
+        </div>
+      </div>
+      <div class="form-row one">
+        <div class="field">
+          <label>Booking URL</label>
+          <input type="url" id="booking-url" placeholder="https://yourcourse.com/book-tee-time">
+          <div class="field-hint">Where golfers land when they click "Book →" on your listing.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="font-size:13px;font-weight:700;color:var(--slate-800);margin-bottom:4px">💳 Payment</div>
+      <div style="font-size:12px;color:var(--slate-500);margin-bottom:16px">First 30 days free. $149/month after. Cancel anytime.</div>
+      <div class="card-fields">
+        <div class="card-number">
+          <input type="text" placeholder="Card number" maxlength="19" oninput="formatCard(this)">
+          <div class="card-logos">
+            <div class="card-logo visa">VISA</div>
+            <div class="card-logo mc">MC</div>
+          </div>
+        </div>
+        <div class="card-row2">
+          <input type="text" placeholder="MM / YY" maxlength="7">
+          <input type="text" placeholder="CVC" maxlength="4">
+        </div>
+      </div>
+      <div class="field-hint green" style="margin-top:8px">🔒 Secured by Stripe · Card won't be charged until day 31</div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-back" onclick="goStep('3')">← Back</button>
+      <button class="btn-primary" onclick="step4ANext()" style="flex:1">Activate premium listing →</button>
+    </div>
+    <p class="terms-note">By activating, you confirm all information is accurate and you are authorized to represent this course. <a href="#">Full terms</a>.</p>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       STEP 4B — TEE SHEET ONBOARDING
+  ══════════════════════════════════════════════════════ -->
+  <div class="step" id="step4B">
+    <div class="step-header">
+      <div class="step-eyebrow">Step 4 of 4 · SwingFirst Tee Sheet</div>
+      <h1 class="step-title">Tell us about your setup</h1>
+      <p class="step-sub">We'll tailor the migration to your current system. Most courses are live within 5 business days.</p>
+    </div>
+
+    <div class="card">
+      <div class="form-row one" style="margin-bottom:0">
+        <div class="field">
+          <label>Current tee sheet software</label>
+          <div class="software-grid">
+            <button class="software-btn" onclick="selectSoftware(this,'GolfNow')">GolfNow</button>
+            <button class="software-btn" onclick="selectSoftware(this,'TeeOff / EZLinks')">TeeOff / EZLinks</button>
+            <button class="software-btn" onclick="selectSoftware(this,'Club Caddie')">Club Caddie</button>
+            <button class="software-btn" onclick="selectSoftware(this,'ForeUp')">ForeUp</button>
+            <button class="software-btn" onclick="selectSoftware(this,'Custom / In-house')">Custom / In-house</button>
+            <button class="software-btn" onclick="selectSoftware(this,'None yet')">None yet</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="form-row two">
+        <div class="field">
+          <label>Number of holes</label>
+          <select id="holes">
+            <option>18 holes</option>
+            <option>9 holes</option>
+            <option>27 holes</option>
+            <option>36 holes</option>
+            <option>54+ holes</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Avg. daily rounds</label>
+          <select id="rounds">
+            <option>Under 50</option>
+            <option>50–100</option>
+            <option>100–150</option>
+            <option>150–200</option>
+            <option>200+</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row one">
+        <div class="field">
+          <label>Best number to reach you</label>
+          <input type="tel" id="callback-phone" placeholder="(602) 555-0100">
+          <div class="field-hint">A SwingFirst specialist will schedule the migration at a time that works for you — no technical work required on your end.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="onboarding-card">
+      <div class="icon">📅</div>
+      <h3>Schedule your onboarding call</h3>
+      <p>Optional — or we'll reach out to the number above within 1 business day.</p>
+      <button class="cal-btn" onclick="alert('In production this opens a Calendly scheduling widget.')">📅 Pick a time →</button>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-back" onclick="goStep('3')">← Back</button>
+      <button class="btn-primary teal" onclick="step4BNext()" style="flex:1">Submit &amp; get listed →</button>
+    </div>
+    <p class="terms-note">By submitting, you confirm you are authorized to represent this course. Your premium listing goes live once verification is complete. <a href="#">Full terms</a>.</p>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       STEP 5 — SUCCESS
+  ══════════════════════════════════════════════════════ -->
+  <div class="step" id="step5">
+    <div class="success-wrap">
+      <div class="success-icon" id="success-icon">🎉</div>
+      <h1 class="success-title">You're in!</h1>
+      <p class="success-sub" id="success-sub"></p>
+    </div>
+    <div class="next-steps" id="next-steps"></div>
+    <a href="swingfirst-v2.html" style="display:block">
+      <button class="btn-primary">← Back to SwingFirst</button>
+    </a>
+    <button class="btn-link" onclick="window.location.href='swingfirst-dashboard.html'">Go to your listing dashboard →</button>
+  </div>
+
+</main>
+
+<script>
+// ── STATE ─────────────────────────────────────────────────
+let verifyPath  = null;   // 1, 2, or 3
+let selectedTrack = null; // 'A' or 'B'
+let selectedSoftware = null;
+
+// ── PROGRESS STEPS config per path ───────────────────────
+const PROG_LABELS = ['Verify', 'Confirm', 'Choose', 'Set Up', 'Done'];
+
+function renderProgress(activeStep) {
+  const steps = document.getElementById('progress-steps');
+  let html = '';
+  for (let i = 1; i <= 5; i++) {
+    const done   = i < activeStep;
+    const active = i === activeStep;
+    const cc = done ? 'done' : active ? 'active' : '';
+    const lc = done ? 'done' : active ? 'active' : '';
+    const num = done ? '✓' : i;
+    html += `<div class="prog-step">
+      <div class="prog-circle ${cc}">${num}</div>
+      <div class="prog-label ${lc}">${PROG_LABELS[i-1]}</div>
+    </div>`;
+    if (i < 5) {
+      html += `<div class="prog-line${done ? ' done' : ''}"></div>`;
+    }
+  }
+  steps.innerHTML = html;
+}
+
+// ── NAVIGATION ────────────────────────────────────────────
+function goStep(id) {
+  document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+  document.getElementById('step' + id).classList.add('active');
+
+  // Map step id → progress number
+  const progMap = {'1':1, '2A':2, '2B':2, '2C':2, '3':3, '4A':4, '4B':4, '5':5};
+  renderProgress(progMap[String(id)] || 1);
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+// ── PATH SELECTION ────────────────────────────────────────
+function selectPath(n) {
+  verifyPath = n;
+  [1,2,3].forEach(i => {
+    const opt   = document.getElementById('path-opt-' + i);
+    if (i === n) {
+      opt.classList.add('selected');
+    } else {
+      opt.classList.remove('selected');
+    }
+  });
+  document.getElementById('path-err').classList.remove('show');
+}
+
+// ── STEP 1 ────────────────────────────────────────────────
+function step1Next() {
+  const fname = document.getElementById('fname').value.trim();
+  const lname = document.getElementById('lname').value.trim();
+  const role  = document.getElementById('role').value;
+  const email = document.getElementById('work-email').value.trim();
+  const cname = document.getElementById('course-name').value.trim();
+
+  if (!fname || !lname || !role || !email || !cname) {
+    alert('Please fill in all fields before continuing.');
+    return;
+  }
+  if (!verifyPath) {
+    document.getElementById('path-err').classList.add('show');
+    document.getElementById('path-err').scrollIntoView({behavior:'smooth', block:'center'});
+    return;
+  }
+
+  // Pre-fill downstream fields
+  document.getElementById('preview-name-a').textContent = cname;
+  document.getElementById('attest-course-name-c').textContent = cname;
+
+  if (verifyPath === 1) {
+    // Validate domain email (no free providers)
+    const domain = email.split('@')[1] || '';
+    const free = ['gmail','yahoo','hotmail','outlook','icloud','aol','proton'];
+    if (free.some(p => domain.includes(p))) {
+      alert('Path 1 requires a domain email matching your course's website.\n\nIf you use Gmail or a personal address, please select "I use a personal email address" instead.');
+      return;
+    }
+    document.getElementById('email-display-a').textContent = email;
+    goStep('2A');
+  } else if (verifyPath === 2) {
+    goStep('2B');
+  } else {
+    goStep('2C');
+  }
+}
+
+// ── STEP 2A — EMAIL CODE ──────────────────────────────────
+function step2ANext() {
+  const code = ['ea1','ea2','ea3','ea4','ea5','ea6'].map(id => document.getElementById(id).value).join('');
+  if (code.length < 6) { alert('Please enter the full 6-digit code.'); return; }
+  goStep('3');
+}
+
+// ── STEP 2B — MANAGEMENT COMPANY ─────────────────────────
+function step2BNext() {
+  const org    = document.getElementById('parent-org').value.trim();
+  const list   = document.getElementById('managed-courses').value.trim();
+  const site   = document.getElementById('org-website').value.trim();
+  const attest = document.getElementById('attest-b').checked;
+
+  if (!org || !list || !site) { alert('Please fill in all fields.'); return; }
+  if (!attest) {
+    document.getElementById('attest-b-err').classList.add('show');
+    return;
+  }
+  document.getElementById('attest-b-err').classList.remove('show');
+  goStep('3');
+}
+
+// ── STEP 2C — PHONE VERIFICATION ─────────────────────────
+let phoneCodeSent = false;
+let selectedMenuDigit = null;
+
+function toggleMenuDigit() {
+  const checked = document.getElementById('has-menu').checked;
+  const card = document.getElementById('menu-digit-card');
+  card.style.display = checked ? 'block' : 'none';
+  if (checked && !document.getElementById('digit-btns').children.length) {
+    renderDigitBtns();
+  }
+  if (!checked) selectedMenuDigit = null;
+}
+
+function renderDigitBtns() {
+  const wrap = document.getElementById('digit-btns');
+  const digits = ['0','1','2','3','4','5','6','7','8','9','*','#'];
+  wrap.innerHTML = digits.map(d =>
+    `<button onclick="pickMenuDigit(this,'${d}')" style="
+      width:44px;height:44px;border:1.5px solid var(--slate-200);border-radius:8px;
+      font-size:15px;font-weight:700;color:var(--slate-700);background:#fff;
+      cursor:pointer;transition:all .15s;font-family:inherit"
+    >${d}</button>`
+  ).join('');
+}
+
+function pickMenuDigit(btn, d) {
+  selectedMenuDigit = d;
+  document.querySelectorAll('#digit-btns button').forEach(b => {
+    b.style.background = '#fff';
+    b.style.borderColor = 'var(--slate-200)';
+    b.style.color = 'var(--slate-700)';
+  });
+  btn.style.background = 'var(--green-700)';
+  btn.style.borderColor = 'var(--green-700)';
+  btn.style.color = '#fff';
+}
+
+function sendPhoneCode() {
+  const phone = document.getElementById('course-phone').value.trim();
+  if (!phone || phone.replace(/\D/g,'').length < 10) {
+    document.getElementById('phone-err').classList.add('show');
+    return;
+  }
+  const hasMenu = document.getElementById('has-menu').checked;
+  if (hasMenu && !selectedMenuDigit) {
+    alert('Please select which button connects to the pro shop.');
+    return;
+  }
+  document.getElementById('phone-err').classList.remove('show');
+
+  const menuNote = hasMenu ? ` — we'll press ${selectedMenuDigit} to reach the pro shop` : '';
+  document.getElementById('phone-sent-msg').textContent = `Calling ${phone}${menuNote}`;
+  document.getElementById('phone-code-section').style.display = 'block';
+  document.getElementById('phone-back-row').style.display = 'none';
+  document.getElementById('send-phone-btn').textContent = 'Call again →';
+  document.getElementById('pc1').focus();
+  phoneCodeSent = true;
+}
+
+function step2CNext() {
+  if (!phoneCodeSent) { alert('Please send a verification code first.'); return; }
+  const code = ['pc1','pc2','pc3','pc4','pc5','pc6'].map(id => document.getElementById(id).value).join('');
+  if (code.length < 6) { alert('Please enter the full 6-digit code.'); return; }
+  const attest = document.getElementById('attest-c').checked;
+  if (!attest) {
+    document.getElementById('attest-c-err').classList.add('show');
+    return;
+  }
+  document.getElementById('attest-c-err').classList.remove('show');
+  goStep('3');
+}
+
+// ── CODE INPUT HELPERS ────────────────────────────────────
+function codeInput(el, prevId, nextId) {
+  el.value = el.value.replace(/[^0-9]/g,'');
+  if (el.value && nextId) document.getElementById(nextId).focus();
+}
+function codeKey(e, el, prevId, nextId) {
+  if (e.key === 'Backspace' && !el.value && prevId) document.getElementById(prevId).focus();
+  if (e.key === 'ArrowLeft'  && prevId) document.getElementById(prevId).focus();
+  if (e.key === 'ArrowRight' && nextId) document.getElementById(nextId).focus();
+}
+
+// ── STEP 3 — TRACK ────────────────────────────────────────
+function selectTrack(t) {
+  selectedTrack = t;
+  document.getElementById('trackA-card').className = 'track-card' + (t==='A' ? ' sel-green' : '');
+  document.getElementById('trackB-card').className = 'track-card recommended' + (t==='B' ? ' sel-teal' : '');
+  document.getElementById('trackA-btn').textContent = t==='A' ? 'Selected ✓' : 'Select →';
+  document.getElementById('trackB-btn').textContent = t==='B' ? 'Selected ✓' : 'Select →';
+  const btn = document.getElementById('track-next-btn');
+  btn.style.opacity = '1';
+  btn.style.pointerEvents = 'auto';
+  btn.textContent = t==='B' ? 'Continue with Tee Sheet →' : 'Continue with Premium →';
+  btn.className = 'btn-primary' + (t==='B' ? ' teal' : '');
+}
+function step3Next() {
+  if (!selectedTrack) { alert('Please choose a listing type.'); return; }
+  goStep(selectedTrack === 'B' ? '4B' : '4A');
+}
+
+// ── STEP 4A HELPERS ───────────────────────────────────────
+function updatePreview() {
+  const desc = document.getElementById('desc-input').value;
+  document.getElementById('desc-chars').textContent = desc.length;
+  const el = document.getElementById('preview-desc-a');
+  el.textContent = desc;
+  el.style.display = desc ? 'block' : 'none';
+}
+function handlePhoto(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  document.getElementById('upload-zone').classList.add('has-file');
+  const fn = document.getElementById('upload-filename');
+  fn.textContent = '✓ ' + file.name;
+  fn.style.display = 'block';
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const t = document.getElementById('preview-thumb-a');
+    t.innerHTML = `<img src="${ev.target.result}" style="width:100%;height:100%;object-fit:cover">`;
+    t.style.padding = '0';
+  };
+  reader.readAsDataURL(file);
+}
+function formatCard(el) {
+  let v = el.value.replace(/\D/g,'').substring(0,16);
+  el.value = v.replace(/(\d{4})/g,'$1 ').trim();
+}
+function step4ANext() {
+  const desc = document.getElementById('desc-input').value.trim();
+  const url  = document.getElementById('booking-url').value.trim();
+  if (!desc) { alert('Please add a description for your listing.'); return; }
+  if (!url)  { alert('Please add your booking URL.'); return; }
+  showSuccess('A');
+}
+
+// ── STEP 4B HELPERS ───────────────────────────────────────
+function selectSoftware(btn, name) {
+  document.querySelectorAll('.software-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  selectedSoftware = name;
+}
+function step4BNext() {
+  if (!selectedSoftware) { alert('Please select your current tee sheet software.'); return; }
+  const phone = document.getElementById('callback-phone').value.trim();
+  if (!phone) { alert('Please provide a callback phone number.'); return; }
+  showSuccess('B');
+}
+
+// ── STEP 5 — SUCCESS ──────────────────────────────────────
+function showSuccess(track) {
+  const cname = document.getElementById('course-name').value.trim() || 'Your Course';
+  document.getElementById('success-sub').textContent = track === 'A'
+    ? `${cname} is now a verified premium listing on SwingFirst. Golfers searching your area will see you featured at the top.`
+    : `A SwingFirst specialist will reach out within 1 business day to begin your tee sheet migration. Once live, ${cname} will have a free premium listing with real-time availability.`;
+
+  document.getElementById('next-steps').innerHTML = track === 'A' ? `
+    <h3>What happens next</h3>
+    <div class="next-item"><div class="next-num">1</div><div class="next-body"><strong>Your listing is active immediately</strong><span>Golfers can see your featured listing, photos, description, and special offer right now.</span></div></div>
+    <div class="next-item"><div class="next-num">2</div><div class="next-body"><strong>30-day free trial begins today</strong><span>Your first charge of $149 won't happen until day 31. Cancel anytime before then at no cost.</span></div></div>
+    <div class="next-item"><div class="next-num">3</div><div class="next-body"><strong>Analytics dashboard unlocked</strong><span>Track impressions, clicks, and booking intent from every golfer who views your listing.</span></div></div>
+  ` : `
+    <h3>What happens next</h3>
+    <div class="next-item"><div class="next-num teal">1</div><div class="next-body"><strong>Onboarding call — within 1 business day</strong><span>We'll walk through your current setup and plan the migration. No technical work required on your end.</span></div></div>
+    <div class="next-item"><div class="next-num teal">2</div><div class="next-body"><strong>Migration & testing — ~5 business days</strong><span>We migrate your tee times and pricing rules. You review and approve before anything goes live.</span></div></div>
+    <div class="next-item"><div class="next-num teal">3</div><div class="next-body"><strong>Go live — free premium listing + tee sheet active</strong><span>Featured in SwingFirst results with live availability. Pay $1.50 only when a golfer books.</span></div></div>
+  `;
+  goStep('5');
+}
+
+// ── INIT ──────────────────────────────────────────────────
+const params = new URLSearchParams(window.location.search);
+if (params.get('course')) {
+  const name = decodeURIComponent(params.get('course'));
+  document.getElementById('course-name').value = name;
+  document.getElementById('preview-name-a').textContent = name;
+  document.getElementById('attest-course-name-c').textContent = name;
+}
+renderProgress(1);
+
+// Wire track cards via JS (can't use onclick on divs containing buttons)
+document.getElementById('trackA-card').addEventListener('click', function(e) {
+  if (!e.target.closest('button') || e.target.id === 'trackA-btn') selectTrack('A');
+});
+document.getElementById('trackB-card').addEventListener('click', function(e) {
+  if (!e.target.closest('button') || e.target.id === 'trackB-btn') selectTrack('B');
+});
+</script>
+</body>
+</html>
