@@ -1,0 +1,712 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>SwingFirst — Edit Booking</title>
+<style>
+  :root {
+    --ink:        #0d1f17;
+    --ink-soft:   #3b4a42;
+    --ink-muted:  #6b7a72;
+    --line:       #e4e9e6;
+    --paper:      #fbfaf7;
+    --card:       #ffffff;
+    --green-900:  #0b3d2e;
+    --green-700:  #1b6b4f;
+    --green-600:  #2a8a6a;
+    --green-200:  #a8d5bc;
+    --green-100:  #e3f2ec;
+    --green-50:   #f2f9f5;
+    --amber-700:  #B45309;
+    --amber-100:  #FEF3C7;
+    --rose-700:   #9A2A42;
+    --rose-100:   #fbe0e6;
+    --rose-50:    #fff1f4;
+    --slate-100:  #eef1ee;
+    --slate-200:  #dde3de;
+    --shadow-sm:  0 1px 0 rgba(13,31,23,.04), 0 1px 2px rgba(13,31,23,.04);
+    --shadow-md:  0 2px 6px rgba(13,31,23,.07), 0 8px 24px rgba(13,31,23,.07);
+    --shadow-lg:  0 4px 16px rgba(13,31,23,.14), 0 1px 3px rgba(13,31,23,.08);
+    --radius:     12px;
+    --radius-sm:  8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { min-height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  /* ── Top bar ── */
+  .top-bar {
+    background: var(--green-900);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 0 24px;
+    height: 52px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,.18);
+  }
+  .top-logo {
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: -.5px;
+    color: #fff;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .top-badge {
+    background: var(--green-600);
+    border-radius: 6px;
+    padding: 2px 7px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+    color: #e3f2ec;
+  }
+  .top-divider { width: 1px; height: 22px; background: rgba(255,255,255,.15); }
+  .top-title { font-size: 13px; font-weight: 600; color: rgba(255,255,255,.75); }
+  .top-spacer { flex: 1; }
+  .top-btn {
+    background: rgba(255,255,255,.1);
+    border: 1px solid rgba(255,255,255,.15);
+    color: #fff;
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: inherit;
+    transition: background .15s;
+  }
+  .top-btn:hover { background: rgba(255,255,255,.18); }
+  .top-btn.primary {
+    background: var(--green-600);
+    border-color: var(--green-600);
+  }
+  .top-btn.primary:hover { background: #1f7a5c; }
+
+  /* ── Layout ── */
+  .page {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 32px 20px 100px;
+  }
+
+  /* ── Slot card ── */
+  .slot-card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    padding: 20px 24px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .slot-time-block {
+    background: var(--green-50);
+    border: 1px solid var(--green-200);
+    border-radius: 10px;
+    padding: 10px 18px;
+    text-align: center;
+    min-width: 90px;
+    flex-shrink: 0;
+  }
+  .slot-time-main { font-size: 24px; font-weight: 800; color: var(--green-700); line-height: 1; letter-spacing: -.5px; }
+  .slot-time-ampm { font-size: 11px; font-weight: 700; color: var(--green-600); text-transform: uppercase; letter-spacing: .5px; margin-top: 2px; }
+  .slot-meta { flex: 1; min-width: 160px; }
+  .slot-meta-course { font-size: 16px; font-weight: 700; color: var(--ink); margin-bottom: 5px; }
+  .slot-meta-row { font-size: 12px; color: var(--ink-muted); display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  .slot-meta-pill {
+    background: var(--green-100);
+    color: var(--green-700);
+    border-radius: 20px;
+    padding: 2px 9px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .slot-id {
+    font-size: 11px;
+    color: var(--ink-muted);
+    font-family: monospace;
+    background: var(--slate-100);
+    padding: 3px 8px;
+    border-radius: 6px;
+    flex-shrink: 0;
+  }
+
+  /* ── Section heading ── */
+  .sec-head {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .7px;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin: 28px 0 10px;
+  }
+
+  /* ── Players card ── */
+  .players-card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+  }
+  .col-heads {
+    display: grid;
+    grid-template-columns: 28px 1fr 138px 128px 86px;
+    gap: 10px;
+    padding: 10px 18px 8px;
+    background: var(--slate-100);
+    border-bottom: 1px solid var(--line);
+  }
+  .col-head {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+  .player-row {
+    display: grid;
+    grid-template-columns: 28px 1fr 138px 128px 86px;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--line);
+  }
+  .player-row:last-child { border-bottom: none; }
+  .player-row.empty-slot { opacity: .4; pointer-events: none; }
+  .player-row.focused-row { background: var(--green-50); }
+  .p-num {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--slate-200);
+    color: var(--ink-muted);
+    font-size: 11px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .p-num.filled { background: var(--green-700); color: #fff; }
+
+  /* shared input / select styles */
+  .f-input, .f-select, .f-price {
+    width: 100%;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 7px 10px;
+    font-size: 13px;
+    font-family: inherit;
+    color: var(--ink);
+    background: #fff;
+    outline: none;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .f-input:focus, .f-select:focus, .f-price:focus {
+    border-color: var(--green-600);
+    box-shadow: 0 0 0 3px rgba(42,138,106,.12);
+  }
+  .f-input::placeholder { color: var(--ink-muted); }
+  .f-select {
+    -webkit-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7' viewBox='0 0 10 7'%3E%3Cpath fill='%236b7a72' d='M5 7 0 0h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 28px;
+    cursor: pointer;
+  }
+  .price-wrap { position: relative; }
+  .price-wrap::before {
+    content: "$";
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--ink-muted);
+    font-size: 13px;
+    pointer-events: none;
+  }
+  .f-price {
+    padding-left: 22px;
+    -moz-appearance: textfield;
+  }
+  .f-price::-webkit-outer-spin-button,
+  .f-price::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+  /* ── Notes ── */
+  .notes-card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+  }
+  .notes-head {
+    padding: 14px 18px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .notes-label { font-size: 13px; font-weight: 600; color: var(--ink); }
+  .notes-has-badge {
+    background: var(--amber-100);
+    color: var(--amber-700);
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 7px;
+    text-transform: uppercase;
+    letter-spacing: .3px;
+    display: none;
+  }
+  #notesArea {
+    display: block;
+    width: 100%;
+    min-height: 96px;
+    border: none;
+    outline: none;
+    resize: vertical;
+    padding: 12px 18px;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--ink);
+    background: transparent;
+    line-height: 1.6;
+  }
+  #notesArea::placeholder { color: var(--ink-muted); }
+
+  /* ── History ── */
+  .history-card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    padding: 14px 18px;
+  }
+  .hist-item {
+    display: flex;
+    gap: 12px;
+    font-size: 12px;
+    color: var(--ink-soft);
+    padding: 6px 0;
+    border-bottom: 1px solid var(--line);
+    align-items: flex-start;
+  }
+  .hist-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .hist-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green-200); flex-shrink: 0; margin-top: 4px; }
+  .hist-time { color: var(--ink-muted); font-size: 11px; flex-shrink: 0; min-width: 62px; margin-top: 1px; }
+  .hist-text { flex: 1; }
+
+  /* ── Bottom action bar ── */
+  .action-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--card);
+    border-top: 1px solid var(--line);
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 -4px 16px rgba(13,31,23,.07);
+    z-index: 50;
+  }
+  .action-hint { font-size: 12px; color: var(--ink-muted); }
+  .action-spacer { flex: 1; }
+  .btn {
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    border: none;
+    outline: none;
+    transition: background .15s, box-shadow .15s;
+  }
+  .btn-ghost { background: transparent; border: 1px solid var(--line); color: var(--ink-soft); }
+  .btn-ghost:hover { background: var(--slate-100); }
+  .btn-primary { background: var(--green-700); color: #fff; border: 1px solid var(--green-700); box-shadow: 0 2px 8px rgba(27,107,79,.25); }
+  .btn-primary:hover { background: var(--green-600); box-shadow: 0 4px 14px rgba(27,107,79,.3); }
+
+  /* ── Save flash ── */
+  .save-flash {
+    position: fixed;
+    top: 64px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-10px);
+    background: var(--green-700);
+    color: #fff;
+    border-radius: 10px;
+    padding: 10px 24px;
+    font-size: 13px;
+    font-weight: 600;
+    box-shadow: var(--shadow-lg);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .2s, transform .2s;
+    z-index: 200;
+  }
+  .save-flash.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ── Demo banner ── */
+  .demo-banner {
+    background: var(--amber-100);
+    border-bottom: 1px solid #fde68a;
+    padding: 8px 24px;
+    font-size: 12px;
+    color: var(--amber-700);
+    font-weight: 600;
+    text-align: center;
+    display: none;
+  }
+  .demo-banner.show { display: block; }
+
+  @media (max-width: 600px) {
+    .col-heads, .player-row {
+      grid-template-columns: 24px 1fr 110px;
+    }
+    .col-heads > *:nth-child(n+4),
+    .player-row > *:nth-child(n+4) { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="demo-banner" id="demoBanner">
+  Demo mode — open this page by right-clicking a player on the tee sheet and choosing Edit Booking
+</div>
+
+<div class="top-bar">
+  <a class='top-logo' href='/swingfirst-tee-sheet'>
+    ⛳ SwingFirst
+    <span class="top-badge">Staff</span>
+  </a>
+  <div class="top-divider"></div>
+  <span class="top-title">Edit Booking</span>
+  <div class="top-spacer"></div>
+  <button class="top-btn" id="topDiscard">✕ Discard</button>
+  <button class="top-btn primary" id="topSave">✓ Save Changes</button>
+</div>
+
+<div class="save-flash" id="saveFlash">✓ Booking saved</div>
+
+<div class="page" id="pageRoot"></div>
+
+<div class="action-bar">
+  <span class="action-hint">⌘S to save &nbsp;·&nbsp; Esc to discard</span>
+  <div class="action-spacer"></div>
+  <button class="btn btn-ghost" id="barDiscard">✕ Discard</button>
+  <button class="btn btn-primary" id="barSave">✓ Save Changes</button>
+</div>
+
+<script>
+// ── Helpers ─────────────────────────────────────────────────────────────────
+function fmt12(h, m) {
+  var ap = h >= 12 ? "PM" : "AM";
+  var hh = h % 12 || 12;
+  var mm = String(m).padStart(2, "0");
+  return hh + ":" + mm + " " + ap;
+}
+function money(cents) { return "$" + Math.round(cents / 100); }
+function esc(s) {
+  return String(s || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+function todayLabel() {
+  return new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+}
+
+// ── Load or demo data ────────────────────────────────────────────────────────
+var RATE_TYPES = ["Public", "Member", "Senior", "Junior", "Twilight", "Guest", "VIP", "Complimentary"];
+var STATUSES   = [
+  { v: "paid",       l: "Paid" },
+  { v: "checked_in", l: "Checked In" },
+  { v: "no_show",    l: "No Show" },
+  { v: "vip",        l: "VIP" },
+  { v: "pending",    l: "Pending" },
+  { v: "comp",       l: "Comp" }
+];
+
+var rawData = null;
+try { rawData = localStorage.getItem("sf_edit_data"); } catch(e) {}
+
+// ── Staff user ────────────────────────────────────────────────────────────────
+var staffUser = null;
+try { staffUser = JSON.parse(localStorage.getItem("sf_staff_user")); } catch(e) {}
+
+// Strip any existing initials attribution from note text (e.g. " — DA")
+function stripAttribution(text) {
+  return (text || "").replace(/\s*—\s*[A-Z]{1,3}\s*$/, "").trimEnd();
+}
+// Append initials to note text
+function addAttribution(text, user) {
+  var t = text.trim();
+  if (!t || !user || !user.initials) return t;
+  return t + " — " + user.initials;
+}
+
+var editData;
+var isDemo = false;
+
+if (rawData) {
+  try {
+    editData = JSON.parse(rawData);
+  } catch(e) {
+    editData = null;
+  }
+}
+
+if (!editData) {
+  isDemo = true;
+  document.getElementById("demoBanner").classList.add("show");
+  // Demo data so the page is always useful
+  editData = {
+    slotId: 42,
+    hour: 8,
+    minute: 30,
+    rateCents: 8500,
+    focusPi: 0,
+    groupIndices: [0],
+    players: [
+      { id: 1, name: "Mike Reynolds",  status: "paid",       rateType: "Public",  groupLeader: false },
+      { id: 2, name: "Sarah Thompson", status: "checked_in", rateType: "Member",  groupLeader: false },
+      { id: 3, name: "Dave Ashton",    status: "paid",       rateType: "Senior",  groupLeader: false },
+      null
+    ],
+    bookingNotes: ""
+  };
+}
+
+// ── State ────────────────────────────────────────────────────────────────────
+var workPlayers = editData.players.map(function(p) { return p ? Object.assign({}, p) : null; });
+var notesVal    = stripAttribution(editData.bookingNotes || "");
+
+// ── Render ───────────────────────────────────────────────────────────────────
+function buildPage() {
+  var d    = editData;
+  var t12  = fmt12(d.hour, d.minute);
+  var parts = t12.split(" ");
+  var tMain = parts[0];
+  var tAmPm = parts[1];
+
+  document.title = "Edit Booking — " + t12;
+
+  document.getElementById("pageRoot").innerHTML =
+    '<div class="slot-card">' +
+      '<div class="slot-time-block">' +
+        '<div class="slot-time-main">' + tMain + '</div>' +
+        '<div class="slot-time-ampm">' + tAmPm + '</div>' +
+      '</div>' +
+      '<div class="slot-meta">' +
+        '<div class="slot-meta-course">San Tan Highlands</div>' +
+        '<div class="slot-meta-row">' +
+          '<span>' + todayLabel() + '</span>' +
+          '<span class="slot-meta-pill">Rack ' + money(d.rateCents) + '</span>' +
+        '</div>' +
+      '</div>' +
+      '<div class="slot-id">ID #' + d.slotId + '</div>' +
+    '</div>' +
+
+    '<div class="sec-head">Players</div>' +
+    '<div class="players-card">' +
+      '<div class="col-heads">' +
+        '<span></span>' +
+        '<span class="col-head">Name</span>' +
+        '<span class="col-head">Rate Type</span>' +
+        '<span class="col-head">Status</span>' +
+        '<span class="col-head">Price</span>' +
+      '</div>' +
+      '<div id="playerRowsWrap"></div>' +
+    '</div>' +
+
+    '<div class="sec-head">Booking Notes</div>' +
+    '<div class="notes-card">' +
+      '<div class="notes-head">' +
+        '<span class="notes-label">Internal Notes</span>' +
+        '<span class="notes-has-badge" id="notesBadge">Has note</span>' +
+        (staffUser ? '<span style="margin-left:auto;font-size:11px;color:var(--ink-muted);">Signed as <strong>' + esc(staffUser.initials) + '</strong></span>' : '<span style="margin-left:auto;font-size:11px;color:var(--rose-700);">⚠ Not logged in</span>') +
+      '</div>' +
+      '<textarea id="notesArea" placeholder="Add internal notes — special requests, VIP details, dietary needs, payment issues\u2026">' + esc(notesVal) + '</textarea>' +
+    '</div>' +
+
+    '<div class="sec-head">History</div>' +
+    '<div class="history-card" id="historyWrap"></div>';
+
+  renderPlayerRows();
+  renderHistory();
+
+  // Notes sync
+  document.getElementById("notesArea").addEventListener("input", function() {
+    notesVal = this.value;
+    document.getElementById("notesBadge").style.display = notesVal.trim() ? "inline-block" : "none";
+  });
+  if (notesVal.trim()) {
+    document.getElementById("notesBadge").style.display = "inline-block";
+  }
+}
+
+function renderPlayerRows() {
+  var wrap = document.getElementById("playerRowsWrap");
+  if (!wrap) return;
+  var html = "";
+  workPlayers.forEach(function(player, pi) {
+    var isEmpty   = !player;
+    var isFocused = pi === editData.focusPi;
+    var rowCls    = "player-row" + (isEmpty ? " empty-slot" : "") + (isFocused ? " focused-row" : "");
+    var numCls    = "p-num" + (!isEmpty ? " filled" : "");
+    var name      = player ? esc(player.name) : "";
+    var price     = player ? Math.round((player.priceCents !== undefined ? player.priceCents : editData.rateCents) / 100) : "";
+
+    // Rate type options
+    var rateOpts = RATE_TYPES.map(function(rt) {
+      var sel = (player && player.rateType === rt) ? ' selected' : '';
+      return '<option value="' + rt + '"' + sel + '>' + rt + '</option>';
+    }).join("");
+
+    // Status options
+    var statOpts = STATUSES.map(function(s) {
+      var sel = (player && player.status === s.v) ? ' selected' : '';
+      return '<option value="' + s.v + '"' + sel + '>' + s.l + '</option>';
+    }).join("");
+
+    html +=
+      '<div class="' + rowCls + '" data-pi="' + pi + '">' +
+        '<div class="' + numCls + '">' + (pi + 1) + '</div>' +
+        '<div><input class="f-input p-name" type="text" placeholder="Empty slot" value="' + name + '" data-pi="' + pi + '"' + (isEmpty ? ' disabled' : '') + '/></div>' +
+        '<div><select class="f-select p-rate" data-pi="' + pi + '"' + (isEmpty ? ' disabled' : '') + '>' + rateOpts + '</select></div>' +
+        '<div><select class="f-select p-status" data-pi="' + pi + '"' + (isEmpty ? ' disabled' : '') + '>' + statOpts + '</select></div>' +
+        '<div class="price-wrap"><input class="f-price p-price" type="number" min="0" step="1" placeholder="rack" value="' + price + '" data-pi="' + pi + '"' + (isEmpty ? ' disabled' : '') + '/></div>' +
+      '</div>';
+  });
+  wrap.innerHTML = html;
+
+  // Attach change listeners
+  wrap.querySelectorAll(".p-name").forEach(function(el) {
+    el.addEventListener("input", function() {
+      var i = parseInt(this.dataset.pi);
+      if (workPlayers[i]) workPlayers[i].name = this.value;
+    });
+  });
+  wrap.querySelectorAll(".p-rate").forEach(function(el) {
+    el.addEventListener("change", function() {
+      var i = parseInt(this.dataset.pi);
+      if (workPlayers[i]) workPlayers[i].rateType = this.value;
+    });
+  });
+  wrap.querySelectorAll(".p-status").forEach(function(el) {
+    el.addEventListener("change", function() {
+      var i = parseInt(this.dataset.pi);
+      if (workPlayers[i]) workPlayers[i].status = this.value;
+    });
+  });
+  wrap.querySelectorAll(".p-price").forEach(function(el) {
+    el.addEventListener("input", function() {
+      var i = parseInt(this.dataset.pi);
+      if (workPlayers[i]) {
+        var v = parseFloat(this.value);
+        workPlayers[i].priceCents = isNaN(v) ? undefined : Math.round(v * 100);
+      }
+    });
+  });
+}
+
+function renderHistory() {
+  var wrap = document.getElementById("historyWrap");
+  if (!wrap) return;
+  var active = editData.players.filter(Boolean);
+  if (!active.length) { wrap.innerHTML = '<div style="color:var(--ink-muted);font-size:13px;font-style:italic;padding:8px 0">No history yet.</div>'; return; }
+
+  var now = new Date();
+  var minsAgo = 18 + ((editData.slotId * 37 + editData.hour * 7 + editData.minute) % 55);
+  var created = new Date(now - minsAgo * 60000);
+  var paid    = new Date(created.getTime() + 95000);
+
+  function tFmt(t) { return t.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }); }
+
+  var items = [
+    { time: tFmt(created), text: "Booking created &mdash; " + active.length + " player" + (active.length > 1 ? "s" : "") },
+    { time: tFmt(paid),    text: "Payment confirmed &mdash; " + active.map(function(p) { return p.name; }).join(", ") }
+  ];
+  active.forEach(function(p, i) {
+    if (p.status === "checked_in") {
+      var ci = new Date(now - (10 - i * 3) * 60000);
+      items.push({ time: tFmt(ci), text: p.name + " checked in" });
+    }
+  });
+
+  wrap.innerHTML = items.map(function(it) {
+    return '<div class="hist-item"><div class="hist-dot"></div><div class="hist-time">' + it.time + '</div><div class="hist-text">' + it.text + '</div></div>';
+  }).join("");
+}
+
+// ── Save / Discard ────────────────────────────────────────────────────────────
+function doSave() {
+  if (!isDemo) {
+    var result = {
+      slotId:  editData.slotId,
+      players: workPlayers,
+      notes:   addAttribution(notesVal, staffUser)
+    };
+    try { localStorage.setItem("sf_edit_result", JSON.stringify(result)); } catch(e) {}
+  }
+  var flash = document.getElementById("saveFlash");
+  flash.classList.add("show");
+  setTimeout(function() {
+    flash.classList.remove("show");
+    setTimeout(function() {
+      if (!isDemo) window.close();
+    }, 280);
+  }, 900);
+}
+
+function doDiscard() {
+  if (isDemo) return;
+  window.close();
+}
+
+// Wire buttons
+document.getElementById("topSave").addEventListener("click", doSave);
+document.getElementById("topDiscard").addEventListener("click", doDiscard);
+document.getElementById("barSave").addEventListener("click", doSave);
+document.getElementById("barDiscard").addEventListener("click", doDiscard);
+
+// Keyboard shortcuts
+document.addEventListener("keydown", function(e) {
+  if ((e.metaKey || e.ctrlKey) && e.key === "s") { e.preventDefault(); doSave(); }
+  if (e.key === "Escape" && !isDemo) doDiscard();
+});
+
+// ── Boot ─────────────────────────────────────────────────────────────────────
+buildPage();
+</script>
+</body>
+</html>
