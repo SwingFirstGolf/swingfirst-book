@@ -1,0 +1,1128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>SwingFirst — Self Check-In</title>
+<script src="https://js.stripe.com/terminal/v1/"></script>
+<style>
+:root {
+  --green:       #16a34a;
+  --green-light: #22c55e;
+  --green-dim:   #166534;
+  --green-glow:  rgba(34,197,94,0.18);
+  --bg:          #060d14;
+  --card:        #0f1923;
+  --card2:       #162030;
+  --border:      #1e2d3d;
+  --text:        #f0f6ff;
+  --muted:       #7a92a8;
+  --amber:       #f59e0b;
+  --red:         #ef4444;
+  --red-dim:     #7f1d1d;
+}
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+
+/* ── SCREENS ─────────────────────────────────────────── */
+.screen {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease;
+  padding-bottom: 48px; /* room for status bar */
+}
+.screen.visible {
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* ── LOGO ─────────────────────────────────────────────── */
+.logo {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--green-light);
+  letter-spacing: -0.3px;
+  margin-bottom: 3.5rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.logo svg { width: 22px; height: 22px; }
+
+/* ── IDLE ─────────────────────────────────────────────── */
+.qr-ring {
+  width: 176px;
+  height: 176px;
+  border: 3px solid var(--green);
+  border-radius: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 2.75rem;
+  position: relative;
+  animation: ringPulse 2.4s ease-in-out infinite;
+}
+.qr-ring::before {
+  content: '';
+  position: absolute;
+  inset: -12px;
+  border: 1.5px solid var(--green);
+  border-radius: 36px;
+  opacity: 0.3;
+  animation: ringPulse 2.4s ease-in-out infinite 0.3s;
+}
+@keyframes ringPulse {
+  0%, 100% { box-shadow: 0 0 0 0 var(--green-glow); }
+  50%       { box-shadow: 0 0 32px 8px var(--green-glow); }
+}
+
+.idle-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 0.75rem;
+  text-align: center;
+  letter-spacing: -0.5px;
+}
+.idle-sub {
+  font-size: 1rem;
+  color: var(--muted);
+  text-align: center;
+  line-height: 1.5;
+}
+.idle-sub strong { color: var(--green-light); font-weight: 600; }
+
+/* ── SCANNING ─────────────────────────────────────────── */
+.scan-dots {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 2rem;
+}
+.scan-dot {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: var(--green);
+  animation: dotBounce 0.9s ease-in-out infinite;
+}
+.scan-dot:nth-child(2) { animation-delay: 0.15s; }
+.scan-dot:nth-child(3) { animation-delay: 0.3s; }
+@keyframes dotBounce {
+  0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+  40%            { transform: scale(1);   opacity: 1; }
+}
+
+/* ── BOOKING CARD ─────────────────────────────────────── */
+.booking-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 28px;
+  padding: 2.5rem 3.25rem;
+  width: 560px;
+  max-width: 90vw;
+  text-align: center;
+  box-shadow: 0 0 60px rgba(22,163,74,0.07);
+}
+.bk-course {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--green-light);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 1.75rem;
+}
+.bk-name {
+  font-size: 2.6rem;
+  font-weight: 800;
+  letter-spacing: -1px;
+  margin-bottom: 0.5rem;
+  line-height: 1.1;
+}
+.bk-details {
+  font-size: 1.15rem;
+  color: var(--muted);
+  margin-bottom: 2.25rem;
+}
+.bk-divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 0 -3.25rem 2.25rem;
+}
+.bk-amount {
+  font-size: 4rem;
+  font-weight: 900;
+  color: var(--green-light);
+  letter-spacing: -2px;
+  line-height: 1;
+  margin-bottom: 0.4rem;
+}
+.bk-amount-sub {
+  font-size: 0.9rem;
+  color: var(--muted);
+  margin-bottom: 2.25rem;
+}
+/* ── PAYMENT CHOICE BUTTONS ───────────────────────────── */
+.pay-choice {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+.pay-question {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 0.25rem;
+}
+.pay-btn {
+  width: 100%;
+  border: none;
+  border-radius: 16px;
+  padding: 1.1rem 1.5rem;
+  font-family: inherit;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: transform 0.1s, opacity 0.15s;
+}
+.pay-btn:active { transform: scale(0.97); }
+.pay-btn-label {
+  text-align: left;
+}
+.pay-btn-label strong {
+  display: block;
+  font-size: 1.05rem;
+  font-weight: 800;
+  margin-bottom: 2px;
+}
+.pay-btn-label span {
+  font-size: 0.82rem;
+  opacity: 0.75;
+}
+.pay-btn-amount {
+  font-size: 1.5rem;
+  font-weight: 900;
+  letter-spacing: -0.5px;
+  flex-shrink: 0;
+  margin-left: 1rem;
+}
+.pay-btn-all {
+  background: var(--green);
+  color: #fff;
+  box-shadow: 0 0 0 0 rgba(22,163,74,0.5);
+  animation: tapPulse 2s ease-in-out infinite;
+}
+.pay-btn-self {
+  background: var(--card2);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+@keyframes tapPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(22,163,74,0.4); }
+  50%       { box-shadow: 0 0 0 10px rgba(22,163,74,0); }
+}
+
+/* Tap prompt — shown after choice is made */
+.tap-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--green);
+  color: #fff;
+  font-size: 1.05rem;
+  font-weight: 700;
+  padding: 0.85rem 2rem;
+  border-radius: 100px;
+  letter-spacing: 0.2px;
+  animation: tapPulse 1.8s ease-in-out infinite;
+  margin-top: 0.5rem;
+}
+
+/* ── UNPAID PARTY NOTICE (success screen) ─────────────── */
+.unpaid-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: rgba(245,158,11,0.12);
+  border: 1px solid rgba(245,158,11,0.35);
+  border-radius: 14px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+  max-width: 420px;
+  text-align: left;
+}
+.unpaid-notice-icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 1px; }
+.unpaid-notice-text { font-size: 0.9rem; color: var(--text); line-height: 1.5; }
+.unpaid-notice-text strong { color: var(--amber); display: block; margin-bottom: 3px; font-size: 0.95rem; }
+
+/* ── PROCESSING ───────────────────────────────────────── */
+.spinner {
+  width: 80px; height: 80px;
+  border: 5px solid var(--border);
+  border-top-color: var(--green);
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+  margin-bottom: 2rem;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.proc-title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 0.6rem;
+  letter-spacing: -0.5px;
+}
+.proc-sub {
+  font-size: 1rem;
+  color: var(--muted);
+}
+
+/* ── SUCCESS ──────────────────────────────────────────── */
+.success-check {
+  width: 110px; height: 110px;
+  background: var(--green);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.75rem;
+  animation: popIn 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+@keyframes popIn {
+  0%   { transform: scale(0); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.success-check svg { width: 54px; height: 54px; }
+.success-title {
+  font-size: 2.6rem;
+  font-weight: 800;
+  letter-spacing: -1px;
+  margin-bottom: 0.4rem;
+}
+.success-name {
+  font-size: 1.2rem;
+  color: var(--muted);
+  margin-bottom: 2.5rem;
+}
+.conf-wrap {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 1.5rem 3rem;
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+.conf-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 0.5rem;
+}
+.conf-code {
+  font-size: 3rem;
+  font-weight: 900;
+  color: var(--green-light);
+  letter-spacing: 6px;
+  font-variant-numeric: tabular-nums;
+}
+.receipt-note {
+  font-size: 0.9rem;
+  color: var(--muted);
+  margin-bottom: 1.75rem;
+}
+.reset-bar-wrap {
+  width: 280px;
+  background: var(--border);
+  border-radius: 100px;
+  height: 4px;
+  overflow: hidden;
+}
+.reset-bar {
+  height: 100%;
+  background: var(--green);
+  border-radius: 100px;
+  width: 100%;
+  transition: width 1s linear;
+}
+
+/* ── ERROR ────────────────────────────────────────────── */
+.error-icon {
+  width: 100px; height: 100px;
+  background: var(--red-dim);
+  border: 2px solid var(--red);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  margin-bottom: 2rem;
+}
+.error-title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+  letter-spacing: -0.5px;
+}
+.error-sub {
+  font-size: 1.05rem;
+  color: var(--muted);
+  text-align: center;
+  max-width: 420px;
+  line-height: 1.55;
+}
+
+/* ── STATUS BAR ───────────────────────────────────────── */
+.status-bar {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: 40px;
+  background: rgba(6,13,20,0.92);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.25rem;
+  font-size: 0.75rem;
+  color: var(--muted);
+  backdrop-filter: blur(8px);
+}
+.reader-status { display: flex; align-items: center; gap: 6px; }
+.dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--muted);
+  flex-shrink: 0;
+  transition: background 0.4s;
+}
+.dot.ok  { background: var(--green-light); }
+.dot.bad { background: var(--red); }
+
+/* ── DEV BUTTON (invisible corner tap) ───────────────── */
+#devBtn {
+  position: fixed;
+  bottom: 40px; right: 0;
+  width: 48px; height: 48px;
+  opacity: 0;
+  cursor: default;
+  border: none;
+  background: transparent;
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════
+     SCREEN: IDLE  — waiting for QR scan
+═══════════════════════════════════════════════════════ -->
+<div id="scrIdle" class="screen visible">
+  <div class="logo">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"/>
+      <path d="M12 8v4l2.5 2.5"/>
+    </svg>
+    SwingFirst
+  </div>
+  <div class="qr-ring">
+    <!-- QR code SVG icon -->
+    <svg width="96" height="96" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="8"  y="8"  width="34" height="34" rx="5" stroke="#22c55e" stroke-width="4"/>
+      <rect x="17" y="17" width="16" height="16" rx="2" fill="#22c55e"/>
+      <rect x="58" y="8"  width="34" height="34" rx="5" stroke="#22c55e" stroke-width="4"/>
+      <rect x="67" y="17" width="16" height="16" rx="2" fill="#22c55e"/>
+      <rect x="8"  y="58" width="34" height="34" rx="5" stroke="#22c55e" stroke-width="4"/>
+      <rect x="17" y="67" width="16" height="16" rx="2" fill="#22c55e"/>
+      <rect x="58" y="58" width="10" height="10" rx="2" fill="#22c55e"/>
+      <rect x="72" y="58" width="10" height="10" rx="2" fill="#22c55e"/>
+      <rect x="86" y="58" width="6"  height="10" rx="2" fill="#22c55e"/>
+      <rect x="58" y="72" width="10" height="10" rx="2" fill="#22c55e"/>
+      <rect x="72" y="72" width="20" height="4"  rx="2" fill="#22c55e"/>
+      <rect x="86" y="72" width="6"  height="20" rx="2" fill="#22c55e"/>
+      <rect x="58" y="86" width="24" height="6"  rx="2" fill="#22c55e"/>
+    </svg>
+  </div>
+  <div class="idle-title">Scan your QR code to check in</div>
+  <div class="idle-sub">Haven't paid yet? Scan your QR code, tap your card, and you're on your way.</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     SCREEN: SCANNING  — QR received, looking up booking
+═══════════════════════════════════════════════════════ -->
+<div id="scrScanning" class="screen">
+  <div class="logo">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l2.5 2.5"/></svg>
+    SwingFirst
+  </div>
+  <div class="scan-dots">
+    <div class="scan-dot"></div>
+    <div class="scan-dot"></div>
+    <div class="scan-dot"></div>
+  </div>
+  <div class="proc-title">Looking up your booking…</div>
+  <div class="proc-sub">Just a moment</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     SCREEN: BOOKING FOUND  — confirm details, auto-charges
+═══════════════════════════════════════════════════════ -->
+<div id="scrBooking" class="screen">
+  <div class="logo">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l2.5 2.5"/></svg>
+    SwingFirst
+  </div>
+  <div class="booking-card">
+    <div class="bk-course" id="bkCourse">—</div>
+    <div class="bk-name"    id="bkName">—</div>
+    <div class="bk-details" id="bkDetails">—</div>
+    <hr class="bk-divider">
+
+    <!-- Payment choice (hidden for pre-paid / solo bookings) -->
+    <div id="payChoice">
+      <div class="pay-question">Who are you paying for today?</div>
+      <div class="pay-choice">
+        <button class="pay-btn pay-btn-all" id="btnPayAll">
+          <div class="pay-btn-label">
+            <strong>Everyone in my group</strong>
+            <span>One payment covers all players</span>
+          </div>
+          <div class="pay-btn-amount" id="btnPayAllAmt">—</div>
+        </button>
+        <button class="pay-btn pay-btn-self" id="btnPaySelf">
+          <div class="pay-btn-label">
+            <strong>Just myself</strong>
+            <span>Others pay separately at the counter</span>
+          </div>
+          <div class="pay-btn-amount" id="btnPaySelfAmt">—</div>
+        </button>
+      </div>
+    </div>
+
+    <!-- Shown after choice is made, prompts card tap -->
+    <div class="tap-pill" id="tapPill" style="display:none">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+        <path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/>
+        <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1" fill="currentColor"/>
+      </svg>
+      Tap your card on the reader below
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     SCREEN: PROCESSING  — card presented, charging
+═══════════════════════════════════════════════════════ -->
+<div id="scrProcessing" class="screen">
+  <div class="spinner"></div>
+  <div class="proc-title">Processing payment…</div>
+  <div class="proc-sub">Keep your card near the reader</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     SCREEN: SUCCESS  — paid & checked in
+═══════════════════════════════════════════════════════ -->
+<div id="scrSuccess" class="screen">
+  <div class="success-check">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="20 6 9 17 4 12"/>
+    </svg>
+  </div>
+  <div class="success-title">You're checked in!</div>
+  <div class="success-name" id="successName">Enjoy your round!</div>
+  <div class="conf-wrap">
+    <div class="conf-label">Confirmation code</div>
+    <div class="conf-code" id="confCode">—</div>
+  </div>
+  <div class="receipt-note" id="receiptNote">Receipt sent to your phone</div>
+  <!-- Shown only when someone paid for themselves in a multi-player group -->
+  <div class="unpaid-notice" id="unpaidNotice" style="display:none">
+    <div class="unpaid-notice-icon">⚠️</div>
+    <div class="unpaid-notice-text">
+      <strong id="unpaidTitle">3 players in your group have not yet paid</strong>
+      They must check in at the pro shop counter before teeing off.
+    </div>
+  </div>
+  <div class="reset-bar-wrap"><div class="reset-bar" id="resetBar"></div></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     SCREEN: ERROR
+═══════════════════════════════════════════════════════ -->
+<div id="scrError" class="screen">
+  <div class="error-icon">!</div>
+  <div class="error-title" id="errTitle">Something went wrong</div>
+  <div class="error-sub"   id="errSub">Please see a staff member at the counter.</div>
+</div>
+
+<!-- ── STATUS BAR ─────────────────────────────────────── -->
+<div class="status-bar">
+  <div class="reader-status">
+    <div class="dot" id="readerDot"></div>
+    <span id="readerLabel">Connecting to reader…</span>
+  </div>
+  <span id="clock"></span>
+</div>
+
+<!-- Invisible dev button — bottom-right corner -->
+<button id="devBtn"></button>
+
+<!-- Hidden input — captures USB QR scanner (acts like keyboard) -->
+<input id="qrInput" type="text" autocomplete="off" autocorrect="off" spellcheck="false"
+  style="position:fixed;opacity:0;width:1px;height:1px;top:0;left:0;border:none;outline:none;pointer-events:none">
+
+<script>
+// ─────────────────────────────────────────────────────────
+//  CONFIG  — edit these before deploying
+// ─────────────────────────────────────────────────────────
+const SUPABASE_URL = 'https://ojgxfeaesnaohskxdvam.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_4UVFMXQWGOt4XNgHVNzWoQ_Id6TBqcu';
+
+// Netlify Function URLs (relative = works on any domain)
+const FN_TOKEN   = '/.netlify/functions/terminal-token';
+const FN_PAYMENT = '/.netlify/functions/create-payment-intent';
+
+// Set to false when the physical WisePOS E reader is on the network
+const SIMULATED = true;
+
+// Stripe Terminal location ID (from Stripe dashboard → Terminal → Locations)
+// Only needed when SIMULATED = false.  One location per course.
+const LOCATION_ID = '';   // e.g. 'tml_loc_AbC123...'
+
+// Auto-reset delay (seconds) after success or error
+const RESET_SECS_SUCCESS = 20;
+const RESET_SECS_ERROR   = 12;
+
+// ─────────────────────────────────────────────────────────
+//  STATE
+// ─────────────────────────────────────────────────────────
+let terminal       = null;
+let readerConnected = false;
+let activeBooking  = null;
+let resetTimer     = null;
+
+// ─────────────────────────────────────────────────────────
+//  UTILITIES
+// ─────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+
+function fmt(cents) {
+  return '$' + (cents / 100).toFixed(2);
+}
+
+function fmtTime(hour, minute) {
+  const h = hour % 12 || 12;
+  const m = String(minute).padStart(2, '0');
+  return `${h}:${m} ${hour < 12 ? 'AM' : 'PM'}`;
+}
+
+// Confirmation code format: {COURSE}{YY}{MON}{DD}{DOW}{###}
+// e.g. CL26AP17TH204 = Coyote Lakes, 2026, April, 17th, Thursday, 204th golfer that day
+const COURSE_ABBREVS = {
+  'palmbrook':         'PB',
+  'san-tan-highlands': 'ST',
+  'coyote-lakes':      'CL',
+  'union-hills':       'UH',
+  'scottsdale-cc':     'CC',
+  'briarwood-cc':      'BR',
+};
+const MONTH_CODES = ['JA','FE','MR','AP','MY','JN','JL','AU','SE','OC','NV','DC'];
+const DAY_CODES   = ['SU','MO','TU','WE','TH','FR','SA'];
+
+async function genConfCode(courseId, dateStr) {
+  // Find slug from courseId
+  let abbrev = 'SF';
+  try {
+    const r = await fetch(
+      `${SUPABASE_URL}/rest/v1/courses?id=eq.${courseId}&select=slug`,
+      { headers: sbHeaders() }
+    );
+    const [c] = await r.json();
+    if (c?.slug) abbrev = COURSE_ABBREVS[c.slug] || 'SF';
+  } catch (_) {}
+
+  const d     = new Date((dateStr || new Date().toISOString().split('T')[0]) + 'T12:00:00');
+  const year  = String(d.getFullYear()).slice(2);
+  const month = MONTH_CODES[d.getMonth()];
+  const day   = String(d.getDate()).padStart(2, '0');
+  const dow   = DAY_CODES[d.getDay()];
+
+  // Count golfers already booked at this course today
+  let golferNum = '001';
+  try {
+    const tees = await fetch(
+      `${SUPABASE_URL}/rest/v1/tee_times?course_id=eq.${courseId}&date=eq.${dateStr}&select=bookings(id)`,
+      { headers: sbHeaders() }
+    );
+    const rows = await tees.json();
+    const count = rows.reduce((s, tt) => s + (tt.bookings?.length || 0), 0);
+    golferNum = String(count + 1).padStart(3, '0');
+  } catch (_) {}
+
+  return `${abbrev}${year}${month}${day}${dow}${golferNum}`;
+}
+
+function sbHeaders() {
+  return {
+    'apikey':        SUPABASE_KEY,
+    'Authorization': `Bearer ${SUPABASE_KEY}`,
+    'Content-Type':  'application/json',
+    'Prefer':        'return=representation'
+  };
+}
+
+// ─────────────────────────────────────────────────────────
+//  SCREEN MANAGER
+// ─────────────────────────────────────────────────────────
+function show(screenId) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('visible'));
+  $(screenId).classList.add('visible');
+  if (screenId === 'scrIdle') {
+    clearTimeout(resetTimer);
+    activeBooking = null;
+    setTimeout(() => $('qrInput').focus(), 80);
+  }
+}
+
+// ─────────────────────────────────────────────────────────
+//  CLOCK
+// ─────────────────────────────────────────────────────────
+(function clockTick() {
+  $('clock').textContent = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  setTimeout(clockTick, 5000);
+})();
+
+// ─────────────────────────────────────────────────────────
+//  STRIPE TERMINAL
+// ─────────────────────────────────────────────────────────
+async function fetchConnectionToken() {
+  const r = await fetch(FN_TOKEN, { method: 'POST' });
+  if (!r.ok) throw new Error('Token fetch failed');
+  const { secret } = await r.json();
+  return secret;
+}
+
+async function initTerminal() {
+  terminal = StripeTerminal.create({
+    onFetchConnectionToken: fetchConnectionToken,
+    onUnexpectedReaderDisconnect: () => {
+      setReader(false, 'Reader disconnected — reconnecting…');
+      readerConnected = false;
+      setTimeout(connectReader, 4000);
+    }
+  });
+  await connectReader();
+}
+
+async function connectReader() {
+  try {
+    const config = SIMULATED
+      ? { simulated: true }
+      : { simulated: false, location: LOCATION_ID || undefined };
+
+    const { discoveredReaders, error: discoverErr } = await terminal.discoverReaders(config);
+    if (discoverErr || !discoveredReaders.length) {
+      setReader(false, 'No reader found — retrying…');
+      setTimeout(connectReader, 15000);
+      return;
+    }
+
+    const { error: connectErr } = await terminal.connectReader(discoveredReaders[0]);
+    if (connectErr) {
+      setReader(false, 'Reader connection failed — retrying…');
+      setTimeout(connectReader, 15000);
+      return;
+    }
+
+    readerConnected = true;
+    const label = SIMULATED ? 'Simulated reader (test mode)' : discoveredReaders[0].label || 'Reader connected';
+    setReader(true, label);
+  } catch (e) {
+    setReader(false, 'Reader unavailable — retrying…');
+    setTimeout(connectReader, 15000);
+  }
+}
+
+function setReader(ok, msg) {
+  $('readerDot').className  = 'dot ' + (ok ? 'ok' : 'bad');
+  $('readerLabel').textContent = msg;
+}
+
+// ─────────────────────────────────────────────────────────
+//  QR SCANNER  (USB scanner = fast keyboard input + Enter)
+// ─────────────────────────────────────────────────────────
+const qrInput = $('qrInput');
+let qrBuf     = '';
+let qrDebounce = null;
+
+// Re-focus whenever user clicks anywhere on idle screen
+document.addEventListener('click', () => {
+  if ($('scrIdle').classList.contains('visible')) qrInput.focus();
+});
+
+qrInput.addEventListener('keydown', e => {
+  clearTimeout(qrDebounce);
+
+  if (e.key === 'Enter') {
+    const raw = qrBuf.trim();
+    qrBuf = '';
+    if (raw.length > 3) onQRScan(raw);
+    return;
+  }
+
+  if (e.key.length === 1) qrBuf += e.key;
+
+  // If no Enter arrives within 200ms, treat accumulated string as a scan
+  qrDebounce = setTimeout(() => {
+    const raw = qrBuf.trim();
+    qrBuf = '';
+    if (raw.length > 8) onQRScan(raw);  // UUIDs are 36 chars
+  }, 200);
+});
+
+// ─────────────────────────────────────────────────────────
+//  BOOKING LOOKUP
+// ─────────────────────────────────────────────────────────
+async function onQRScan(raw) {
+  if (!$('scrIdle').classList.contains('visible')) return; // ignore if mid-flow
+
+  // QR format: "SF:{uuid}" — strip prefix if present
+  const bookingId = raw.startsWith('SF:') ? raw.slice(3) : raw;
+  show('scrScanning');
+
+  try {
+    // ── Fetch booking ────────────────────────────────────
+    // Supports both UUID (from live.html QR: "SF:{uuid}") and
+    // display ref (from book.html QR: "SF:{ref}") via OR filter
+    const idEnc  = encodeURIComponent(bookingId);
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/bookings?or=(id.eq.${idEnc},booking_ref.eq.${idEnc})&select=*&limit=1`,
+      { headers: sbHeaders() }
+    );
+    const rows = await res.json();
+
+    if (!rows || !rows.length) {
+      showError('Booking not found', 'No booking matched that QR code. Please see a staff member.');
+      return;
+    }
+
+    const booking = rows[0];
+
+    // Already fully checked in (came through kiosk before)?
+    if (booking.status === 'checked_in') {
+      const name = booking.player_name ? booking.player_name.split(' ')[0] : 'This booking';
+      showError('Already checked in', `${name} is already checked in. Enjoy your round!`);
+      return;
+    }
+
+    // Pre-paid online — show confirmation without charging again
+    if (booking.status === 'paid') {
+      displayBooking(booking, courseName, /* skipPayment= */ true);
+      return;
+    }
+
+    // ── Fetch course name ────────────────────────────────
+    let courseName = 'SwingFirst Golf';
+    if (booking.course_id) {
+      try {
+        const cr = await fetch(
+          `${SUPABASE_URL}/rest/v1/courses?id=eq.${booking.course_id}&select=name`,
+          { headers: sbHeaders() }
+        );
+        const [c] = await cr.json();
+        if (c?.name) courseName = c.name;
+      } catch (_) {}
+    }
+
+    displayBooking(booking, courseName);
+
+  } catch (err) {
+    console.error('[QR] lookup error:', err);
+    showError('Connection error', 'Could not reach the booking system. Please see a staff member.');
+  }
+}
+
+// ─────────────────────────────────────────────────────────
+//  DISPLAY BOOKING
+// ─────────────────────────────────────────────────────────
+function displayBooking(booking, courseName, skipPayment = false) {
+  activeBooking = booking;
+
+  // NOTE: adjust field names below to match your Supabase bookings schema
+  const name    = booking.player_name  || 'Golfer';
+  const players = booking.num_players  || booking.players || 1;
+  const hour    = booking.hour         || 0;
+  const minute  = booking.minute       || 0;
+  // rack_cents is per-player rate; total_cents is already multiplied if stored that way
+  const perPlayer = booking.rack_cents || Math.round((booking.total_cents || 0) / players);
+  const total     = booking.total_cents || (perPlayer * players);
+
+  $('bkCourse').textContent    = courseName;
+  $('bkName').textContent      = name;
+  $('bkDetails').textContent   = `${fmtTime(hour, minute)} · ${players} player${players !== 1 ? 's' : ''}`;
+
+  if (skipPayment) {
+    // Pre-paid online — skip choice, show confirmation
+    $('payChoice').style.display = 'none';
+    $('tapPill').style.display   = 'none';
+    show('scrBooking');
+    const dateStr = booking.date || new Date().toISOString().split('T')[0];
+    genConfCode(booking.course_id, dateStr).then(code => {
+      setTimeout(() => showSuccess(booking, booking.conf_code || code, true, players), 1800);
+    });
+    return;
+  }
+
+  if (players === 1) {
+    // Solo — no choice needed, go straight to card tap
+    $('payChoice').style.display = 'none';
+    $('tapPill').style.display   = '';
+    show('scrBooking');
+    setTimeout(() => chargeBooking(booking, total, true, 1), 1500);
+    return;
+  }
+
+  // Multi-player — show pay-all vs pay-self buttons
+  $('btnPayAllAmt').textContent  = fmt(total);
+  $('btnPaySelfAmt').textContent = fmt(perPlayer);
+  $('payChoice').style.display   = '';
+  $('tapPill').style.display     = 'none';
+
+  // Replace buttons to wipe any stale event listeners
+  ['btnPayAll', 'btnPaySelf'].forEach(id => {
+    const fresh = $(id).cloneNode(true);
+    $(id).replaceWith(fresh);
+  });
+
+  $('btnPayAll').addEventListener('click', () => {
+    $('payChoice').style.display = 'none';
+    $('tapPill').style.display   = '';
+    chargeBooking(booking, total, true, players);
+  });
+  $('btnPaySelf').addEventListener('click', () => {
+    $('payChoice').style.display = 'none';
+    $('tapPill').style.display   = '';
+    chargeBooking(booking, perPlayer, false, players);
+  });
+
+  show('scrBooking');
+}
+
+// ─────────────────────────────────────────────────────────
+//  CHARGE
+// ─────────────────────────────────────────────────────────
+async function chargeBooking(booking, totalCents, payForAll = true, numPlayers = 1) {
+  if (!terminal || !readerConnected) {
+    showError('Reader not ready', 'The card reader is offline. Please see a staff member.');
+    return;
+  }
+
+  // 1. Create PaymentIntent server-side
+  let clientSecret;
+  try {
+    const r = await fetch(FN_PAYMENT, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ amount: totalCents, bookingId: booking.id })
+    });
+    const data = await r.json();
+    if (!data.clientSecret) throw new Error(data.error || 'No client secret returned');
+    clientSecret = data.clientSecret;
+  } catch (err) {
+    console.error('[payment] intent error:', err);
+    showError('Payment setup failed', 'Could not start payment. Please see a staff member.');
+    return;
+  }
+
+  // 2. Collect payment via Terminal reader
+  show('scrProcessing');
+  const { paymentIntent, error: collectErr } = await terminal.collectPaymentMethod(clientSecret);
+  if (collectErr) {
+    console.error('[payment] collect error:', collectErr);
+    if (collectErr.code === 'canceled') {
+      show('scrIdle');  // user or staff cancelled — go back quietly
+    } else {
+      showError('Payment cancelled', collectErr.message || 'Please try again or see a staff member.');
+    }
+    return;
+  }
+
+  // 3. Process payment
+  const { paymentIntent: confirmed, error: processErr } = await terminal.processPayment(paymentIntent);
+  if (processErr) {
+    console.error('[payment] process error:', processErr);
+    showError('Card declined', processErr.message || 'Please try another card or see a staff member.');
+    return;
+  }
+
+  // 4. Update booking / players in Supabase
+  const dateStr  = booking.date || new Date().toISOString().split('T')[0];
+  const confCode = await genConfCode(booking.course_id, dateStr);
+  try {
+    if (payForAll) {
+      // Mark the whole booking paid + all booking_players
+      await fetch(`${SUPABASE_URL}/rest/v1/bookings?id=eq.${booking.id}`, {
+        method:  'PATCH',
+        headers: { ...sbHeaders(), 'Prefer': 'return=minimal' },
+        body:    JSON.stringify({
+          status:                   'paid',
+          stripe_payment_intent_id: confirmed.id,
+          conf_code:                confCode,
+          checked_in_at:            new Date().toISOString()
+        })
+      });
+      await fetch(`${SUPABASE_URL}/rest/v1/booking_players?booking_id=eq.${booking.id}`, {
+        method:  'PATCH',
+        headers: { ...sbHeaders(), 'Prefer': 'return=minimal' },
+        body:    JSON.stringify({ status: 'paid' })
+      });
+    } else {
+      // Mark only the lead player paid; booking stays partially unpaid
+      await fetch(`${SUPABASE_URL}/rest/v1/booking_players?booking_id=eq.${booking.id}&is_lead=eq.true`, {
+        method:  'PATCH',
+        headers: { ...sbHeaders(), 'Prefer': 'return=minimal' },
+        body:    JSON.stringify({
+          status:                   'paid',
+          stripe_payment_intent_id: confirmed.id,
+          conf_code:                confCode
+        })
+      });
+      await fetch(`${SUPABASE_URL}/rest/v1/bookings?id=eq.${booking.id}`, {
+        method:  'PATCH',
+        headers: { ...sbHeaders(), 'Prefer': 'return=minimal' },
+        body:    JSON.stringify({ status: 'partial' })
+      });
+    }
+  } catch (err) {
+    console.error('[supabase] status update failed (non-fatal):', err);
+  }
+
+  showSuccess(booking, confCode, payForAll, numPlayers);
+}
+
+// ─────────────────────────────────────────────────────────
+//  SUCCESS
+// ─────────────────────────────────────────────────────────
+function showSuccess(booking, confCode, payForAll = true, numPlayers = 1) {
+  const firstName = (booking.player_name || '').split(' ')[0];
+  $('successName').textContent = firstName ? `Enjoy your round, ${firstName}!` : 'Enjoy your round!';
+  $('confCode').textContent    = confCode;
+
+  const contact = booking.player_email || booking.player_phone || '';
+  $('receiptNote').textContent = contact
+    ? `Receipt sent to ${contact}`
+    : 'Receipt sent to your phone or email';
+
+  // Show unpaid-party warning if someone paid for themselves in a group
+  const notice = $('unpaidNotice');
+  if (!payForAll && numPlayers > 1) {
+    const unpaid = numPlayers - 1;
+    $('unpaidTitle').textContent =
+      `${unpaid} ${unpaid === 1 ? 'player' : 'players'} in your group ${unpaid === 1 ? 'has' : 'have'} not yet paid`;
+    notice.style.display = '';
+  } else {
+    notice.style.display = 'none';
+  }
+
+  show('scrSuccess');
+  startReset(RESET_SECS_SUCCESS, 'resetBar');
+}
+
+// ─────────────────────────────────────────────────────────
+//  ERROR
+// ─────────────────────────────────────────────────────────
+function showError(title, sub) {
+  $('errTitle').textContent = title;
+  $('errSub').textContent   = sub;
+  show('scrError');
+  startReset(RESET_SECS_ERROR, null);
+}
+
+// ─────────────────────────────────────────────────────────
+//  AUTO-RESET  (draining progress bar + timer)
+// ─────────────────────────────────────────────────────────
+function startReset(secs, barId) {
+  clearTimeout(resetTimer);
+  let remaining = secs;
+
+  if (barId) {
+    const bar = $(barId);
+    bar.style.transition = 'none';
+    bar.style.width = '100%';
+    // Trigger reflow then animate
+    void bar.offsetWidth;
+    bar.style.transition = `width ${secs}s linear`;
+    bar.style.width = '0%';
+  }
+
+  const tick = () => {
+    remaining--;
+    if (remaining <= 0) {
+      show('scrIdle');
+    } else {
+      resetTimer = setTimeout(tick, 1000);
+    }
+  };
+  resetTimer = setTimeout(tick, 1000);
+}
+
+// ─────────────────────────────────────────────────────────
+//  DEV MODE  — invisible button in bottom-right corner
+//  Click to simulate a scan without a physical QR code
+// ─────────────────────────────────────────────────────────
+$('devBtn').addEventListener('click', () => {
+  const input = prompt('Booking ID (leave blank to use a test booking):');
+  if (input === null) return; // cancelled
+
+  if (input.trim()) {
+    onQRScan(input.trim());
+  } else {
+    // Simulate a fake booking for end-to-end UI testing
+    displayBooking({
+      id:          'test-' + Date.now(),
+      player_name: 'Alex Rivera',
+      player_email:'alex@example.com',
+      course_id:   null,
+      hour:        8,
+      minute:      24,
+      num_players: 2,
+      rack_cents:  4500,
+      total_cents: 9000,
+      status:      'booked'
+    }, 'Palmbrook Golf Club');
+  }
+});
+
+// ─────────────────────────────────────────────────────────
+//  BOOT
+// ─────────────────────────────────────────────────────────
+(async () => {
+  show('scrIdle');
+  qrInput.focus();
+
+  try {
+    await initTerminal();
+  } catch (e) {
+    console.error('[boot] Terminal init failed:', e);
+    setReader(false, 'Reader unavailable — check WiFi');
+  }
+})();
+</script>
+</body>
+</html>
