@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>SwingFirst — Generate Tee Times</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;background:#f2f9f5;color:#0d1f17;font-size:14px;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:40px 20px;}
+.card{background:#fff;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,.08);width:100%;max-width:600px;overflow:hidden;}
+.card-head{background:#0b3d2e;padding:28px 32px;text-align:center;}
+.card-head .icon{font-size:32px;margin-bottom:8px;}
+.card-head h1{color:#fff;font-size:20px;font-weight:800;letter-spacing:-.01em;}
+.card-head p{color:rgba(255,255,255,.55);font-size:13px;margin-top:4px;}
+.card-body{padding:28px 32px;}
+.info-box{background:#f2f9f5;border:1px solid #a8d5bc;border-radius:10px;padding:16px 20px;margin-bottom:24px;font-size:13px;line-height:1.7;color:#1b4a35;}
+.info-box strong{color:#0b3d2e;}
+.pricing-table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:10px;}
+.pricing-table th{text-align:left;padding:5px 10px;color:#6b7a72;font-weight:700;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid #e4e9e6;}
+.pricing-table td{padding:5px 10px;border-bottom:1px solid #f0f4f1;}
+.pricing-table tr:last-child td{border:none;}
+.btn-generate{width:100%;background:#1b6b4f;color:#fff;border:none;border-radius:10px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;transition:background .15s;margin-bottom:0;}
+.btn-generate:hover{background:#0b3d2e;}
+.btn-generate:disabled{opacity:.5;cursor:not-allowed;}
+.progress-section{margin-top:24px;display:none;}
+.course-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #e4e9e6;}
+.course-row:last-child{border:none;}
+.course-name{flex:1;font-weight:600;font-size:13px;}
+.course-status{font-size:12px;color:#6b7a72;white-space:nowrap;}
+.course-bar-wrap{width:100%;background:#e4e9e6;border-radius:4px;height:6px;margin-top:4px;}
+.course-bar{height:6px;border-radius:4px;background:#1b6b4f;width:0%;transition:width .3s ease;}
+.course-row.done .course-status{color:#16a34a;font-weight:700;}
+.course-row.error .course-status{color:#dc2626;font-weight:700;}
+.summary-box{background:#f2f9f5;border:1px solid #a8d5bc;border-radius:10px;padding:16px 20px;margin-top:20px;text-align:center;display:none;}
+.summary-box .big{font-size:36px;font-weight:800;color:#0b3d2e;margin-bottom:4px;}
+.summary-box p{font-size:13px;color:#6b7a72;}
+.error-hint{background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:14px 18px;font-size:13px;color:#dc2626;line-height:1.6;margin-top:16px;display:none;}
+.error-hint strong{color:#b91c1c;}
+.total-counter{text-align:center;margin-top:16px;font-size:13px;color:#6b7a72;}
+.total-counter span{font-weight:700;color:#0b3d2e;}
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="card-head">
+    <div class="icon">⛳</div>
+    <h1>SwingFirst — Generate Tee Times</h1>
+    <p>One-time setup: fill all 6 courses through Dec 31, 2026</p>
+  </div>
+  <div class="card-body">
+
+    <div class="info-box">
+      <strong>What this does:</strong> Generates <strong id="slotCount">—</strong> tee time slots across all 6 courses from tomorrow through December 31, 2026. Safe to re-run — existing slots won't be overwritten.<br/><br/>
+      <strong>Hours:</strong> 4:44 AM – 6:04 PM &nbsp;·&nbsp; <strong>Interval:</strong> Every 8 minutes &nbsp;·&nbsp; <strong>Slots/day:</strong> 101<br/><br/>
+      <strong>Pricing tiers:</strong>
+      <table class="pricing-table">
+        <thead><tr><th>Time window</th><th>Rate/player</th></tr></thead>
+        <tbody>
+          <tr><td>4:44 AM – 5:52 AM (Pre-Dawn)</td><td>$25</td></tr>
+          <tr><td>6:00 AM – 7:52 AM (Early Bird)</td><td>$39</td></tr>
+          <tr><td>8:00 AM – 10:52 AM (Peak Morning)</td><td>$79</td></tr>
+          <tr><td>11:00 AM – 12:52 PM (Midday)</td><td>$65</td></tr>
+          <tr><td>1:00 PM – 2:52 PM (Afternoon)</td><td>$55</td></tr>
+          <tr><td>3:00 PM – 6:04 PM (Twilight)</td><td>$45</td></tr>
+        </tbody>
+      </table>
+      Override any price anytime in the operator sheet.
+    </div>
+
+    <button class="btn-generate" id="genBtn" onclick="generate()">🚀 Generate All Tee Times</button>
+
+    <div class="progress-section" id="progressSection">
+      <div class="total-counter">Generated <span id="totalDone">0</span> of <span id="totalAll">—</span> slots</div>
+      <div style="margin-top:16px;" id="courseList"></div>
+      <div class="error-hint" id="errorHint">
+        <strong>Upsert conflict detected.</strong> Your <code>tee_times</code> table may be missing a unique constraint on <code>(course_id, date, hour, minute)</code>.<br/>
+        To add it: open your Supabase project → Table Editor → tee_times → Indexes → Add unique index on those 4 columns. Then re-run this page.
+      </div>
+    </div>
+
+    <div class="summary-box" id="summaryBox">
+      <div class="big" id="summaryCount">—</div>
+      <p>tee time slots ready to book 🎉</p>
+      <p style="margin-top:8px;color:#1b6b4f;font-weight:600;">All done! Head to the live tee sheet to start taking bookings.</p>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://ojgxfeaesnaohskxdvam.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_4UVFMXQWGOt4XNgHVNzWoQ_Id6TBqcu';
+const SB_HEADERS = {
+  'apikey':          SUPABASE_KEY,
+  'Authorization':   `Bearer ${SUPABASE_KEY}`,
+  'Content-Type':    'application/json',
+};
+
+// ── 101 slots: 4:44 AM → 6:04 PM, every 8 minutes ───────────────
+const SLOT_TIMES = [];
+for (let i = 0; i < 101; i++) {
+  const totalMins = 284 + i * 8; // 284 = 4*60+44
+  SLOT_TIMES.push({ hour: Math.floor(totalMins / 60), minute: totalMins % 60 });
+}
+
+// ── Pricing tiers (cents) ─────────────────────────────────────────
+function getRackCents(hour, minute) {
+  const m = hour * 60 + minute;
+  if (m < 360)  return 2500;  // 4:44–5:52 AM  → $25 (pre-dawn)
+  if (m < 480)  return 3900;  // 6:00–7:52 AM  → $39 (early bird)
+  if (m < 660)  return 7900;  // 8:00–10:52 AM → $79 (peak morning)
+  if (m < 780)  return 6500;  // 11:00–12:52   → $65 (midday)
+  if (m < 900)  return 5500;  // 1:00–2:52 PM  → $55 (afternoon)
+  return 4500;                 // 3:00–6:04 PM  → $45 (twilight)
+}
+
+// ── Date range: tomorrow → Dec 31, 2026 ──────────────────────────
+function getDates() {
+  const dates = [];
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  d.setHours(0, 0, 0, 0);
+  const end = new Date('2026-12-31T23:59:59');
+  while (d <= end) {
+    dates.push(d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'));
+    d.setDate(d.getDate() + 1);
+  }
+  return dates;
+}
+
+const DATES = getDates();
+const TOTAL_PER_COURSE = DATES.length * SLOT_TIMES.length;
+
+// Update slot count display
+document.getElementById('slotCount').textContent =
+  (6 * TOTAL_PER_COURSE).toLocaleString();
+document.getElementById('totalAll').textContent =
+  (6 * TOTAL_PER_COURSE).toLocaleString();
+
+// ── Course state elements ─────────────────────────────────────────
+let courseEls = {};
+let totalGenerated = 0;
+let hasError = false;
+
+function buildCourseUI(courses) {
+  const list = document.getElementById('courseList');
+  list.innerHTML = '';
+  courses.forEach(c => {
+    const div = document.createElement('div');
+    div.className = 'course-row';
+    div.id = `cr-${c.id}`;
+    div.innerHTML = `
+      <div style="flex:1;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="course-name">${c.name}</div>
+          <div class="course-status" id="cst-${c.id}">Waiting…</div>
+        </div>
+        <div class="course-bar-wrap"><div class="course-bar" id="cbar-${c.id}"></div></div>
+      </div>`;
+    list.appendChild(div);
+    courseEls[c.id] = {
+      row:    div,
+      status: document.getElementById(`cst-${c.id}`),
+      bar:    document.getElementById(`cbar-${c.id}`),
+    };
+  });
+}
+
+function setCourseProgress(id, done, total, err) {
+  const el = courseEls[id];
+  if (!el) return;
+  const pct = Math.round(100 * done / total);
+  el.bar.style.width = pct + '%';
+  if (err) {
+    el.status.textContent = '✗ Error';
+    el.row.classList.add('error');
+  } else if (done >= total) {
+    el.status.textContent = `✓ ${total.toLocaleString()} slots`;
+    el.row.classList.add('done');
+  } else {
+    el.status.textContent = `${pct}%`;
+  }
+}
+
+// ── Upsert a batch of rows ────────────────────────────────────────
+async function upsertBatch(rows) {
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/tee_times?on_conflict=course_id,date,hour,minute`,
+    {
+      method:  'POST',
+      headers: { ...SB_HEADERS, 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+      body:    JSON.stringify(rows),
+    }
+  );
+  if (!res.ok) {
+    const text = await res.text();
+    // If unique constraint missing, fall back to plain insert (ignores conflicts via duplicate error)
+    if (text.includes('constraint') || text.includes('on_conflict') || res.status === 400) {
+      // Attempt plain insert — Supabase will error per-batch on conflict but we continue
+      const res2 = await fetch(`${SUPABASE_URL}/rest/v1/tee_times`, {
+        method:  'POST',
+        headers: { ...SB_HEADERS, 'Prefer': 'return=minimal' },
+        body:    JSON.stringify(rows),
+      });
+      if (!res2.ok && res2.status !== 409 && res2.status !== 400) {
+        throw new Error(`HTTP ${res2.status}`);
+      }
+      return { fallback: true };
+    }
+    throw new Error(`HTTP ${res.status}: ${text.slice(0, 200)}`);
+  }
+  return { ok: true };
+}
+
+// ── Main generate function ────────────────────────────────────────
+async function generate() {
+  const btn = document.getElementById('genBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Generating…';
+
+  document.getElementById('progressSection').style.display = '';
+  document.getElementById('summaryBox').style.display = 'none';
+  document.getElementById('errorHint').style.display = 'none';
+  totalGenerated = 0;
+  hasError = false;
+
+  // Fetch courses
+  let courses;
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/courses?select=id,slug,name&active=eq.true&order=name.asc`,
+      { headers: SB_HEADERS }
+    );
+    if (!res.ok) throw new Error('Could not load courses');
+    courses = await res.json();
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = '🚀 Generate All Tee Times';
+    alert('Failed to load courses: ' + e.message);
+    return;
+  }
+
+  buildCourseUI(courses);
+  document.getElementById('totalAll').textContent =
+    (courses.length * TOTAL_PER_COURSE).toLocaleString();
+
+  const BATCH_SIZE = 500;
+
+  for (const course of courses) {
+    const rows = [];
+    for (const date of DATES) {
+      for (const { hour, minute } of SLOT_TIMES) {
+        rows.push({
+          course_id:  course.id,
+          date,
+          hour,
+          minute,
+          rack_cents: getRackCents(hour, minute),
+          status:     'open',
+        });
+      }
+    }
+
+    let doneSoFar = 0;
+    let courseErr = false;
+    let usedFallback = false;
+
+    for (let i = 0; i < rows.length; i += BATCH_SIZE) {
+      const batch = rows.slice(i, i + BATCH_SIZE);
+      try {
+        const result = await upsertBatch(batch);
+        if (result.fallback) usedFallback = true;
+        doneSoFar      += batch.length;
+        totalGenerated += batch.length;
+      } catch (e) {
+        console.error('Batch error:', e);
+        courseErr = true;
+        hasError  = true;
+        break;
+      }
+      setCourseProgress(course.id, doneSoFar, rows.length, false);
+      document.getElementById('totalDone').textContent = totalGenerated.toLocaleString();
+      // Yield to browser to update UI
+      await new Promise(r => setTimeout(r, 0));
+    }
+
+    setCourseProgress(course.id, doneSoFar, rows.length, courseErr);
+    if (usedFallback && !hasError) {
+      document.getElementById('errorHint').style.display = '';
+    }
+  }
+
+  // Done
+  btn.disabled = false;
+  btn.textContent = hasError ? '🔁 Retry' : '✓ Done — Run Again';
+
+  if (!hasError) {
+    const summaryBox = document.getElementById('summaryBox');
+    document.getElementById('summaryCount').textContent =
+      totalGenerated.toLocaleString();
+    summaryBox.style.display = '';
+  }
+}
+</script>
+</body>
+</html>
