@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>SwingFirst — Listing Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --green-700:#15803d; --green-600:#16a34a; --green-100:#dcfce7; --green-50:#f0fdf4;
+  --teal-600:#0d9488;  --teal-100:#ccfbf1;  --teal-50:#f0fdfa;
+  --amber-500:#f59e0b; --amber-100:#fef3c7; --amber-50:#fffbeb;
+  --red-500:#ef4444;   --red-100:#fee2e2;   --red-50:#fef2f2;
+  --blue-600:#2563eb;  --blue-100:#dbeafe;  --blue-50:#eff6ff;
+  --slate-900:#0f172a; --slate-800:#1e293b; --slate-700:#334155;
+  --slate-600:#475569; --slate-500:#64748b; --slate-400:#94a3b8;
+  --slate-300:#cbd5e1; --slate-200:#e2e8f0; --slate-100:#f1f5f9; --slate-50:#f8fafc;
+  --sidebar-w:220px;
+}
+body{font-family:'Inter',sans-serif;background:var(--slate-50);color:var(--slate-900);min-height:100vh;display:flex;flex-direction:column}
+
+/* ── TOP HEADER ── */
+.top-bar{height:52px;background:#fff;border-bottom:1px solid var(--slate-200);display:flex;align-items:center;padding:0 20px;gap:14px;position:sticky;top:0;z-index:100;flex-shrink:0}
+.logo{font-size:18px;font-weight:800;color:var(--green-700);letter-spacing:-.5px;text-decoration:none;white-space:nowrap}
+.logo span{color:var(--slate-900)}
+.logo-tag{font-size:10.5px;background:var(--green-100);color:var(--green-700);font-weight:700;padding:2px 8px;border-radius:100px;white-space:nowrap}
+
+/* Course switcher */
+.course-switcher{margin-left:auto;position:relative}
+.switcher-btn{display:flex;align-items:center;gap:8px;padding:6px 12px;border:1.5px solid var(--slate-200);border-radius:8px;background:#fff;cursor:pointer;font-size:13px;font-weight:600;color:var(--slate-800);font-family:inherit;transition:border-color .15s}
+.switcher-btn:hover{border-color:var(--green-600)}
+.switcher-dot{width:8px;height:8px;border-radius:50%;background:var(--green-500);flex-shrink:0}
+.switcher-chevron{color:var(--slate-400);font-size:10px;margin-left:2px}
+.switcher-dropdown{display:none;position:absolute;right:0;top:calc(100% + 6px);background:#fff;border:1px solid var(--slate-200);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.1);min-width:230px;z-index:200;overflow:hidden}
+.switcher-dropdown.open{display:block}
+.switcher-section{font-size:10px;font-weight:700;color:var(--slate-400);text-transform:uppercase;letter-spacing:.6px;padding:10px 14px 4px}
+.switcher-course{display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;transition:background .12s;font-size:13px;color:var(--slate-700);font-weight:500}
+.switcher-course:hover{background:var(--slate-50)}
+.switcher-course.active{background:var(--green-50);color:var(--green-700);font-weight:700}
+.switcher-course .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.switcher-course .dot.live{background:var(--green-500)}
+.switcher-course .dot.pending{background:var(--amber-500)}
+.switcher-divider{height:1px;background:var(--slate-100);margin:4px 0}
+.switcher-add{display:flex;align-items:center;gap:8px;padding:10px 14px;cursor:pointer;font-size:12.5px;color:var(--green-700);font-weight:600}
+.switcher-add:hover{background:var(--green-50)}
+
+/* Account avatar */
+.account-btn{width:32px;height:32px;border-radius:50%;background:var(--green-700);color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;margin-left:10px}
+
+/* ── APP SHELL ── */
+.app-shell{display:flex;flex:1;min-height:0}
+
+/* ── SIDEBAR ── */
+.sidebar{width:var(--sidebar-w);background:#fff;border-right:1px solid var(--slate-200);flex-shrink:0;display:flex;flex-direction:column;padding:16px 0}
+.nav-section{font-size:10px;font-weight:700;color:var(--slate-400);text-transform:uppercase;letter-spacing:.7px;padding:12px 16px 6px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 16px;font-size:13px;font-weight:500;color:var(--slate-600);cursor:pointer;transition:all .14s;border-left:3px solid transparent;margin:1px 0}
+.nav-item:hover{background:var(--slate-50);color:var(--slate-900)}
+.nav-item.active{background:var(--green-50);color:var(--green-700);font-weight:700;border-left-color:var(--green-700)}
+.nav-icon{font-size:15px;flex-shrink:0;width:18px;text-align:center}
+.nav-badge{margin-left:auto;background:var(--green-100);color:var(--green-700);font-size:9px;font-weight:700;padding:2px 6px;border-radius:100px}
+.sidebar-footer{margin-top:auto;padding:12px 16px;border-top:1px solid var(--slate-100)}
+.sidebar-plan{background:var(--green-50);border:1px solid var(--green-100);border-radius:8px;padding:10px 12px}
+.sidebar-plan-name{font-size:11px;font-weight:700;color:var(--green-700);margin-bottom:2px}
+.sidebar-plan-detail{font-size:10.5px;color:var(--slate-500);line-height:1.4}
+
+/* ── MAIN CONTENT ── */
+.main-content{flex:1;overflow-y:auto;padding:24px 28px 48px}
+.view{display:none}
+.view.active{display:block}
+
+/* ── PAGE HEADER ── */
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
+.page-title{font-size:20px;font-weight:800;color:var(--slate-900);letter-spacing:-.4px}
+.page-sub{font-size:13px;color:var(--slate-500);margin-top:2px}
+.header-actions{display:flex;gap:8px;align-items:center}
+.btn-sm{padding:7px 14px;border-radius:7px;font-size:12.5px;font-weight:600;cursor:pointer;border:1.5px solid;transition:all .15s;font-family:inherit;white-space:nowrap}
+.btn-sm.outline{border-color:var(--slate-200);color:var(--slate-700);background:#fff}
+.btn-sm.outline:hover{border-color:var(--slate-400)}
+.btn-sm.primary{border-color:var(--green-700);background:var(--green-700);color:#fff}
+.btn-sm.primary:hover{background:var(--green-600);border-color:var(--green-600)}
+.btn-sm.teal{border-color:var(--teal-600);background:var(--teal-600);color:#fff}
+.btn-sm.teal:hover{background:#0f766e;border-color:#0f766e}
+
+/* ── STAT CARDS ── */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
+.stat-card{background:#fff;border:1px solid var(--slate-200);border-radius:12px;padding:18px 20px}
+.stat-label{font-size:11px;font-weight:700;color:var(--slate-400);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.stat-value{font-size:26px;font-weight:800;color:var(--slate-900);letter-spacing:-.5px;line-height:1}
+.stat-delta{font-size:11.5px;margin-top:6px;display:flex;align-items:center;gap:4px}
+.stat-delta.up{color:var(--green-700)}
+.stat-delta.down{color:var(--red-500)}
+.stat-delta.neutral{color:var(--slate-400)}
+
+/* ── CARDS ── */
+.card{background:#fff;border:1px solid var(--slate-200);border-radius:12px;margin-bottom:18px}
+.card-header{padding:16px 20px;border-bottom:1px solid var(--slate-100);display:flex;align-items:center;justify-content:space-between}
+.card-title{font-size:13px;font-weight:700;color:var(--slate-800)}
+.card-body{padding:20px}
+.card-body.tight{padding:14px 20px}
+
+/* ── BAR CHART ── */
+.chart-wrap{position:relative;height:140px;display:flex;align-items:flex-end;gap:8px;padding:0 4px}
+.chart-bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px}
+.chart-bar-track{flex:1;width:100%;display:flex;align-items:flex-end;position:relative}
+.chart-bar{width:100%;border-radius:5px 5px 0 0;transition:opacity .15s;cursor:default;min-height:4px}
+.chart-bar:hover{opacity:.75}
+.chart-label{font-size:10px;color:var(--slate-400);font-weight:600;white-space:nowrap}
+.chart-grid{position:absolute;left:0;right:0;border-top:1px dashed var(--slate-100);z-index:0}
+
+/* ── LISTING PREVIEW ROW ── */
+.preview-row{display:grid;grid-template-columns:120px 1fr auto;border:1px solid var(--slate-200);border-radius:10px;overflow:hidden;background:#fff}
+.preview-thumb{background:linear-gradient(155deg,#0c3d22,#15803d);display:flex;align-items:center;justify-content:center;font-size:24px;min-height:74px;position:relative;overflow:hidden}
+.preview-thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.preview-info{padding:12px 16px;display:flex;flex-direction:column;gap:5px;justify-content:center}
+.preview-name-row{display:flex;align-items:center;gap:8px}
+.preview-name{font-size:13px;font-weight:700;color:var(--slate-900)}
+.preview-badge{background:var(--green-100);color:var(--green-700);font-size:9px;font-weight:700;padding:2px 7px;border-radius:100px}
+.preview-meta{font-size:11px;color:var(--slate-500)}
+.preview-desc-text{font-size:11px;color:var(--slate-500);line-height:1.4}
+.preview-offer{display:inline-block;font-size:9.5px;color:var(--green-700);font-weight:600;background:var(--green-100);padding:2px 8px;border-radius:100px;margin-top:2px}
+.preview-cta{padding:12px 18px;display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:3px;border-left:1px solid var(--slate-100)}
+.preview-from{font-size:9.5px;color:var(--slate-400)}
+.preview-price{font-size:18px;font-weight:800;color:var(--slate-900)}
+
+/* ── LISTING EDIT FIELDS ── */
+.edit-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.edit-grid.one{grid-template-columns:1fr}
+.field label{display:block;font-size:11px;font-weight:700;color:var(--slate-600);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.field input,.field select,.field textarea{width:100%;padding:9px 12px;border:1.5px solid var(--slate-200);border-radius:7px;font-size:13px;font-family:inherit;color:var(--slate-900);background:#fff;outline:none;transition:border-color .18s}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--green-600)}
+.field textarea{resize:vertical;min-height:72px;line-height:1.5}
+.field-hint{font-size:11px;color:var(--slate-400);margin-top:4px;line-height:1.4}
+.char-row{display:flex;justify-content:space-between;align-items:center;margin-top:4px}
+.char-count{font-size:11px;color:var(--slate-400)}
+
+/* ── PHOTO UPLOAD ── */
+.photo-current{position:relative;border-radius:10px;overflow:hidden;height:140px;background:linear-gradient(155deg,#0c3d22,#15803d);display:flex;align-items:center;justify-content:center;font-size:32px;margin-bottom:10px}
+.photo-current img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.photo-overlay{position:absolute;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .18s;cursor:pointer}
+.photo-current:hover .photo-overlay{opacity:1}
+.photo-overlay-text{color:#fff;font-size:13px;font-weight:700}
+.upload-zone-sm{border:2px dashed var(--slate-300);border-radius:8px;padding:16px;text-align:center;cursor:pointer;transition:all .18s;background:var(--slate-50);font-size:12.5px;color:var(--slate-500)}
+.upload-zone-sm:hover{border-color:var(--green-600);background:var(--green-50);color:var(--green-700)}
+
+/* ── STATUS BADGE ── */
+.status-pill{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:100px;font-size:11px;font-weight:700}
+.status-pill.live{background:var(--green-100);color:var(--green-700)}
+.status-pill.trial{background:var(--amber-100);color:#92400e}
+.status-pill.pending{background:var(--blue-100);color:var(--blue-600)}
+.status-dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+
+/* ── ANALYTICS DETAIL ── */
+.period-tabs{display:flex;gap:4px;margin-bottom:18px}
+.period-tab{padding:5px 14px;border-radius:100px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid var(--slate-200);color:var(--slate-600);transition:all .14s}
+.period-tab.active{background:var(--green-700);border-color:var(--green-700);color:#fff}
+.analytics-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px}
+.mini-stat{background:var(--slate-50);border-radius:10px;padding:16px}
+.mini-stat-label{font-size:11px;color:var(--slate-500);font-weight:600;margin-bottom:6px}
+.mini-stat-val{font-size:22px;font-weight:800;color:var(--slate-900)}
+.mini-stat-sub{font-size:11px;color:var(--slate-400);margin-top:3px}
+.search-term-row{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--slate-100)}
+.search-term-row:last-child{border-bottom:none}
+.search-term-name{font-size:13px;color:var(--slate-700);font-weight:500;flex:1}
+.search-term-bar-wrap{width:140px;height:6px;background:var(--slate-100);border-radius:100px;overflow:hidden}
+.search-term-bar{height:100%;border-radius:100px;background:var(--green-600)}
+.search-term-count{font-size:12px;color:var(--slate-500);width:40px;text-align:right}
+
+/* ── BILLING ── */
+.plan-card{border:2px solid var(--green-700);border-radius:12px;padding:22px;background:var(--green-50);margin-bottom:16px;display:flex;align-items:flex-start;gap:18px}
+.plan-icon{font-size:28px;flex-shrink:0}
+.plan-name{font-size:16px;font-weight:800;color:var(--slate-900);margin-bottom:3px}
+.plan-price{font-size:13px;color:var(--slate-600);margin-bottom:10px}
+.plan-features{list-style:none;display:flex;flex-direction:column;gap:5px}
+.plan-features li{font-size:12px;color:var(--slate-600);display:flex;align-items:center;gap:6px}
+.plan-ck{color:var(--green-700);font-weight:700;font-size:11px}
+.invoice-row{display:flex;align-items:center;padding:10px 0;border-bottom:1px solid var(--slate-100);font-size:13px;gap:12px}
+.invoice-row:last-child{border-bottom:none}
+.invoice-date{color:var(--slate-500);width:110px;flex-shrink:0}
+.invoice-desc{color:var(--slate-700);flex:1}
+.invoice-amount{font-weight:700;color:var(--slate-800);width:60px;text-align:right}
+.invoice-status{font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:100px;background:var(--green-100);color:var(--green-700)}
+.invoice-dl{color:var(--slate-400);font-size:12px;cursor:pointer;margin-left:8px}
+.invoice-dl:hover{color:var(--green-700)}
+.payment-row{display:flex;align-items:center;gap:14px;padding:14px;border:1.5px solid var(--slate-200);border-radius:10px;background:#fff}
+.card-chip{width:36px;height:24px;border-radius:4px;background:linear-gradient(135deg,#d4af37,#b8860b);flex-shrink:0}
+.card-info{flex:1}
+.card-number-mask{font-size:13px;font-weight:600;color:var(--slate-800)}
+.card-expiry{font-size:11px;color:var(--slate-400);margin-top:1px}
+
+/* ── INLINE EDIT ── */
+.editable-field{position:relative;group:true}
+.edit-trigger{display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--slate-400);cursor:pointer;padding:2px 6px;border-radius:4px;transition:all .14s;border:1px solid transparent;margin-left:4px}
+.edit-trigger:hover{color:var(--green-700);border-color:var(--green-100);background:var(--green-50)}
+.inline-edit-wrap{display:none;margin-top:8px}
+.inline-edit-wrap.open{display:flex;gap:8px;align-items:flex-start}
+.inline-save{padding:6px 14px;background:var(--green-700);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:inherit}
+.inline-save:hover{background:var(--green-600)}
+.inline-cancel{padding:6px 10px;background:none;border:1.5px solid var(--slate-200);border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;color:var(--slate-600);font-family:inherit}
+
+/* ── ALERT BANNER ── */
+.alert-banner{display:flex;align-items:flex-start;gap:12px;padding:14px 18px;border-radius:10px;margin-bottom:18px;font-size:13px;line-height:1.5}
+.alert-banner.amber{background:var(--amber-50);border:1px solid var(--amber-100);color:#92400e}
+.alert-banner.green{background:var(--green-50);border:1px solid var(--green-100);color:var(--green-700)}
+.alert-icon{font-size:16px;flex-shrink:0;margin-top:1px}
+.alert-body strong{font-weight:700;display:block;margin-bottom:2px}
+.alert-action{margin-top:6px;font-size:12px;font-weight:700;color:var(--green-700);cursor:pointer;text-decoration:underline}
+
+/* ── QUICK ACTIONS ── */
+.qa-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px}
+.qa-card{background:#fff;border:1.5px solid var(--slate-200);border-radius:10px;padding:14px 16px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:12px}
+.qa-card:hover{border-color:var(--green-600);background:var(--green-50)}
+.qa-icon{font-size:20px;flex-shrink:0}
+.qa-label{font-size:12.5px;font-weight:700;color:var(--slate-700)}
+.qa-desc{font-size:11px;color:var(--slate-400);margin-top:1px}
+
+/* ── SAVE BAR ── */
+.save-bar{display:none;position:sticky;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--slate-200);padding:12px 28px;align-items:center;justify-content:space-between;gap:14px;z-index:50}
+.save-bar.visible{display:flex}
+.save-bar-msg{font-size:13px;color:var(--slate-600)}
+.save-bar-msg strong{color:var(--slate-900)}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<header class="top-bar">
+  <a class="logo" href="swingfirst-v2.html">swing<span>first</span></a>
+  <span class="logo-tag">Course Dashboard</span>
+
+  <div class="course-switcher" id="switcher">
+    <button class="switcher-btn" onclick="toggleSwitcher()">
+      <span class="switcher-dot"></span>
+      <span id="switcher-label">Palmbrook Golf Club</span>
+      <span class="switcher-chevron">▾</span>
+    </button>
+    <div class="switcher-dropdown" id="switcher-dd">
+      <div class="switcher-section">Your courses</div>
+      <div class="switcher-course active" onclick="switchCourse('Palmbrook Golf Club',this)">
+        <span class="dot live"></span>Palmbrook Golf Club
+      </div>
+      <div class="switcher-course" onclick="switchCourse('Coyote Lakes Golf Club',this)">
+        <span class="dot live"></span>Coyote Lakes Golf Club
+      </div>
+      <div class="switcher-course" onclick="switchCourse('Scottsdale Country Club',this)">
+        <span class="dot live"></span>Scottsdale Country Club
+      </div>
+      <div class="switcher-course" onclick="switchCourse('Arrowhead Country Club',this)">
+        <span class="dot pending"></span>Arrowhead Country Club <span style="font-size:10px;color:var(--amber-500);margin-left:4px">Setup</span>
+      </div>
+      <div class="switcher-course" onclick="switchCourse('Lone Tree Golf Club',this)">
+        <span class="dot pending"></span>Lone Tree Golf Club <span style="font-size:10px;color:var(--amber-500);margin-left:4px">Setup</span>
+      </div>
+      <div class="switcher-course" onclick="switchCourse('Westbrook Golf Club',this)">
+        <span class="dot pending"></span>Westbrook Golf Club <span style="font-size:10px;color:var(--amber-500);margin-left:4px">Setup</span>
+      </div>
+      <div class="switcher-divider"></div>
+      <div class="switcher-add" onclick="window.location.href='swingfirst-claim.html'">＋ Add another course</div>
+    </div>
+  </div>
+
+  <div class="account-btn" title="Dave Sansom">DS</div>
+</header>
+
+<!-- APP SHELL -->
+<div class="app-shell">
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="nav-section">Manage</div>
+    <div class="nav-item active" onclick="showView('overview',this)">
+      <span class="nav-icon">📊</span> Overview
+    </div>
+    <div class="nav-item" onclick="showView('listing',this)">
+      <span class="nav-icon">📋</span> Listing
+    </div>
+    <div class="nav-item" onclick="showView('analytics',this)">
+      <span class="nav-icon">📈</span> Analytics
+    </div>
+    <div class="nav-section">Account</div>
+    <div class="nav-item" onclick="showView('billing',this)">
+      <span class="nav-icon">💳</span> Billing
+    </div>
+    <div class="nav-item" onclick="window.location.href='swingfirst-v2.html'">
+      <span class="nav-icon">🔍</span> View in search
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-plan">
+        <div class="sidebar-plan-name">⭐ Premium Listing</div>
+        <div class="sidebar-plan-detail">Trial · 22 days left<br>$149/mo starts Nov 15</div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content" id="main-content">
+
+    <!-- ═══════════════════════════════════════
+         VIEW: OVERVIEW
+    ═══════════════════════════════════════ -->
+    <div class="view active" id="view-overview">
+
+      <div class="page-header">
+        <div>
+          <div class="page-title">Palmbrook Golf Club
+            <span class="status-pill trial" style="font-size:10px;vertical-align:middle;margin-left:8px"><span class="status-dot"></span>Trial · 22 days left</span>
+          </div>
+          <div class="page-sub">Sun City, AZ · Listed since Oct 22, 2026</div>
+        </div>
+        <div class="header-actions">
+          <button class="btn-sm outline" onclick="window.location.href='swingfirst-v2.html'">View in search →</button>
+        </div>
+      </div>
+
+      <!-- Trial alert -->
+      <div class="alert-banner amber">
+        <span class="alert-icon">⏳</span>
+        <div class="alert-body">
+          <strong>Your free trial ends in 22 days</strong>
+          Your listing stays live. Starting November 15, you'll be charged $149/month. Cancel anytime before then.
+          <div class="alert-action" onclick="showView('billing', document.querySelector('[onclick*=billing]'))">Manage billing →</div>
+        </div>
+      </div>
+
+      <!-- Stat cards -->
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-label">Impressions</div>
+          <div class="stat-value">847</div>
+          <div class="stat-delta up">↑ 19% vs last week</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Clicks to book</div>
+          <div class="stat-value">43</div>
+          <div class="stat-delta up">↑ 13% vs last week</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Click-through rate</div>
+          <div class="stat-value">5.1%</div>
+          <div class="stat-delta neutral">— avg for your area: 4.3%</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Avg. search position</div>
+          <div class="stat-value">#2</div>
+          <div class="stat-delta up">↑ from #4 last week</div>
+        </div>
+      </div>
+
+      <!-- Bar chart -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Impressions — last 7 days</div>
+          <div style="font-size:11px;color:var(--slate-400)">Oct 16 – Oct 22</div>
+        </div>
+        <div class="card-body">
+          <div class="chart-wrap" id="chart-impressions">
+            <!-- rendered by JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick actions -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">Quick actions</div></div>
+        <div class="card-body tight">
+          <div class="qa-grid">
+            <div class="qa-card" onclick="showView('listing', document.querySelectorAll('.nav-item')[1])">
+              <span class="qa-icon">📷</span>
+              <div><div class="qa-label">Update photo</div><div class="qa-desc">Replace your course image</div></div>
+            </div>
+            <div class="qa-card" onclick="showView('listing', document.querySelectorAll('.nav-item')[1])">
+              <span class="qa-icon">🏷</span>
+              <div><div class="qa-label">Add special offer</div><div class="qa-desc">Drive off-peak bookings</div></div>
+            </div>
+            <div class="qa-card" onclick="showView('analytics', document.querySelectorAll('.nav-item')[2])">
+              <span class="qa-icon">📈</span>
+              <div><div class="qa-label">Full analytics</div><div class="qa-desc">Searches, clicks, trends</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Listing preview -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Your listing — as golfers see it</div>
+          <button class="btn-sm outline" onclick="showView('listing', document.querySelectorAll('.nav-item')[1])">Edit →</button>
+        </div>
+        <div class="card-body tight">
+          <div class="preview-row">
+            <div class="preview-thumb">
+              <img src="palmbrook.png" alt="Palmbrook Golf Club" onerror="this.style.display='none'">
+              ⛳
+            </div>
+            <div class="preview-info">
+              <div class="preview-name-row">
+                <span class="preview-name">Palmbrook Golf Club</span>
+                <span class="preview-badge">✓ Verified</span>
+              </div>
+              <div class="preview-meta">★★★★☆ 4.3 · 18 mi · 1,847 reviews</div>
+              <div class="preview-desc-text">A beloved Sun City parkland classic — lush fairways, soaring palms, and impeccable year-round conditions.</div>
+              <div class="preview-offer">🏷 SwingFirst member rates — exclusive savings on select tee times</div>
+            </div>
+            <div class="preview-cta">
+              <span class="preview-from">from</span>
+              <span class="preview-price">$35</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /overview -->
+
+    <!-- ═══════════════════════════════════════
+         VIEW: LISTING
+    ═══════════════════════════════════════ -->
+    <div class="view" id="view-listing">
+
+      <div class="page-header">
+        <div>
+          <div class="page-title">Edit Listing</div>
+          <div class="page-sub">Changes go live immediately after saving.</div>
+        </div>
+        <div class="header-actions">
+          <span class="status-pill live"><span class="status-dot"></span>Live</span>
+        </div>
+      </div>
+
+      <!-- Live preview -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">Live preview</div><div style="font-size:11px;color:var(--slate-400)">Updates as you type</div></div>
+        <div class="card-body tight">
+          <div class="preview-row">
+            <div class="preview-thumb" id="edit-preview-thumb">
+              <img src="palmbrook.png" alt="Palmbrook" id="edit-preview-img" onerror="this.style.display='none'">
+              ⛳
+            </div>
+            <div class="preview-info">
+              <div class="preview-name-row">
+                <span class="preview-name" id="lp-name">Palmbrook Golf Club</span>
+                <span class="preview-badge">✓ Verified</span>
+              </div>
+              <div class="preview-meta">★★★★☆ 4.3 · 18 mi · 1,847 reviews</div>
+              <div class="preview-desc-text" id="lp-desc">A beloved Sun City parkland classic — lush fairways, soaring palms, and impeccable year-round conditions.</div>
+              <div id="lp-offer-wrap"><div class="preview-offer" id="lp-offer">🏷 SwingFirst member rates — exclusive savings on select tee times</div></div>
+            </div>
+            <div class="preview-cta">
+              <span class="preview-from">from</span>
+              <span class="preview-price">$35</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Photo -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">📷 Course photo</div></div>
+        <div class="card-body">
+          <div class="photo-current" id="photo-current-wrap">
+            <img src="palmbrook.png" alt="Palmbrook" id="photo-preview" onerror="this.style.display='none'">
+            ⛳
+            <div class="photo-overlay" onclick="document.getElementById('photo-file').click()">
+              <span class="photo-overlay-text">Click to replace</span>
+            </div>
+          </div>
+          <input type="file" id="photo-file" accept="image/*" style="display:none" onchange="handlePhotoChange(event)">
+          <div style="font-size:11px;color:var(--slate-400)">JPEG or PNG · Landscape · Min 1200×800 px recommended · Click the photo to replace it</div>
+        </div>
+      </div>
+
+      <!-- Description -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">📝 Description</div></div>
+        <div class="card-body">
+          <div class="field">
+            <label>Shown when golfers hover your listing</label>
+            <textarea id="edit-desc" maxlength="220" oninput="syncPreview()"
+            >A beloved Sun City parkland classic — lush fairways, soaring palms, and impeccable year-round conditions. One of the Phoenix area's most welcoming courses for every level of golfer.</textarea>
+            <div class="char-row">
+              <span class="field-hint">Keep it punchy — 1–2 sentences is ideal.</span>
+              <span class="char-count"><span id="desc-count">184</span> / 220</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Special offer -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">🏷 Special offer</div><div style="font-size:11px;color:var(--slate-400)">Optional</div></div>
+        <div class="card-body">
+          <div class="field">
+            <label>Shown as a green tag on your listing</label>
+            <input type="text" id="edit-offer" value="SwingFirst member rates — exclusive savings on select tee times" oninput="syncPreview()" placeholder="e.g. 20% off twilight rounds this week">
+            <div class="field-hint">Great for driving bookings during slow periods. Leave blank to hide the tag.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Booking URL -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">🔗 Booking URL</div></div>
+        <div class="card-body">
+          <div class="field">
+            <label>Where golfers land when they click "Book →"</label>
+            <input type="url" id="edit-booking-url" value="https://www.palmbrookgolf.com/golf/tee-times">
+            <div class="field-hint">Link directly to your tee time booking page, not your homepage.</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:4px">
+        <button class="btn-sm outline" onclick="discardChanges()">Discard changes</button>
+        <button class="btn-sm primary" onclick="saveListingChanges()" style="flex:1">Save changes →</button>
+      </div>
+      <div id="save-confirm" style="display:none;text-align:center;font-size:13px;color:var(--green-700);font-weight:600;margin-top:12px">✓ Changes saved and live</div>
+
+    </div><!-- /listing -->
+
+    <!-- ═══════════════════════════════════════
+         VIEW: ANALYTICS
+    ═══════════════════════════════════════ -->
+    <div class="view" id="view-analytics">
+
+      <div class="page-header">
+        <div><div class="page-title">Analytics</div><div class="page-sub">How golfers are finding and interacting with your listing.</div></div>
+      </div>
+
+      <div class="period-tabs">
+        <div class="period-tab active" onclick="setPeriod(this,'7d')">7 days</div>
+        <div class="period-tab" onclick="setPeriod(this,'30d')">30 days</div>
+        <div class="period-tab" onclick="setPeriod(this,'90d')">90 days</div>
+      </div>
+
+      <div class="analytics-grid">
+        <div class="mini-stat"><div class="mini-stat-label">Total impressions</div><div class="mini-stat-val">847</div><div class="mini-stat-sub">↑ 19% vs prior period</div></div>
+        <div class="mini-stat"><div class="mini-stat-label">Clicks to book</div><div class="mini-stat-val">43</div><div class="mini-stat-sub">↑ 13% vs prior period</div></div>
+        <div class="mini-stat"><div class="mini-stat-label">Click-through rate</div><div class="mini-stat-val">5.1%</div><div class="mini-stat-sub">Area avg: 4.3%</div></div>
+        <div class="mini-stat"><div class="mini-stat-label">Hover engagements</div><div class="mini-stat-val">201</div><div class="mini-stat-sub">Golfers who expanded your listing</div></div>
+      </div>
+
+      <!-- Impressions chart -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-header"><div class="card-title">Daily impressions</div></div>
+        <div class="card-body">
+          <div class="chart-wrap" id="chart-analytics"><!-- rendered by JS --></div>
+        </div>
+      </div>
+
+      <!-- Clicks chart -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-header"><div class="card-title">Daily clicks to book</div></div>
+        <div class="card-body">
+          <div class="chart-wrap" id="chart-clicks"><!-- rendered by JS --></div>
+        </div>
+      </div>
+
+      <!-- Search terms -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">Top searches that showed your listing</div></div>
+        <div class="card-body">
+          <div class="search-term-row"><span class="search-term-name">Phoenix golf courses</span><div class="search-term-bar-wrap"><div class="search-term-bar" style="width:100%"></div></div><span class="search-term-count">312</span></div>
+          <div class="search-term-row"><span class="search-term-name">Sun City golf</span><div class="search-term-bar-wrap"><div class="search-term-bar" style="width:74%"></div></div><span class="search-term-count">231</span></div>
+          <div class="search-term-row"><span class="search-term-name">Scottsdale tee times</span><div class="search-term-bar-wrap"><div class="search-term-bar" style="width:53%"></div></div><span class="search-term-count">165</span></div>
+          <div class="search-term-row"><span class="search-term-name">golf near me</span><div class="search-term-bar-wrap"><div class="search-term-bar" style="width:38%"></div></div><span class="search-term-count">119</span></div>
+          <div class="search-term-row"><span class="search-term-name">cheap golf Phoenix</span><div class="search-term-bar-wrap"><div class="search-term-bar" style="width:21%"></div></div><span class="search-term-count">65</span></div>
+        </div>
+      </div>
+
+    </div><!-- /analytics -->
+
+    <!-- ═══════════════════════════════════════
+         VIEW: BILLING
+    ═══════════════════════════════════════ -->
+    <div class="view" id="view-billing">
+
+      <div class="page-header">
+        <div><div class="page-title">Billing</div><div class="page-sub">Manage your plan and payment details.</div></div>
+      </div>
+
+      <!-- Trial alert -->
+      <div class="alert-banner amber">
+        <span class="alert-icon">⏳</span>
+        <div class="alert-body">
+          <strong>Free trial · 22 days remaining</strong>
+          Your card on file will be charged $149 on November 15, 2026. Cancel before then and you won't be charged.
+        </div>
+      </div>
+
+      <!-- Current plan -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">Current plan</div><div><button class="btn-sm teal" onclick="alert('Tee sheet upgrade flow — coming soon!')">Upgrade to Tee Sheet →</button></div></div>
+        <div class="card-body">
+          <div class="plan-card">
+            <div class="plan-icon">⭐</div>
+            <div>
+              <div class="plan-name">Premium Listing</div>
+              <div class="plan-price">$149 / month · billed monthly · cancel anytime</div>
+              <ul class="plan-features">
+                <li><span class="plan-ck">✓</span>Featured placement in search results</li>
+                <li><span class="plan-ck">✓</span>Verified badge &amp; custom photos</li>
+                <li><span class="plan-ck">✓</span>Description &amp; special offers</li>
+                <li><span class="plan-ck">✓</span>Analytics dashboard</li>
+              </ul>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:4px">
+            <button class="btn-sm outline" style="color:var(--red-500);border-color:var(--red-100)" onclick="confirmCancel()">Cancel plan</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Payment method -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">Payment method</div><button class="btn-sm outline" onclick="alert('Card update flow — coming soon!')">Update</button></div>
+        <div class="card-body">
+          <div class="payment-row">
+            <div class="card-chip"></div>
+            <div class="card-info">
+              <div class="card-number-mask">Visa ending in 4242</div>
+              <div class="card-expiry">Expires 09 / 28</div>
+            </div>
+            <span class="status-pill live"><span class="status-dot"></span>Active</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Invoice history -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">Invoice history</div></div>
+        <div class="card-body">
+          <div class="invoice-row">
+            <span class="invoice-date">Oct 22, 2026</span>
+            <span class="invoice-desc">Premium Listing — trial start</span>
+            <span class="invoice-amount">$0.00</span>
+            <span class="invoice-status">Trial</span>
+            <span class="invoice-dl" onclick="alert('Downloading…')">↓ PDF</span>
+          </div>
+          <div style="padding:16px 0;text-align:center;font-size:12px;color:var(--slate-400)">Your first invoice of $149.00 will appear here on November 15, 2026.</div>
+        </div>
+      </div>
+
+    </div><!-- /billing -->
+
+  </main>
+</div><!-- /app-shell -->
+
+<script>
+// ── NAV ───────────────────────────────────────────────────
+function showView(id, navEl) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  if (navEl) navEl.classList.add('active');
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+// ── COURSE SWITCHER ───────────────────────────────────────
+function toggleSwitcher() {
+  document.getElementById('switcher-dd').classList.toggle('open');
+}
+document.addEventListener('click', e => {
+  if (!document.getElementById('switcher').contains(e.target)) {
+    document.getElementById('switcher-dd').classList.remove('open');
+  }
+});
+function switchCourse(name, el) {
+  document.getElementById('switcher-label').textContent = name;
+  document.querySelectorAll('.switcher-course').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('switcher-dd').classList.remove('open');
+  // Update page title
+  document.querySelector('#view-overview .page-title').childNodes[0].textContent = name + ' ';
+}
+
+// ── CHARTS ────────────────────────────────────────────────
+const DAYS  = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const IMP   = [98, 112, 87, 124, 156, 198, 72];
+const CLICK = [5,   6,   4,   7,   9,  11,   1];
+
+function renderBarChart(containerId, data, color) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const max = Math.max(...data);
+  el.innerHTML = data.map((v, i) => {
+    const pct = max > 0 ? (v / max * 100) : 0;
+    return `<div class="chart-bar-col">
+      <div class="chart-bar-track">
+        <div class="chart-bar" style="height:${pct}%;background:${color}" title="${DAYS[i]}: ${v}"></div>
+      </div>
+      <div class="chart-label">${DAYS[i]}</div>
+    </div>`;
+  }).join('');
+}
+
+renderBarChart('chart-impressions', IMP,   'var(--green-600)');
+renderBarChart('chart-analytics',   IMP,   'var(--green-600)');
+renderBarChart('chart-clicks',      CLICK, 'var(--teal-600)');
+
+// ── LISTING EDIT ──────────────────────────────────────────
+function syncPreview() {
+  // Description
+  const desc = document.getElementById('edit-desc').value;
+  document.getElementById('lp-desc').textContent = desc;
+  document.getElementById('desc-count').textContent = desc.length;
+
+  // Offer
+  const offer = document.getElementById('edit-offer').value.trim();
+  document.getElementById('lp-offer').textContent = offer ? '🏷 ' + offer : '';
+  document.getElementById('lp-offer-wrap').style.display = offer ? 'block' : 'none';
+}
+
+function handlePhotoChange(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    ['photo-preview','edit-preview-img'].forEach(id => {
+      const img = document.getElementById(id);
+      img.src = ev.target.result;
+      img.style.display = '';
+    });
+  };
+  reader.readAsDataURL(file);
+}
+
+function saveListingChanges() {
+  const btn = event.target;
+  btn.textContent = 'Saving…';
+  btn.disabled = true;
+  setTimeout(() => {
+    btn.textContent = 'Save changes →';
+    btn.disabled = false;
+    const confirm = document.getElementById('save-confirm');
+    confirm.style.display = 'block';
+    setTimeout(() => { confirm.style.display = 'none'; }, 3000);
+  }, 900);
+}
+
+function discardChanges() {
+  document.getElementById('edit-desc').value = 'A beloved Sun City parkland classic — lush fairways, soaring palms, and impeccable year-round conditions. One of the Phoenix area\'s most welcoming courses for every level of golfer.';
+  document.getElementById('edit-offer').value = 'SwingFirst member rates — exclusive savings on select tee times';
+  document.getElementById('edit-booking-url').value = 'https://www.palmbrookgolf.com/golf/tee-times';
+  syncPreview();
+}
+
+// ── ANALYTICS PERIOD ──────────────────────────────────────
+const PERIOD_DATA = {
+  '7d' : {imp:[98,112,87,124,156,198,72],  clicks:[5,6,4,7,9,11,1]},
+  '30d': {imp:[310,280,420,390,510,640,220,300,410,350,480,590,180,290,380,440,520,610,230,360,470,400,550,680,260,340,420,480,600,670],
+          clicks:[14,12,19,17,22,28,9,13,18,15,21,26,8,12,17,19,23,27,10,16,20,18,24,30,11,15,18,21,26,29]},
+  '90d': {imp:Array.from({length:30},(_,i)=>Math.floor(200+Math.random()*500)),
+          clicks:Array.from({length:30},(_,i)=>Math.floor(8+Math.random()*30))}
+};
+function setPeriod(tab, key) {
+  document.querySelectorAll('.period-tab').forEach(t => t.classList.remove('active'));
+  tab.classList.add('active');
+  const d = PERIOD_DATA[key];
+  // Only show last 7 bars for readability in the mockup
+  const imp = d.imp.slice(-7);
+  const clicks = d.clicks.slice(-7);
+  renderBarChart('chart-analytics', imp,    'var(--green-600)');
+  renderBarChart('chart-clicks',    clicks, 'var(--teal-600)');
+  // Update stat cards roughly
+  const totImp = d.imp.reduce((a,b)=>a+b,0);
+  const totClk = d.clicks.reduce((a,b)=>a+b,0);
+  document.querySelectorAll('.mini-stat-val')[0].textContent = totImp.toLocaleString();
+  document.querySelectorAll('.mini-stat-val')[1].textContent = totClk.toLocaleString();
+  document.querySelectorAll('.mini-stat-val')[2].textContent = (totClk/totImp*100).toFixed(1) + '%';
+}
+
+// ── BILLING ───────────────────────────────────────────────
+function confirmCancel() {
+  if (confirm('Are you sure you want to cancel? Your listing will remain active until the end of your trial on November 15, 2026.')) {
+    alert('Your plan has been cancelled. Your listing stays live until Nov 15.');
+  }
+}
+
+// ── INIT ──────────────────────────────────────────────────
+syncPreview();
+document.getElementById('desc-count').textContent = document.getElementById('edit-desc').value.length;
+</script>
+</body>
+</html>
