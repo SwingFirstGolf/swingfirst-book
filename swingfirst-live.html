@@ -221,7 +221,7 @@ main{padding:20px 22px 60px;min-width:0;overflow-x:auto;}
 .player-cell{flex:1;border-radius:5px;display:flex;flex-direction:column;justify-content:center;align-items:stretch;padding:3px 7px;height:29px;transition:all 100ms ease;position:relative;overflow:hidden;}
 
 /* Open slot — bookable */
-.player-cell.open{border:1.5px dashed var(--line);cursor:pointer;justify-content:center;align-items:center;}
+.player-cell.open{border:1.5px dashed var(--line);cursor:pointer;justify-content:center;align-items:center;background:#ffffff;}
 .player-cell.open:hover{border-color:var(--green-600);background:var(--green-50);}
 .open-inner{display:flex;flex-direction:column;align-items:center;gap:1px;}
 .open-price{font-size:11px;font-weight:700;color:var(--green-700);}
@@ -848,8 +848,11 @@ function timeOfDayStyle(hour, minute) {
   }
   return { bg: '#111e1a', color: '#384e48' };
 }
+function nowAZ() {
+  return new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Phoenix' }));
+}
 function getDateStr() {
-  const d = new Date(); d.setDate(d.getDate() + state.dayOffset);
+  const d = nowAZ(); d.setDate(d.getDate() + state.dayOffset);
   return d.getFullYear() + '-' +
     String(d.getMonth() + 1).padStart(2, '0') + '-' +
     String(d.getDate()).padStart(2, '0');
@@ -1070,7 +1073,7 @@ function renderRows() {
 
   // Operator blocking handled server-side (status=neq.blocked).
   // Past-time slots on today are hidden from the list.
-  const _now     = new Date();
+  const _now     = nowAZ();
   const _nowMins = _now.getHours() * 60 + _now.getMinutes();
 
   const visibleSlots = state.slots.filter(s => {
@@ -1265,7 +1268,7 @@ function renderWeekStrip() {
   const MO_LONG  = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   const MO_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-  const sel = new Date(); sel.setDate(sel.getDate() + state.dayOffset);
+  const sel = nowAZ(); sel.setDate(sel.getDate() + state.dayOffset);
 
   // Big date
   document.getElementById('wsBigWeekday').textContent = WD_LONG[sel.getDay()];
@@ -1347,9 +1350,10 @@ document.getElementById('liveSearchClear').addEventListener('click', function() 
 
 // ─── Clock ────────────────────────────────────────────────────────
 function tickClock() {
+  const opts = { timeZone: 'America/Phoenix' };
   document.getElementById('clock').textContent =
-    new Date().toLocaleDateString(undefined,{month:'short',day:'numeric'})+' · '+
-    new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    new Date().toLocaleDateString('en-US',{...opts,month:'short',day:'numeric'})+' · '+
+    new Date().toLocaleTimeString('en-US',{...opts,hour:'2-digit',minute:'2-digit'});
 }
 tickClock(); setInterval(tickClock, 30000);
 
