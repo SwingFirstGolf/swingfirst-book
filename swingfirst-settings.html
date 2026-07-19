@@ -1,0 +1,716 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>SwingFirst — Course Settings</title>
+<style>
+  :root {
+    --ink:       #0d1f17; --ink-soft: #3b4a42; --ink-muted: #6b7a72;
+    --line:      #e4e9e6; --paper: #fbfaf7; --card: #ffffff;
+    --green-900: #0b3d2e; --green-700: #1b6b4f; --green-600: #2a8a6a;
+    --green-200: #a8d5bc; --green-100: #e3f2ec; --green-50: #f2f9f5;
+    --amber-700: #B45309; --amber-100: #FEF3C7;
+    --rose-700:  #9A2A42; --rose-100: #fbe0e6;
+    --slate-100: #eef1ee; --slate-200: #dde3de;
+    --shadow-sm: 0 1px 0 rgba(13,31,23,.04), 0 1px 2px rgba(13,31,23,.04);
+    --shadow-md: 0 2px 6px rgba(13,31,23,.07), 0 8px 24px rgba(13,31,23,.07);
+    --radius: 12px; --radius-sm: 8px;
+  }
+  * { box-sizing: border-box; }
+  html,body { height: 100%; margin: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    color: var(--ink); background: #eef4fb; font-size: 14px; line-height: 1.45; }
+
+  /* ── Layout ── */
+  .shell { display: flex; height: 100%; }
+  .sidebar { width: 220px; flex-shrink: 0; background: var(--green-900); color: white;
+    display: flex; flex-direction: column; padding: 20px 0; overflow-y: auto; }
+  .brand { display: flex; align-items: center; gap: 10px; padding: 0 18px 20px; border-bottom: 1px solid rgba(255,255,255,.12); margin-bottom: 16px; }
+  .brand-mark { width: 32px; height: 32px; background: var(--green-600); border-radius: 8px; display: grid; place-items: center; font-weight: 900; font-size: 16px; color: white; }
+  .brand-name { font-weight: 700; font-size: 15px; }
+  .brand-tag  { font-size: 10px; color: rgba(255,255,255,.45); letter-spacing: .05em; text-transform: uppercase; }
+  .nav-group  { margin-bottom: 20px; padding: 0 10px; }
+  .nav-title  { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: rgba(255,255,255,.4); font-weight: 700; padding: 0 8px 6px; }
+  .nav-item   { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 7px; color: rgba(255,255,255,.7); font-size: 13px; font-weight: 500; text-decoration: none; transition: background .1s; }
+  .nav-item:hover, .nav-item.active { background: rgba(255,255,255,.1); color: white; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,.3); flex-shrink: 0; }
+  .nav-item.active .dot { background: var(--green-200); }
+  .main { flex: 1; overflow-y: auto; padding: 28px 32px 60px; }
+
+  /* ── Page head ── */
+  .page-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; gap: 12px; }
+  .page-title { font-size: 22px; font-weight: 700; letter-spacing: -.01em; }
+  .page-sub   { color: var(--ink-muted); font-size: 13px; margin-top: 3px; }
+
+  /* ── Course tabs ── */
+  .course-tabs { display: flex; gap: 6px; margin-bottom: 24px; flex-wrap: wrap; }
+  .course-tab  { padding: 6px 14px; border-radius: 999px; border: 1.5px solid var(--line); background: var(--card); outline: none;
+    font-size: 13px; font-weight: 600; color: var(--ink-soft); cursor: pointer; transition: all .12s; }
+  .course-tab:hover  { border-color: var(--green-600); color: var(--green-700); background: var(--green-50); }
+  .course-tab.active { font-weight: 700; }
+
+  /* ── Sections ── */
+  .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 900px) { .settings-grid { grid-template-columns: 1fr; } }
+  .section { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow-sm); overflow: hidden; }
+  .section-head { padding: 14px 20px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 8px; }
+  .section-title { font-size: 14px; font-weight: 700; }
+  .section-icon  { font-size: 16px; }
+  .section-body  { padding: 16px 20px; display: flex; flex-direction: column; gap: 14px; }
+
+  /* ── Form controls ── */
+  .form-group  { display: flex; flex-direction: column; gap: 5px; }
+  .form-label  { font-size: 11px; font-weight: 700; color: var(--ink-muted); text-transform: uppercase; letter-spacing: .05em; }
+  .form-input, .form-select {
+    padding: 8px 12px; border: 1.5px solid var(--line); border-radius: var(--radius-sm);
+    font: inherit; font-size: 13.5px; color: var(--ink); background: var(--card);
+    outline: none; transition: border-color .15s; width: 100%; }
+  .form-input:focus, .form-select:focus { border-color: var(--green-700); }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .form-hint { font-size: 11.5px; color: var(--ink-muted); }
+
+  /* ── Toggle ── */
+  .toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .toggle-label { font-size: 13.5px; font-weight: 600; }
+  .toggle-sub   { font-size: 12px; color: var(--ink-muted); margin-top: 2px; }
+  .toggle { position: relative; width: 42px; height: 24px; flex-shrink: 0; }
+  .toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+  .toggle-track { position: absolute; inset: 0; background: var(--slate-200); border-radius: 999px; cursor: pointer; transition: background .2s; }
+  .toggle input:checked + .toggle-track { background: var(--green-700); }
+  .toggle-thumb { position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; background: white; border-radius: 50%; transition: transform .2s; pointer-events: none; box-shadow: 0 1px 3px rgba(0,0,0,.2); }
+  .toggle input:checked ~ .toggle-thumb { transform: translateX(18px); }
+
+  /* ── Rate table ── */
+  .rate-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .rate-table th { text-align: left; padding: 8px 12px; border-bottom: 2px solid var(--line);
+    font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-muted); }
+  .rate-table td { padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  .rate-table tr:last-child td { border-bottom: none; }
+  .rate-tag { font-size: 10px; font-weight: 700; border-radius: 3px; padding: 2px 6px; }
+  .rt-sf  { background: #e3f2ec; color: var(--green-700); }
+  .rt-mbr { background: #ede9fe; color: #5b21b6; }
+  .rt-yoc { background: #dbeaf5; color: #175e8c; }
+  .rt-emp { background: #eef1ee; color: #6b7a72; }
+  .rt-twi { background: #FEF3C7; color: #B45309; }
+  .rt-vip { background: #fbe0e6; color: #9A2A42; }
+  .rt-9   { background: #fff7ed; color: #c2410c; }
+
+  /* ── Save bar ── */
+  .save-bar { position: sticky; bottom: 0; background: var(--card); border-top: 1px solid var(--line);
+    padding: 14px 32px; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    box-shadow: 0 -4px 16px rgba(0,0,0,.06); z-index: 10; margin: 32px -32px -60px; }
+  .save-status { font-size: 13px; color: var(--ink-muted); }
+  .save-actions { display: flex; gap: 8px; }
+  .btn-discard { padding: 8px 18px; border: 1.5px solid var(--line); border-radius: var(--radius-sm);
+    background: var(--card); color: var(--ink-soft); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .btn-save    { padding: 8px 22px; border: 0; border-radius: var(--radius-sm);
+    background: var(--green-700); color: white; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; transition: background .12s; }
+  .btn-save:hover { background: var(--green-900); }
+  .btn-save:disabled { background: var(--green-200); cursor: not-allowed; }
+
+  /* ── Toast ── */
+  .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(40px); background: var(--ink); color: white;
+    padding: 8px 18px; border-radius: 999px; font-size: 13px; box-shadow: 0 4px 16px rgba(0,0,0,.15); opacity: 0;
+    transition: all .2s ease; pointer-events: none; z-index: 999; white-space: nowrap; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- ── PIN Gate ────────────────────────────────────────────────────── -->
+<style>
+  .pin-overlay{position:fixed;inset:0;background:var(--green-900);display:flex;align-items:center;justify-content:center;z-index:999;}
+  .pin-card{background:#fff;border-radius:20px;padding:36px 40px;text-align:center;width:320px;box-shadow:0 8px 40px rgba(0,0,0,.25);}
+  .pin-logo{font-size:36px;margin-bottom:10px;}
+  .pin-title{font-size:18px;font-weight:800;letter-spacing:-.01em;margin-bottom:4px;}
+  .pin-sub{font-size:13px;color:var(--ink-muted);margin-bottom:22px;}
+  .pin-input{width:100%;text-align:center;font-size:28px;font-weight:800;letter-spacing:.3em;padding:12px;border:2px solid var(--line);border-radius:12px;outline:none;color:var(--ink);font-family:inherit;transition:border-color .15s;}
+  .pin-input:focus{border-color:var(--green-700);}
+  @keyframes pinShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+  .pin-input.error{border-color:var(--rose-700);animation:pinShake .35s;}
+  .pin-err{font-size:13px;color:var(--rose-700);margin-top:10px;min-height:20px;font-weight:500;}
+  .pin-btn{margin-top:14px;width:100%;padding:12px;background:var(--green-700);color:#fff;border:none;border-radius:10px;font:inherit;font-size:15px;font-weight:700;cursor:pointer;transition:background .15s;}
+  .pin-btn:hover{background:var(--green-900);}
+</style>
+<div class="pin-overlay" id="pinOverlay">
+  <div class="pin-card">
+    <div class="pin-logo">⛳</div>
+    <div class="pin-title">Operator Access</div>
+    <div class="pin-sub">Enter your PIN to view settings</div>
+    <input class="pin-input" id="pinInput" type="password" inputmode="numeric" maxlength="4" placeholder="••••" autocomplete="off"/>
+    <div class="pin-err" id="pinErr"></div>
+    <button class="pin-btn" id="pinSubmit">Unlock →</button>
+  </div>
+</div>
+<script>
+  const AUTH_KEY='sf_op_auth', VALID_PIN='golf';
+  function checkAuth(){if(sessionStorage.getItem(AUTH_KEY)==='1')document.getElementById('pinOverlay').style.display='none';}
+  function tryPin(){
+    const v=document.getElementById('pinInput').value.toLowerCase();
+    if(v===VALID_PIN){sessionStorage.setItem(AUTH_KEY,'1');document.getElementById('pinOverlay').style.display='none';}
+    else{const i=document.getElementById('pinInput');i.classList.add('error');document.getElementById('pinErr').textContent='Incorrect PIN';setTimeout(()=>{i.classList.remove('error');i.value='';},700);}
+  }
+  document.getElementById('pinSubmit').addEventListener('click',tryPin);
+  document.getElementById('pinInput').addEventListener('keydown',e=>{if(e.key==='Enter')tryPin();});
+  checkAuth();
+</script>
+
+<div class="shell">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">S</div>
+      <div><div class="brand-name">SwingFirst</div><div class="brand-tag">Operator</div></div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-title">Tee Sheet</div>
+      <a class='nav-item' href='/swingfirst-tee-sheet'><span class="dot"></span> Tee Sheet</a>
+      <a class='nav-item' href='/swingfirst-live'><span class="dot"></span> Live View</a>
+      <a class="nav-item" href="swingfirst-qr-scanner.html"><span class="dot"></span> Check-ins</a>
+    </div>
+    <div class="nav-group">
+      <div class="nav-title">Manage</div>
+      <a class='nav-item' href='/swingfirst-bookings'><span class="dot"></span> Bookings</a>
+      <a class='nav-item' href='/swingfirst-customers'><span class="dot"></span> Customers</a>
+      <a class='nav-item' href='/swingfirst-reports'><span class="dot"></span> Reports</a>
+    </div>
+    <div class="nav-group">
+      <div class="nav-title">Course</div>
+      <a class='nav-item active' href='/swingfirst-settings'><span class="dot"></span> Settings</a>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+    <div class="page-head">
+      <div>
+        <div class="page-title">Course Settings</div>
+        <div class="page-sub">Configure each course's name, hours, rates, and booking rules.</div>
+      </div>
+    </div>
+
+    <!-- Course selector tabs -->
+    <div class="course-tabs" id="courseTabs">
+      <button class="course-tab active" data-slug="palmbrook">Palmbrook</button>
+      <button class="course-tab" data-slug="union-hills">Union Hills</button>
+      <button class="course-tab" data-slug="scottsdale-cc">Scottsdale CC</button>
+      <button class="course-tab" data-slug="briarwood-cc">Briarwood CC</button>
+    </div>
+
+    <!-- Settings grid -->
+    <div class="settings-grid">
+
+      <!-- ── Course Info ── -->
+      <div class="section">
+        <div class="section-head"><span class="section-icon">🏌️</span><div class="section-title">Course Info</div></div>
+        <div class="section-body">
+          <div class="form-group">
+            <label class="form-label">Course Name</label>
+            <input class="form-input" id="sCourseName" placeholder="e.g. Palmbrook Golf Club"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Phone Number</label>
+            <input class="form-input" id="sCoursePhone" type="tel" placeholder="(602) 555-0100"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Address</label>
+            <input class="form-input" id="sCourseAddress" placeholder="1234 Golf Club Dr, Phoenix AZ"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Website</label>
+            <input class="form-input" id="sCourseWebsite" type="url" placeholder="https://palmbrookgolf.com"/>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Par</label>
+              <input class="form-input" id="sCoursePar" type="number" placeholder="72" min="50" max="80"/>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Yards</label>
+              <input class="form-input" id="sCourseYards" type="number" placeholder="6800"/>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Year Built</label>
+              <input class="form-input" id="sCourseYearBuilt" type="number" placeholder="1975" min="1800" max="2030"/>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group" style="flex:2;">
+              <label class="form-label">Architect</label>
+              <input class="form-input" id="sCourseArchitect" placeholder="Robert Trent Jones Sr."/>
+            </div>
+            <div class="form-group" style="flex:2;">
+              <label class="form-label">Cart Policy</label>
+              <input class="form-input" id="sCourseCartPolicy" placeholder="Public · Cart included"/>
+            </div>
+          </div>
+          <div class="toggle-row">
+            <div>
+              <div class="toggle-label">Course Active</div>
+              <div class="toggle-sub">Show this course on the golfer booking page</div>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" id="sCourseActive" checked/>
+              <span class="toggle-track"></span>
+              <span class="toggle-thumb"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Operating Hours ── -->
+      <div class="section">
+        <div class="section-head"><span class="section-icon">⏰</span><div class="section-title">Operating Hours</div></div>
+        <div class="section-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">First Tee Time</label>
+              <input class="form-input" id="sFirstTee" type="time" value="06:00"/>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Last Tee Time</label>
+              <input class="form-input" id="sLastTee" type="time" value="16:30"/>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Tee Interval (min)</label>
+              <select class="form-select" id="sTeeInterval">
+                <option value="7">7 minutes</option>
+                <option value="8" selected>8 minutes</option>
+                <option value="9">9 minutes</option>
+                <option value="10">10 minutes</option>
+                <option value="12">12 minutes</option>
+                <option value="15">15 minutes</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Max Group Size</label>
+              <select class="form-select" id="sGroupSize">
+                <option value="3">3 players</option>
+                <option value="4" selected>4 players</option>
+                <option value="5">5 players</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Booking Window (days in advance)</label>
+            <select class="form-select" id="sBookingWindow">
+              <option value="7">7 days</option>
+              <option value="14">14 days</option>
+              <option value="30">30 days</option>
+              <option value="60">60 days</option>
+              <option value="90" selected>90 days</option>
+            </select>
+            <div class="form-hint">Golfers can book up to this many days ahead.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Pricing ── -->
+      <div class="section" style="grid-column: span 2;">
+        <div class="section-head"><span class="section-icon">💰</span><div class="section-title">Rate Types &amp; Pricing Rules</div></div>
+        <div class="section-body">
+          <table class="rate-table">
+            <thead>
+              <tr>
+                <th>Tag</th>
+                <th>Name</th>
+                <th>Pricing Rule</th>
+                <th style="text-align:center;">Active</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="rate-tag" style="background:#eef1ee;color:#6b7a72;">Public</span></td>
+                <td>Public Rate</td>
+                <td>Rack price (no discount)</td>
+                <td style="text-align:center;"><input type="checkbox" checked disabled title="Always active"/></td>
+              </tr>
+              <tr>
+                <td><span class="rate-tag rt-sf">SF</span></td>
+                <td>SwingFirst Card</td>
+                <td>
+                  <span id="sfRuleDisplay">Rack × 0.85 (Scottsdale CC: × 0.90)</span>
+                </td>
+                <td style="text-align:center;"><label class="toggle" style="width:36px;height:20px;"><input type="checkbox" id="rSfActive" checked/><span class="toggle-track"></span><span class="toggle-thumb" style="width:14px;height:14px;top:3px;left:3px;"></span></label></td>
+              </tr>
+              <tr>
+                <td><span class="rate-tag rt-mbr">Mbr</span></td>
+                <td>Member</td>
+                <td>Rack price (tracked separately)</td>
+                <td style="text-align:center;"><label class="toggle" style="width:36px;height:20px;"><input type="checkbox" id="rMbrActive" checked/><span class="toggle-track"></span><span class="toggle-thumb" style="width:14px;height:14px;top:3px;left:3px;"></span></label></td>
+              </tr>
+              <tr>
+                <td><span class="rate-tag rt-yoc">YoC</span></td>
+                <td>Youth on Course</td>
+                <td>
+                  $<input type="number" id="rYocFlat" value="5" min="0" max="99" step="1"
+                    style="width:54px;padding:3px 6px;border:1.5px solid var(--line);border-radius:6px;font:inherit;font-size:13px;"/> flat
+                </td>
+                <td style="text-align:center;"><label class="toggle" style="width:36px;height:20px;"><input type="checkbox" id="rYocActive" checked/><span class="toggle-track"></span><span class="toggle-thumb" style="width:14px;height:14px;top:3px;left:3px;"></span></label></td>
+              </tr>
+              <tr>
+                <td><span class="rate-tag rt-emp">Emp</span></td>
+                <td>Staff / Employee</td>
+                <td>Rack price (comp or tracked)</td>
+                <td style="text-align:center;"><label class="toggle" style="width:36px;height:20px;"><input type="checkbox" id="rEmpActive" checked/><span class="toggle-track"></span><span class="toggle-thumb" style="width:14px;height:14px;top:3px;left:3px;"></span></label></td>
+              </tr>
+              <tr>
+                <td><span class="rate-tag rt-twi">Twi</span></td>
+                <td>Twilight</td>
+                <td>Rack price (twilight slot)</td>
+                <td style="text-align:center;"><label class="toggle" style="width:36px;height:20px;"><input type="checkbox" id="rTwiActive" checked/><span class="toggle-track"></span><span class="toggle-thumb" style="width:14px;height:14px;top:3px;left:3px;"></span></label></td>
+              </tr>
+              <tr>
+                <td><span class="rate-tag rt-vip">VIP</span></td>
+                <td>VIP / Comp</td>
+                <td>$0 (complimentary)</td>
+                <td style="text-align:center;"><label class="toggle" style="width:36px;height:20px;"><input type="checkbox" id="rVipActive" checked/><span class="toggle-track"></span><span class="toggle-thumb" style="width:14px;height:14px;top:3px;left:3px;"></span></label></td>
+              </tr>
+              <tr>
+                <td><span class="rate-tag rt-9">9H</span></td>
+                <td>9-Hole Rate</td>
+                <td>Rack × 0.55 (rounded to $5)</td>
+                <td style="text-align:center;"><label class="toggle" style="width:36px;height:20px;"><input type="checkbox" id="r9Active" checked/><span class="toggle-track"></span><span class="toggle-thumb" style="width:14px;height:14px;top:3px;left:3px;"></span></label></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── SwingFirst Card ── -->
+      <div class="section">
+        <div class="section-head"><span class="section-icon">💳</span><div class="section-title">SwingFirst Card</div></div>
+        <div class="section-body">
+          <div class="toggle-row">
+            <div>
+              <div class="toggle-label">SwingFirst Card Accepted</div>
+              <div class="toggle-sub">Allow SF card discounts on this course</div>
+            </div>
+            <label class="toggle"><input type="checkbox" id="sSfCard" checked/><span class="toggle-track"></span><span class="toggle-thumb"></span></label>
+          </div>
+          <div class="form-group">
+            <label class="form-label">SF Card Discount</label>
+            <select class="form-select" id="sSfDiscount">
+              <option value="0.90">10% off rack (× 0.90)</option>
+              <option value="0.85" selected>15% off rack (× 0.85)</option>
+              <option value="0.80">20% off rack (× 0.80)</option>
+            </select>
+            <div class="form-hint">Applied automatically when rate type = SF is selected in a booking.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Reminders ── -->
+      <div class="section">
+        <div class="section-head"><span class="section-icon">📲</span><div class="section-title">Reminders</div></div>
+        <div class="section-body">
+          <div class="toggle-row">
+            <div>
+              <div class="toggle-label">24h SMS Reminders</div>
+              <div class="toggle-sub">Send reminder texts the evening before</div>
+            </div>
+            <label class="toggle"><input type="checkbox" id="sSmsReminder" checked/><span class="toggle-track"></span><span class="toggle-thumb"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div>
+              <div class="toggle-label">24h Email Reminders</div>
+              <div class="toggle-sub">Send reminder emails the evening before</div>
+            </div>
+            <label class="toggle"><input type="checkbox" id="sEmailReminder" checked/><span class="toggle-track"></span><span class="toggle-thumb"></span></label>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Reminder Time</label>
+            <input class="form-input" id="sReminderTime" type="time" value="19:00"/>
+            <div class="form-hint">Reminders fire at this local time the evening before. Currently: 7:00 PM via scheduled function.</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Cutoff — skip if booked after</label>
+            <input class="form-input" id="sReminderCutoff" type="time" value="16:00"/>
+            <div class="form-hint">Don't send reminder if booking was made after this time on the day before the tee time.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Cancellation Policy ── -->
+      <div class="section">
+        <div class="section-head"><span class="section-icon">🚫</span><div class="section-title">Cancellation Policy</div></div>
+        <div class="section-body">
+          <div class="form-group">
+            <label class="form-label">Cancel Window</label>
+            <select class="form-select" id="sCancelWindow">
+              <option value="0">Any time</option>
+              <option value="4">Up to 4 hours before</option>
+              <option value="12">Up to 12 hours before</option>
+              <option value="24" selected>Up to 24 hours before</option>
+              <option value="48">Up to 48 hours before</option>
+              <option value="never">No cancellations</option>
+            </select>
+          </div>
+          <div class="toggle-row">
+            <div>
+              <div class="toggle-label">Full Refund on Cancel</div>
+              <div class="toggle-sub">Issue full refund within cancel window</div>
+            </div>
+            <label class="toggle"><input type="checkbox" id="sCancelRefund" checked/><span class="toggle-track"></span><span class="toggle-thumb"></span></label>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Cancellation Policy Text</label>
+            <textarea class="form-input" id="sCancelPolicy" rows="3"
+              style="resize:vertical;line-height:1.5;">Cancellations accepted up to 24 hours before your tee time for a full refund.</textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Booking Page ── -->
+      <div class="section">
+        <div class="section-head"><span class="section-icon">🌐</span><div class="section-title">Booking Page</div></div>
+        <div class="section-body">
+          <div class="toggle-row">
+            <div>
+              <div class="toggle-label">Show on Live Tee Sheet</div>
+              <div class="toggle-sub">Visible at book.swingfirst.ai</div>
+            </div>
+            <label class="toggle"><input type="checkbox" id="sShowLive" checked/><span class="toggle-track"></span><span class="toggle-thumb"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div>
+              <div class="toggle-label">Members Only</div>
+              <div class="toggle-sub">Show lock badge — not open to public</div>
+            </div>
+            <label class="toggle"><input type="checkbox" id="sPrivate"/><span class="toggle-track"></span><span class="toggle-thumb"></span></label>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Booking Page URL</label>
+            <input class="form-input" id="sBookingUrl" readonly
+              value="https://book.swingfirst.ai/?course=palmbrook"
+              style="background:var(--paper);color:var(--ink-muted);cursor:text;"/>
+            <div class="form-hint">Share this link with golfers to book directly at this course.</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /settings-grid -->
+
+    <!-- Save bar -->
+    <div class="save-bar">
+      <span class="save-status" id="saveStatus">No unsaved changes.</span>
+      <div class="save-actions">
+        <button class="btn-discard" id="discardBtn">Discard</button>
+        <button class="btn-save" id="saveBtn" disabled>Save Changes</button>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── Supabase ──────────────────────────────────────────────────────────────
+const SUPABASE_URL = 'https://ojgxfeaesnaohskxdvam.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_4UVFMXQWGOt4XNgHVNzWoQ_Id6TBqcu';
+const SB_HEADERS = {
+  'apikey':        SUPABASE_KEY,
+  'Authorization': `Bearer ${SUPABASE_KEY}`,
+  'Content-Type':  'application/json',
+};
+
+async function sbGet(table, params) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${params||''}`, { headers: SB_HEADERS });
+  if (!res.ok) throw new Error(`${res.status}`);
+  return res.json();
+}
+
+async function sbPatch(table, filter, body) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${filter}`, {
+    method: 'PATCH',
+    headers: { ...SB_HEADERS, 'Prefer': 'return=representation' },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`${res.status}`);
+  return res.json();
+}
+
+// ─── State ──────────────────────────────────────────────────────────────────
+let currentSlug = 'palmbrook';
+let courseData   = {};  // slug → {id, name, phone, ...settings}
+let isDirty      = false;
+
+// ─── Courses ────────────────────────────────────────────────────────────────
+async function loadCourses() {
+  try {
+    const courses = await sbGet('courses', 'select=id,slug,name,phone,address,par,yards,year_built,architect,cart_policy,active&order=name.asc');
+    courses.forEach(c => { courseData[c.slug] = c; });
+    renderTabs();
+    loadCourseIntoForm(currentSlug);
+  } catch(e) {
+    console.warn('Could not load courses from Supabase — using defaults:', e.message);
+    loadCourseIntoForm(currentSlug);
+  }
+}
+
+function renderTabs() {
+  const tabsEl = document.getElementById('courseTabs');
+  const knownSlugs = Object.keys(courseData);
+  if (!knownSlugs.length) return;
+  const TAB_COLORS = {
+    'palmbrook':          { bg:'#4ade80', text:'#14532d' },
+    'san-tan-highlands':  { bg:'#f472b6', text:'#831843' },
+    'coyote-lakes':       { bg:'#22d3ee', text:'#164e63' },
+    'union-hills':        { bg:'#fde047', text:'#713f12' },
+    'scottsdale-cc':      { bg:'#c084fc', text:'#3b0764' },
+    'briarwood-cc':       { bg:'#166534', text:'#f0fdf4' },
+    'briarwood':          { bg:'#166534', text:'#f0fdf4' },
+  };
+  const TAB_NAMES = {
+    'scottsdale-cc':     'Scottsdale CC',
+    'san-tan-highlands': 'San Tan Highlands',
+    'coyote-lakes':      'Coyote Lakes',
+    'palmbrook':         'Palmbrook',
+    'union-hills':       'Union Hills',
+    'briarwood-cc':      'Briarwood',
+    'briarwood':         'Briarwood',
+  };
+  const TAB_ORDER = ['scottsdale-cc','san-tan-highlands','coyote-lakes','palmbrook','union-hills','briarwood-cc'];
+  const orderedSlugs = [...knownSlugs].sort((a,b) => {
+    const ai = TAB_ORDER.indexOf(a), bi = TAB_ORDER.indexOf(b);
+    return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+  });
+  tabsEl.innerHTML = orderedSlugs.map(slug => {
+    const c = courseData[slug];
+    const col = TAB_COLORS[slug] || { bg:'#e5e7eb', text:'#374151' };
+    const isActive = slug === currentSlug;
+    const label = TAB_NAMES[slug] || c.name || slug;
+    const style = isActive ? `background:${col.bg};color:${col.text};border-color:${col.bg};` : ``;
+    return `<button class="course-tab${isActive?' active':''}" data-slug="${slug}" style="${style}">${label}</button>`;
+  }).join('');
+  tabsEl.querySelectorAll('.course-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (isDirty && !confirm('You have unsaved changes. Discard them?')) return;
+      currentSlug = btn.dataset.slug;
+      // Re-render tabs so inline color styles update for the new active tab
+      renderTabs();
+      loadCourseIntoForm(currentSlug);
+    });
+  });
+}
+
+function loadCourseIntoForm(slug) {
+  const c = courseData[slug] || {};
+  document.getElementById('sCourseName').value       = c.name        || '';
+  document.getElementById('sCoursePhone').value      = c.phone       || '';
+  document.getElementById('sCourseAddress').value    = c.address     || '';
+  document.getElementById('sCoursePar').value        = c.par         || '';
+  document.getElementById('sCourseYards').value      = c.yards       || '';
+  document.getElementById('sCourseYearBuilt').value  = c.year_built  || '';
+  document.getElementById('sCourseArchitect').value  = c.architect   || '';
+  document.getElementById('sCourseCartPolicy').value = c.cart_policy || '';
+  document.getElementById('sCourseActive').checked   = c.active !== false;
+  // Booking URL
+  document.getElementById('sBookingUrl').value    = `https://book.swingfirst.ai/?course=${slug}`;
+  // Settings from JSON blob if available
+  const s = c.settings || {};
+  document.getElementById('sFirstTee').value      = s.first_tee    || '06:00';
+  document.getElementById('sLastTee').value       = s.last_tee     || '16:30';
+  document.getElementById('sTeeInterval').value   = s.tee_interval || '8';
+  document.getElementById('sGroupSize').value     = s.group_size   || '4';
+  document.getElementById('sBookingWindow').value = s.booking_window|| '90';
+  document.getElementById('sSfCard').checked      = s.sf_card !== false;
+  document.getElementById('sSfDiscount').value    = s.sf_discount  || '0.85';
+  document.getElementById('sSmsReminder').checked = s.sms_reminder !== false;
+  document.getElementById('sEmailReminder').checked = s.email_reminder !== false;
+  document.getElementById('sReminderTime').value  = s.reminder_time  || '19:00';
+  document.getElementById('sReminderCutoff').value= s.reminder_cutoff|| '16:00';
+  document.getElementById('sCancelWindow').value  = s.cancel_window  || '24';
+  document.getElementById('sCancelRefund').checked= s.cancel_refund !== false;
+  document.getElementById('sCancelPolicy').value  = s.cancel_policy  || 'Cancellations accepted up to 24 hours before your tee time for a full refund.';
+  document.getElementById('sShowLive').checked    = s.show_live !== false;
+  document.getElementById('sPrivate').checked     = !!s.private;
+  setDirty(false);
+}
+
+// ─── Dirty tracking ─────────────────────────────────────────────────────────
+function setDirty(val) {
+  isDirty = val;
+  document.getElementById('saveBtn').disabled     = !val;
+  document.getElementById('saveStatus').textContent = val ? '● Unsaved changes' : 'No unsaved changes.';
+  document.getElementById('saveStatus').style.color  = val ? 'var(--amber-700)' : 'var(--ink-muted)';
+}
+
+document.querySelectorAll('.form-input,.form-select,input[type=checkbox],textarea').forEach(el => {
+  el.addEventListener('change', () => setDirty(true));
+  el.addEventListener('input',  () => setDirty(true));
+});
+
+// ─── Save ───────────────────────────────────────────────────────────────────
+document.getElementById('saveBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('saveBtn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+
+  const settings = {
+    first_tee:        document.getElementById('sFirstTee').value,
+    last_tee:         document.getElementById('sLastTee').value,
+    tee_interval:     parseInt(document.getElementById('sTeeInterval').value, 10),
+    group_size:       parseInt(document.getElementById('sGroupSize').value, 10),
+    booking_window:   parseInt(document.getElementById('sBookingWindow').value, 10),
+    sf_card:          document.getElementById('sSfCard').checked,
+    sf_discount:      parseFloat(document.getElementById('sSfDiscount').value),
+    sms_reminder:     document.getElementById('sSmsReminder').checked,
+    email_reminder:   document.getElementById('sEmailReminder').checked,
+    reminder_time:    document.getElementById('sReminderTime').value,
+    reminder_cutoff:  document.getElementById('sReminderCutoff').value,
+    cancel_window:    document.getElementById('sCancelWindow').value,
+    cancel_refund:    document.getElementById('sCancelRefund').checked,
+    cancel_policy:    document.getElementById('sCancelPolicy').value,
+    show_live:        document.getElementById('sShowLive').checked,
+    private:          document.getElementById('sPrivate').checked,
+  };
+
+  try {
+    const c = courseData[currentSlug];
+    if (c && c.id) {
+      await sbPatch('courses', `slug=eq.${currentSlug}`, {
+        name:        document.getElementById('sCourseName').value.trim(),
+        phone:       document.getElementById('sCoursePhone').value.trim()         || null,
+        address:     document.getElementById('sCourseAddress').value.trim()       || null,
+        par:         parseInt(document.getElementById('sCoursePar').value)        || null,
+        yards:       parseInt(document.getElementById('sCourseYards').value)      || null,
+        year_built:  parseInt(document.getElementById('sCourseYearBuilt').value)  || null,
+        architect:   document.getElementById('sCourseArchitect').value.trim()     || null,
+        cart_policy: document.getElementById('sCourseCartPolicy').value.trim()    || null,
+        active:      document.getElementById('sCourseActive').checked,
+        settings:    settings,
+      });
+      courseData[currentSlug] = { ...c, name: document.getElementById('sCourseName').value.trim(), settings };
+    }
+    setDirty(false);
+    toast('✅ Settings saved');
+  } catch(e) {
+    console.error('Save failed:', e.message);
+    toast('⚠ Save failed: ' + e.message);
+    btn.disabled = false;
+  } finally {
+    btn.textContent = 'Save Changes';
+  }
+});
+
+document.getElementById('discardBtn').addEventListener('click', () => {
+  if (!isDirty) return;
+  loadCourseIntoForm(currentSlug);
+});
+
+// ─── Toast ───────────────────────────────────────────────────────────────────
+function toast(msg, duration=2800) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), duration);
+}
+
+// ─── Init ────────────────────────────────────────────────────────────────────
+loadCourses();
+</script>
+</body>
+</html>
