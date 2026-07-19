@@ -893,8 +893,7 @@ function setSheetMode(mode) {
   sheetMode = mode;
   document.getElementById('tab18').classList.toggle('active', mode === '18');
   document.getElementById('tab9').classList.toggle('active', mode === '9');
-  renderRows();
-  renderStats();
+  if (courseB9[currentCourseId]?.b9CourseId) { loadSheet(); } else { renderRows(); renderStats(); }
 }
 
 async function initCourses() {
@@ -920,6 +919,15 @@ async function initCourses() {
         };
       }
     });
+    data.forEach(c => {
+      if (c.slug.endsWith('-back-9')) {
+        const parentId = courseMap[c.slug.replace('-back-9', '')];
+        if (parentId) {
+          if (!courseB9[parentId]) courseB9[parentId] = { cutoffMin: 0, rateCents: 0 };
+          courseB9[parentId].b9CourseId = c.id;
+        }
+      }
+    });
     const savedSlug     = localStorage.getItem('sf_live_course') || 'palmbrook';
     const defaultCourse = data.find(c => c.slug === savedSlug) || data.find(c => c.slug === 'palmbrook') || data[0] || {};
     const defaultSlug   = defaultCourse.slug || 'palmbrook';
@@ -938,7 +946,7 @@ function renderCourseNav() {
   // Sort by canonical COURSES order (geographic / acquisition order), not DB alphabetical.
   const SLUG_ORDER = COURSES.map(c => c.slug);
   const raw  = dbCourses.length > 0 ? dbCourses : COURSES;
-  const list = [...raw].sort((a, b) => {
+  const list = [...raw].filter(c => !c.slug.endsWith('-back-9')).sort((a, b) => {
     const ai = SLUG_ORDER.indexOf(a.slug); const bi = SLUG_ORDER.indexOf(b.slug);
     return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
   });
@@ -984,10 +992,13 @@ async function loadSheet() {
   document.getElementById('rows').innerHTML = '<div class="loading-row">Loading tee times…</div>';
 
   const dateStr = getDateStr();
+  const _b9Map   = courseB9[currentCourseId];
+  const _queryId = (sheetMode === '9' && _b9Map?.b9CourseId) ? _b9Map.b9CourseId : currentCourseId;
+  const _forceB9 = (_queryId !== currentCourseId);
   try {
     const params = [
       'select=id,hour,minute,rack_cents,status,bookings(id,lead_name,booking_notes,status,booking_players(id,status))',
-      `course_id=eq.${currentCourseId}`,
+      `course_id=eq.${_queryId}`,
       `date=eq.${dateStr}`,
       'order=hour.asc,minute.asc',
       'bookings.status=neq.cancelled',  // filter server-side — smaller payload, faster
@@ -1016,10 +1027,10 @@ async function loadSheet() {
       while (players.length < 4) players.push(null);
       const _b9 = courseB9[currentCourseId];
       const _slotMin = tt.hour * 60 + tt.minute;
-      const _isB9 = _b9 && _b9.cutoffMin > 0 && _slotMin < _b9.cutoffMin;
+      const _isB9 = _forceB9 || (_b9 && _b9.cutoffMin > 0 && _slotMin < _b9.cutoffMin);
       return {
         id: tt.id, hour: tt.hour, minute: tt.minute,
-        rateCents: _isB9 && _b9.rateCents > 0 ? _b9.rateCents : tt.rack_cents,
+        rateCents: _isB9 && _b9?.rateCents > 0 ? _b9.rateCents : tt.rack_cents,
         status: tt.status,
         holes: _isB9 ? 9 : 18,
         players, _dbRow: true,
