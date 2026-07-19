@@ -1,0 +1,1486 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>SwingFirst — Point of Sale</title>
+<style>
+  /* ─── Variables ─── */
+  :root {
+    --ink:        #0d1f17;
+    --ink-soft:   #3b4a42;
+    --ink-muted:  #6b7a72;
+    --line:       #e4e9e6;
+    --paper:      #fbfaf7;
+    --card:       #ffffff;
+    --green-900:  #0b3d2e;
+    --green-700:  #1b6b4f;
+    --green-600:  #2a8a6a;
+    --green-200:  #a8d5bc;
+    --green-100:  #e3f2ec;
+    --green-50:   #f2f9f5;
+    --amber-700:  #B45309;
+    --amber-50:   #FFFBEB;
+    --orange-700: #C2410C;
+    --orange-50:  #FFF7ED;
+    --purple-700: #6D28D9;
+    --purple-50:  #F5F3FF;
+    --rose-700:   #9A2A42;
+    --rose-100:   #fbe0e6;
+    --rose-50:    #fff1f4;
+    --blue-700:   #1D4ED8;
+    --blue-50:    #EFF6FF;
+    --slate-100:  #eef1ee;
+    --slate-200:  #dde3de;
+    --shadow-sm:  0 1px 0 rgba(13,31,23,.04), 0 1px 2px rgba(13,31,23,.04);
+    --shadow-md:  0 2px 6px rgba(13,31,23,.07), 0 8px 24px rgba(13,31,23,.07);
+    --shadow-lg:  0 4px 16px rgba(13,31,23,.14), 0 1px 3px rgba(13,31,23,.08);
+    --radius:     12px;
+    --radius-sm:  8px;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--ink); background: var(--paper); font-size: 14px; line-height: 1.45;
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  h1,h2,h3 { margin: 0; font-weight: 600; letter-spacing: -.01em; }
+  input, select { font: inherit; }
+
+  /* ─── Topbar ─── */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 20px; border-bottom: 1px solid var(--line);
+    background: var(--card); flex-shrink: 0; gap: 16px;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; text-decoration: none; color: inherit; }
+  .brand-mark {
+    width: 28px; height: 28px; border-radius: 8px;
+    background: linear-gradient(135deg,var(--green-700),var(--green-900));
+    display: grid; place-items: center; color: white; font-size: 14px;
+  }
+  .brand-name { font-size: 15px; }
+  .brand-tag { font-size: 11px; color: var(--ink-muted); font-weight: 500; letter-spacing: .04em; text-transform: uppercase; }
+  .topbar-center { display: flex; align-items: center; gap: 12px; flex: 1; justify-content: center; }
+  .date-badge {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--green-50); border: 1px solid var(--green-200);
+    border-radius: 8px; padding: 6px 14px; font-size: 13px; font-weight: 600; color: var(--green-700);
+  }
+  .topbar-right { display: flex; align-items: center; gap: 10px; }
+  .till-badge {
+    display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600;
+    padding: 5px 12px; border-radius: 7px; border: 1px solid var(--line); cursor: pointer;
+    transition: background .12s;
+  }
+  .till-badge:hover { background: var(--slate-100); }
+  .till-dot { width: 7px; height: 7px; border-radius: 50%; background: #22c55e; }
+  .till-dot.closed { background: var(--ink-muted); }
+  .nav-link {
+    font-size: 13px; color: var(--ink-muted); text-decoration: none; padding: 5px 10px;
+    border-radius: 7px; transition: background .12s;
+  }
+  .nav-link:hover { background: var(--slate-100); color: var(--ink); }
+
+  /* ─── Main layout ─── */
+  .pos-layout {
+    display: grid;
+    grid-template-columns: 320px 1fr 300px;
+    gap: 0;
+    flex: 1;
+    overflow: hidden;
+  }
+  .pos-panel {
+    display: flex; flex-direction: column; overflow: hidden;
+    border-right: 1px solid var(--line);
+  }
+  .pos-panel:last-child { border-right: 0; }
+  .panel-head {
+    padding: 14px 16px 10px; border-bottom: 1px solid var(--line);
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .07em; color: var(--ink-muted); flex-shrink: 0;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .panel-body { flex: 1; overflow-y: auto; }
+
+  /* ─── Catalog ─── */
+  .cat-tabs {
+    display: flex; gap: 2px; padding: 10px 10px 0; flex-shrink: 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .cat-tab {
+    padding: 6px 11px; border-radius: 7px 7px 0 0; font-size: 12px; font-weight: 600;
+    border: none; background: none; color: var(--ink-muted); cursor: pointer;
+    border-bottom: 2px solid transparent; transition: color .12s;
+  }
+  .cat-tab.active { color: var(--green-700); border-bottom-color: var(--green-700); background: var(--green-50); }
+  .cat-tab:hover:not(.active) { background: var(--slate-100); color: var(--ink); }
+  .cat-page { display: none; padding: 12px; }
+  .cat-page.visible { display: block; }
+  .cat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .cat-item {
+    border: 1.5px solid var(--line); border-radius: var(--radius-sm);
+    padding: 12px; cursor: pointer; background: var(--card);
+    transition: border-color .12s, background .12s;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .cat-item:hover { border-color: var(--green-600); background: var(--green-50); }
+  .cat-item:active { background: var(--green-100); }
+  .cat-item-name { font-size: 12.5px; font-weight: 700; color: var(--ink); line-height: 1.2; }
+  .cat-item-price { font-size: 13px; font-weight: 800; color: var(--green-700); }
+  .cat-item-sub { font-size: 10.5px; color: var(--ink-muted); }
+  .cat-item.full-width { grid-column: 1 / -1; }
+  .cat-divider { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--ink-muted); padding: 10px 0 6px; grid-column: 1 / -1; }
+
+  /* Greens fee tee time list */
+  .tt-list { display: flex; flex-direction: column; gap: 4px; }
+  .tt-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 9px 12px; border: 1.5px solid var(--line); border-radius: var(--radius-sm);
+    cursor: pointer; background: var(--card); transition: border-color .12s, background .12s;
+  }
+  .tt-item:hover { border-color: var(--green-600); background: var(--green-50); }
+  .tt-item.booked { opacity: .45; cursor: not-allowed; }
+  .tt-item.booked:hover { border-color: var(--line); background: var(--card); }
+  .tt-time { font-weight: 700; font-size: 13px; }
+  .tt-avail { font-size: 11px; color: var(--ink-muted); }
+  .tt-price { font-weight: 700; color: var(--green-700); font-size: 13px; }
+  .tt-empty { text-align: center; padding: 24px; color: var(--ink-muted); font-size: 13px; }
+  .tt-date-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .tt-date-row input[type=date] {
+    flex: 1; padding: 7px 10px; border: 1px solid var(--line); border-radius: var(--radius-sm);
+    font: inherit; font-size: 13px; background: var(--card);
+  }
+  .tt-date-row input[type=date]:focus { outline: none; border-color: var(--green-600); }
+
+  /* ─── Cart ─── */
+  .cart-empty {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    height: 100%; gap: 10px; color: var(--ink-muted);
+  }
+  .cart-empty-ico { font-size: 36px; opacity: .35; }
+  .cart-empty-txt { font-size: 13px; }
+  .cart-items { padding: 12px; display: flex; flex-direction: column; gap: 6px; }
+  .cart-row {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 10px 12px; background: var(--card); border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+  }
+  .cart-row-info { flex: 1; min-width: 0; }
+  .cart-row-name { font-weight: 700; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cart-row-sub { font-size: 11px; color: var(--ink-muted); margin-top: 2px; }
+  .cart-row-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .cart-qty { display: flex; align-items: center; gap: 4px; }
+  .qty-btn {
+    width: 22px; height: 22px; border-radius: 6px; border: 1px solid var(--line);
+    background: var(--card); font-size: 14px; font-weight: 700; display: grid; place-items: center;
+    transition: background .1s;
+  }
+  .qty-btn:hover { background: var(--slate-100); }
+  .qty-num { font-size: 13px; font-weight: 700; min-width: 18px; text-align: center; }
+  .cart-price { font-size: 13px; font-weight: 700; min-width: 44px; text-align: right; }
+  .cart-remove { border: none; background: none; color: var(--ink-muted); font-size: 15px; padding: 2px 4px; line-height: 1; opacity: .5; transition: opacity .1s; }
+  .cart-remove:hover { opacity: 1; color: var(--rose-700); }
+
+  /* Tee time + players section in cart */
+  .cart-tee-section {
+    margin: 0 12px 8px; padding: 12px; background: var(--green-50);
+    border: 1px solid var(--green-200); border-radius: var(--radius-sm);
+  }
+  .cart-tee-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--green-700); margin-bottom: 8px; }
+  .cart-tee-time {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .cart-tee-val { font-size: 14px; font-weight: 700; color: var(--ink); }
+  .cart-tee-change { font-size: 12px; color: var(--green-700); font-weight: 600; cursor: pointer; text-decoration: underline; }
+  .cart-tee-placeholder {
+    font-size: 13px; color: var(--green-700); font-weight: 600; cursor: pointer;
+    display: flex; align-items: center; gap: 6px; margin-bottom: 8px;
+  }
+  .player-inputs { display: flex; flex-direction: column; gap: 5px; }
+  .player-input-row { display: flex; align-items: center; gap: 6px; }
+  .player-input-label { font-size: 11px; color: var(--ink-muted); width: 50px; flex-shrink: 0; font-weight: 600; }
+  .player-input {
+    flex: 1; padding: 6px 9px; border: 1px solid var(--green-200); border-radius: 6px;
+    font: inherit; font-size: 13px; background: white;
+  }
+  .player-input:focus { outline: none; border-color: var(--green-600); }
+  .player-input::placeholder { color: var(--ink-muted); opacity: .6; }
+  .player-count-row { display: flex; gap: 5px; margin-bottom: 8px; }
+  .pc-btn {
+    flex: 1; padding: 5px; border: 1.5px solid var(--line); border-radius: 6px;
+    background: var(--card); font-size: 12px; font-weight: 700; text-align: center;
+    transition: all .1s;
+  }
+  .pc-btn.active { background: var(--green-700); border-color: var(--green-700); color: white; }
+
+  /* Cart totals */
+  .cart-totals {
+    margin: 0 12px; padding: 12px; border-top: 1px solid var(--line);
+    display: flex; flex-direction: column; gap: 5px;
+  }
+  .total-row { display: flex; justify-content: space-between; font-size: 13px; color: var(--ink-soft); }
+  .total-row.surcharge { color: var(--amber-700); }
+  .total-row.grand { font-size: 16px; font-weight: 800; color: var(--ink); margin-top: 6px; padding-top: 8px; border-top: 1px solid var(--line); }
+
+  /* ─── Payment panel ─── */
+  .payment-section { padding: 14px 14px 10px; border-bottom: 1px solid var(--line); flex-shrink: 0; }
+  .payment-section-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--ink-muted); margin-bottom: 10px; }
+  .pay-methods { display: flex; flex-direction: column; gap: 7px; }
+  .pay-btn {
+    width: 100%; padding: 13px 16px; border-radius: var(--radius-sm);
+    border: 1.5px solid var(--line); background: var(--card);
+    display: flex; align-items: center; gap: 12px;
+    transition: border-color .12s, background .12s;
+    text-align: left;
+  }
+  .pay-btn:hover:not(:disabled) { border-color: var(--green-600); background: var(--green-50); }
+  .pay-btn:disabled { opacity: .4; cursor: not-allowed; }
+  .pay-btn-ico { font-size: 20px; flex-shrink: 0; }
+  .pay-btn-info { flex: 1; }
+  .pay-btn-name { font-size: 13px; font-weight: 700; color: var(--ink); }
+  .pay-btn-sub { font-size: 11px; color: var(--ink-muted); margin-top: 1px; }
+  .pay-btn-amt { font-size: 14px; font-weight: 800; color: var(--green-700); flex-shrink: 0; }
+  .pay-btn.credit .pay-btn-amt { color: var(--amber-700); }
+
+  .clear-btn {
+    width: 100%; margin-top: 10px; padding: 10px; border-radius: var(--radius-sm);
+    border: 1px solid var(--line); background: none; color: var(--ink-muted);
+    font-size: 12px; font-weight: 600; transition: background .12s;
+  }
+  .clear-btn:hover { background: var(--rose-50); color: var(--rose-700); border-color: var(--rose-100); }
+
+  .reader-status {
+    margin: 10px 14px; padding: 8px 12px; border-radius: var(--radius-sm);
+    background: var(--slate-100); font-size: 11px; color: var(--ink-muted);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .reader-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ink-muted); flex-shrink: 0; }
+  .reader-dot.connected { background: #22c55e; }
+  .reader-dot.processing { background: var(--amber-700); animation: blink 1s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+  /* ─── Modals ─── */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(13,31,23,.45);
+    display: none; align-items: center; justify-content: center; z-index: 200;
+    padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-card {
+    background: var(--card); border-radius: 16px; box-shadow: var(--shadow-lg);
+    width: 100%; max-width: 440px; overflow: hidden;
+    display: flex; flex-direction: column; max-height: 90vh;
+  }
+  .modal-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 22px 14px; border-bottom: 1px solid var(--line);
+  }
+  .modal-head h2 { font-size: 17px; }
+  .modal-close { border: 0; background: 0; color: var(--ink-muted); font-size: 18px; line-height: 1; padding: 4px 7px; border-radius: 6px; }
+  .modal-close:hover { background: var(--slate-100); }
+  .modal-body { padding: 20px 22px; overflow-y: auto; flex: 1; }
+  .modal-footer { padding: 14px 22px; border-top: 1px solid var(--line); display: flex; gap: 10px; justify-content: flex-end; }
+  .btn-cancel { padding: 9px 18px; border-radius: var(--radius-sm); border: 1.5px solid var(--line); background: none; font-weight: 600; font-size: 13px; }
+  .btn-cancel:hover { background: var(--slate-100); }
+  .btn-save { padding: 9px 20px; border-radius: var(--radius-sm); border: none; background: var(--green-700); color: white; font-weight: 700; font-size: 13px; }
+  .btn-save:hover { background: var(--green-900); }
+  .btn-save:disabled { opacity: .45; cursor: not-allowed; }
+  .form-label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-muted); margin-bottom: 5px; }
+  .form-input, .form-select {
+    width: 100%; padding: 9px 12px; border: 1px solid var(--line); border-radius: var(--radius-sm);
+    font: inherit; font-size: 14px; background: var(--card);
+  }
+  .form-input:focus, .form-select:focus { outline: none; border-color: var(--green-600); box-shadow: 0 0 0 3px var(--green-100); }
+  .form-group { margin-bottom: 14px; }
+
+  /* Zelle modal */
+  .zelle-display {
+    text-align: center; padding: 20px 0;
+  }
+  .zelle-logo { font-size: 32px; margin-bottom: 12px; }
+  .zelle-handle {
+    font-size: 22px; font-weight: 800; color: var(--ink);
+    background: var(--slate-100); padding: 12px 24px; border-radius: 10px;
+    letter-spacing: .02em; margin-bottom: 12px; display: inline-block;
+  }
+  .zelle-amount { font-size: 15px; color: var(--ink-soft); margin-bottom: 16px; }
+  .zelle-instructions { font-size: 13px; color: var(--ink-muted); line-height: 1.6; }
+
+  /* Card terminal modal */
+  .terminal-steps { display: flex; flex-direction: column; gap: 14px; }
+  .terminal-step {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px; border-radius: var(--radius-sm); background: var(--slate-100);
+  }
+  .terminal-step.active { background: var(--green-50); border: 1px solid var(--green-200); }
+  .terminal-step.done { opacity: .5; }
+  .step-ico { font-size: 22px; flex-shrink: 0; }
+  .step-info { flex: 1; }
+  .step-name { font-size: 13px; font-weight: 700; }
+  .step-sub { font-size: 12px; color: var(--ink-muted); margin-top: 2px; }
+  .step-check { font-size: 16px; color: var(--green-700); }
+  .terminal-amount { text-align: center; font-size: 28px; font-weight: 800; color: var(--ink); margin: 16px 0 8px; }
+  .terminal-label { text-align: center; font-size: 13px; color: var(--ink-muted); }
+
+  /* Cash modal */
+  .cash-display { text-align: center; margin: 16px 0; }
+  .cash-due { font-size: 13px; color: var(--ink-muted); margin-bottom: 4px; }
+  .cash-amount { font-size: 32px; font-weight: 800; color: var(--ink); }
+  .cash-input-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .cash-input-prefix { font-size: 18px; font-weight: 700; color: var(--ink-muted); }
+  .cash-input {
+    flex: 1; font-size: 24px; font-weight: 800; padding: 10px 14px;
+    border: 2px solid var(--line); border-radius: var(--radius-sm); text-align: right;
+  }
+  .cash-input:focus { outline: none; border-color: var(--green-600); }
+  .cash-change { text-align: center; padding: 14px; border-radius: var(--radius-sm); }
+  .cash-change.positive { background: var(--green-50); border: 1px solid var(--green-200); }
+  .cash-change.exact { background: var(--green-50); border: 1px solid var(--green-200); }
+  .cash-change.short { background: var(--rose-50); border: 1px solid var(--rose-100); }
+  .cash-change-label { font-size: 12px; color: var(--ink-muted); margin-bottom: 4px; }
+  .cash-change-amount { font-size: 26px; font-weight: 800; }
+  .cash-change.positive .cash-change-amount { color: var(--green-700); }
+  .cash-change.short .cash-change-amount { color: var(--rose-700); }
+
+  /* Receipt modal */
+  .receipt-preview {
+    background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-sm);
+    padding: 20px; font-size: 12px; line-height: 1.7; margin-bottom: 16px;
+    max-height: 260px; overflow-y: auto;
+  }
+  .receipt-header { text-align: center; margin-bottom: 12px; }
+  .receipt-title { font-size: 16px; font-weight: 800; }
+  .receipt-sub { color: var(--ink-muted); font-size: 11px; }
+  .receipt-items { border-top: 1px dashed var(--line); border-bottom: 1px dashed var(--line); padding: 8px 0; margin: 8px 0; }
+  .receipt-item { display: flex; justify-content: space-between; }
+  .receipt-total-row { display: flex; justify-content: space-between; }
+  .receipt-total-row.bold { font-weight: 800; font-size: 13px; }
+  .receipt-ref { text-align: center; margin-top: 10px; font-size: 11px; color: var(--ink-muted); }
+  .receipt-ref strong { color: var(--green-700); font-size: 14px; display: block; letter-spacing: .06em; }
+
+  /* Success overlay */
+  .success-flash {
+    position: fixed; inset: 0; background: var(--green-700); display: none;
+    align-items: center; justify-content: center; z-index: 400; flex-direction: column; gap: 16px;
+  }
+  .success-flash.show { display: flex; }
+  .success-ico { font-size: 56px; }
+  .success-msg { font-size: 24px; font-weight: 800; color: white; }
+  .success-sub { font-size: 15px; color: rgba(255,255,255,.7); }
+
+  /* Custom item modal */
+  .price-presets { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .price-preset {
+    padding: 5px 12px; border: 1.5px solid var(--line); border-radius: 7px;
+    background: var(--card); font-size: 13px; font-weight: 700;
+    transition: all .1s;
+  }
+  .price-preset:hover { border-color: var(--green-600); background: var(--green-50); }
+
+  /* Toast */
+  #toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    background: var(--ink); color: white; padding: 10px 20px;
+    border-radius: 10px; font-size: 13px; font-weight: 600;
+    z-index: 999; opacity: 0; transition: opacity .2s; pointer-events: none;
+    white-space: nowrap;
+  }
+  #toast.show { opacity: 1; }
+
+  /* Scrollbar */
+  .panel-body::-webkit-scrollbar { width: 4px; }
+  .panel-body::-webkit-scrollbar-track { background: transparent; }
+  .panel-body::-webkit-scrollbar-thumb { background: var(--slate-200); border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<!-- Topbar -->
+<div class="topbar">
+  <a class='brand' href='/swingfirst-tee-sheet'>
+    <div class="brand-mark">⛳</div>
+    <div>
+      <div class="brand-name">SwingFirst</div>
+    </div>
+    <div class="brand-tag">POS</div>
+  </a>
+  <div class="topbar-center">
+    <div class="date-badge">📅 <span id="todayLabel"></span></div>
+  </div>
+  <div class="topbar-right">
+    <a class='nav-link' href='/swingfirst-tee-sheet'>← Tee Sheet</a>
+    <div class="till-badge" id="tillBadge" onclick="openTillModal()">
+      <div class="till-dot" id="tillDot"></div>
+      <span id="tillLabel">Till closed</span>
+    </div>
+  </div>
+</div>
+
+<!-- Main POS layout -->
+<div class="pos-layout">
+
+  <!-- ── LEFT: Product catalog ── -->
+  <div class="pos-panel">
+    <div class="panel-head">Catalog</div>
+    <div class="cat-tabs" id="catTabs">
+      <button class="cat-tab active" data-tab="greens">Greens</button>
+      <button class="cat-tab" data-tab="cart-fee">Cart</button>
+      <button class="cat-tab" data-tab="range">Range</button>
+      <button class="cat-tab" data-tab="merch">Merch</button>
+      <button class="cat-tab" data-tab="food">Food</button>
+    </div>
+    <div class="panel-body">
+
+      <!-- Greens Fees -->
+      <div class="cat-page visible" id="tab-greens">
+        <div class="tt-date-row">
+          <input type="date" id="teeDate" onchange="loadTeeTimes()"/>
+        </div>
+        <div class="tt-list" id="ttList">
+          <div class="tt-empty">Loading tee times…</div>
+        </div>
+      </div>
+
+      <!-- Cart fee -->
+      <div class="cat-page" id="tab-cart-fee">
+        <div class="cat-grid">
+          <div class="cat-item full-width" onclick="addItem({id:'cart-fee',name:'Cart Fee',price:2000,category:'cart'})">
+            <div class="cat-item-name">🛒 Cart Fee</div>
+            <div class="cat-item-price">$20.00</div>
+            <div class="cat-item-sub">18-hole cart rental</div>
+          </div>
+          <div class="cat-item full-width" onclick="addItem({id:'cart-fee-9',name:'Cart Fee (9-hole)',price:1200,category:'cart'})">
+            <div class="cat-item-name">🛒 Cart Fee (9-hole)</div>
+            <div class="cat-item-price">$12.00</div>
+            <div class="cat-item-sub">9-hole cart rental</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Range -->
+      <div class="cat-page" id="tab-range">
+        <div class="cat-grid">
+          <div class="cat-item" onclick="addItem({id:'range-sm',name:'Range — Small Bucket',price:800,category:'range'})">
+            <div class="cat-item-name">🏌️ Small Bucket</div>
+            <div class="cat-item-price">$8.00</div>
+            <div class="cat-item-sub">~50 balls</div>
+          </div>
+          <div class="cat-item" onclick="addItem({id:'range-md',name:'Range — Medium Bucket',price:1400,category:'range'})">
+            <div class="cat-item-name">🏌️ Medium Bucket</div>
+            <div class="cat-item-price">$14.00</div>
+            <div class="cat-item-sub">~100 balls</div>
+          </div>
+          <div class="cat-item full-width" onclick="addItem({id:'range-lg',name:'Range — Large Bucket',price:2000,category:'range'})">
+            <div class="cat-item-name">🏌️ Large Bucket</div>
+            <div class="cat-item-price">$20.00</div>
+            <div class="cat-item-sub">~150 balls</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Merch -->
+      <div class="cat-page" id="tab-merch">
+        <div class="cat-grid">
+          <div class="cat-item" onclick="openCustomItem('merch')">
+            <div class="cat-item-name">➕ Custom Item</div>
+            <div class="cat-item-price">Enter price</div>
+            <div class="cat-item-sub">Apparel, gear, etc.</div>
+          </div>
+          <div class="cat-item" onclick="addItem({id:'glove',name:'Golf Glove',price:1800,category:'merch'})">
+            <div class="cat-item-name">🧤 Golf Glove</div>
+            <div class="cat-item-price">$18.00</div>
+          </div>
+          <div class="cat-item" onclick="addItem({id:'balls-sleeve',name:'Ball Sleeve (3pk)',price:900,category:'merch'})">
+            <div class="cat-item-name">⚪ Ball Sleeve</div>
+            <div class="cat-item-price">$9.00</div>
+            <div class="cat-item-sub">3-pack</div>
+          </div>
+          <div class="cat-item" onclick="addItem({id:'tees-pack',name:'Tee Pack',price:300,category:'merch'})">
+            <div class="cat-item-name">📌 Tee Pack</div>
+            <div class="cat-item-price">$3.00</div>
+          </div>
+          <div class="cat-item" onclick="addItem({id:'divot-tool',name:'Divot Tool',price:800,category:'merch'})">
+            <div class="cat-item-name">🔧 Divot Tool</div>
+            <div class="cat-item-price">$8.00</div>
+          </div>
+          <div class="cat-item" onclick="addItem({id:'hat',name:'SwingFirst Hat',price:2800,category:'merch'})">
+            <div class="cat-item-name">🧢 SF Hat</div>
+            <div class="cat-item-price">$28.00</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pro Shop Food -->
+      <div class="cat-page" id="tab-food">
+        <div class="cat-grid">
+          <div class="cat-item" onclick="openCustomItem('food')">
+            <div class="cat-item-name">➕ Custom Item</div>
+            <div class="cat-item-price">Enter price</div>
+            <div class="cat-item-sub">Any food/snack item</div>
+          </div>
+          <div class="cat-item" onclick="addItem({id:'water',name:'Bottled Water',price:200,category:'food'})">
+            <div class="cat-item-name">💧 Water</div>
+            <div class="cat-item-price">$2.00</div>
+          </div>
+          <div class="cat-item" onclick="addItem({id:'sports-drink',name:'Sports Drink',price:350,category:'food'})">
+            <div class="cat-item-name">🥤 Sports Drink</div>
+            <div class="cat-item-price">$3.50</div>
+          </div>
+          <div class="cat-item" onclick="addItem({id:'energy-bar',name:'Energy Bar',price:300,category:'food'})">
+            <div class="cat-item-name">🍫 Energy Bar</div>
+            <div class="cat-item-price">$3.00</div>
+          </div>
+          <div class="cat-item" onclick="addItem({id:'candy',name:'Candy / Snack',price:200,category:'food'})">
+            <div class="cat-item-name">🍬 Candy / Snack</div>
+            <div class="cat-item-price">$2.00</div>
+          </div>
+          <div class="cat-item" onclick="addItem({id:'hot-dog',name:'Hot Dog',price:400,category:'food'})">
+            <div class="cat-item-name">🌭 Hot Dog</div>
+            <div class="cat-item-price">$4.00</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /panel-body -->
+  </div><!-- /catalog panel -->
+
+  <!-- ── CENTER: Cart ── -->
+  <div class="pos-panel">
+    <div class="panel-head">
+      <span>Order</span>
+      <span id="itemCount" style="color:var(--ink-muted);font-size:11px"></span>
+    </div>
+    <div class="panel-body" id="cartBody">
+      <div class="cart-empty" id="cartEmpty">
+        <div class="cart-empty-ico">🛒</div>
+        <div class="cart-empty-txt">Tap catalog items to add to order</div>
+      </div>
+
+      <!-- Tee time + players (shown when greens in cart) -->
+      <div id="teeSection" style="display:none">
+        <div class="cart-tee-section">
+          <div class="cart-tee-label">⛳ Tee Time & Players</div>
+          <div id="teeTimeDisplay">
+            <div class="cart-tee-placeholder" onclick="switchCatalogTo('greens')">
+              <span>📅</span> Select a tee time →
+            </div>
+          </div>
+          <div class="player-count-row" id="pcRow">
+            <button class="pc-btn active" data-n="1" onclick="setPlayerCount(1)">1</button>
+            <button class="pc-btn" data-n="2" onclick="setPlayerCount(2)">2</button>
+            <button class="pc-btn" data-n="3" onclick="setPlayerCount(3)">3</button>
+            <button class="pc-btn" data-n="4" onclick="setPlayerCount(4)">4</button>
+          </div>
+          <div class="player-inputs" id="playerInputs"></div>
+        </div>
+      </div>
+
+      <div id="cartItems" class="cart-items"></div>
+
+      <div class="cart-totals" id="cartTotals" style="display:none">
+        <div class="total-row"><span>Subtotal</span><span id="subtotalAmt"></span></div>
+        <div class="total-row surcharge" id="surchargeRow" style="display:none">
+          <span>Credit card surcharge (3%)</span><span id="surchargeAmt"></span>
+        </div>
+        <div class="total-row grand"><span>Total</span><span id="totalAmt"></span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── RIGHT: Payment ── -->
+  <div class="pos-panel">
+    <div class="panel-head">Payment</div>
+    <div class="panel-body">
+      <div class="reader-status" id="readerStatus">
+        <div class="reader-dot" id="readerDot"></div>
+        <span id="readerLabel">No reader connected (demo mode)</span>
+      </div>
+
+      <div class="payment-section">
+        <div class="payment-section-label">Card (Stripe Terminal)</div>
+        <div class="pay-methods">
+          <button class="pay-btn credit" id="btnCredit" onclick="startCardPayment('credit')" disabled>
+            <div class="pay-btn-ico">💳</div>
+            <div class="pay-btn-info">
+              <div class="pay-btn-name">Credit Card</div>
+              <div class="pay-btn-sub" id="creditSub">3% surcharge applies</div>
+            </div>
+            <div class="pay-btn-amt" id="creditAmt">—</div>
+          </button>
+          <button class="pay-btn" id="btnDebit" onclick="startCardPayment('debit')" disabled>
+            <div class="pay-btn-ico">🏦</div>
+            <div class="pay-btn-info">
+              <div class="pay-btn-name">Debit Card</div>
+              <div class="pay-btn-sub">No surcharge</div>
+            </div>
+            <div class="pay-btn-amt" id="debitAmt">—</div>
+          </button>
+        </div>
+      </div>
+
+      <div class="payment-section">
+        <div class="payment-section-label">Manual Payment</div>
+        <div class="pay-methods">
+          <button class="pay-btn" id="btnCash" onclick="startCashPayment()" disabled>
+            <div class="pay-btn-ico">💵</div>
+            <div class="pay-btn-info">
+              <div class="pay-btn-name">Cash</div>
+              <div class="pay-btn-sub">No surcharge</div>
+            </div>
+            <div class="pay-btn-amt" id="cashAmt">—</div>
+          </button>
+          <button class="pay-btn" id="btnZelle" onclick="startZellePayment()" disabled>
+            <div class="pay-btn-ico">⚡</div>
+            <div class="pay-btn-info">
+              <div class="pay-btn-name">Zelle</div>
+              <div class="pay-btn-sub">No surcharge — instant</div>
+            </div>
+            <div class="pay-btn-amt" id="zelleAmt">—</div>
+          </button>
+          <button class="pay-btn" id="btnCheck" onclick="startCheckPayment()" disabled>
+            <div class="pay-btn-ico">📄</div>
+            <div class="pay-btn-info">
+              <div class="pay-btn-name">Check</div>
+              <div class="pay-btn-sub">Record check number</div>
+            </div>
+            <div class="pay-btn-amt" id="checkAmt">—</div>
+          </button>
+        </div>
+      </div>
+
+      <div style="padding:0 14px">
+        <button class="clear-btn" onclick="clearCart()">🗑 Clear order</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /pos-layout -->
+
+<!-- ── MODALS ── -->
+
+<!-- Stripe Terminal modal -->
+<div class="modal-overlay" id="terminalModal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h2>💳 Card Payment</h2>
+      <button class="modal-close" onclick="closeTerminalModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="terminal-label">Amount due</div>
+      <div class="terminal-amount" id="terminalAmount">$0.00</div>
+      <div class="terminal-label" id="terminalTypeLabel" style="margin-bottom:16px"></div>
+      <div class="terminal-steps" id="terminalSteps">
+        <div class="terminal-step active" id="tstep-connect">
+          <div class="step-ico">📡</div>
+          <div class="step-info">
+            <div class="step-name">Connecting to reader</div>
+            <div class="step-sub" id="tstep-connect-sub">Looking for Stripe Terminal…</div>
+          </div>
+        </div>
+        <div class="terminal-step" id="tstep-present">
+          <div class="step-ico">💳</div>
+          <div class="step-info">
+            <div class="step-name">Present card</div>
+            <div class="step-sub">Tap, insert, or swipe</div>
+          </div>
+        </div>
+        <div class="terminal-step" id="tstep-process">
+          <div class="step-ico">⚙️</div>
+          <div class="step-info">
+            <div class="step-name">Processing</div>
+            <div class="step-sub">Please wait…</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" id="terminalCancel" onclick="closeTerminalModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Zelle modal -->
+<div class="modal-overlay" id="zelleModal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h2>⚡ Zelle Payment</h2>
+      <button class="modal-close" onclick="closeZelleModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="zelle-display">
+        <div class="zelle-logo">⚡</div>
+        <div style="font-size:13px;color:var(--ink-muted);margin-bottom:8px">Send payment to</div>
+        <div class="zelle-handle" id="zelleHandle">YOUR_ZELLE_HANDLE</div>
+        <div class="zelle-amount" id="zelleModalAmount"></div>
+        <div class="zelle-instructions">
+          Have the customer open their banking app,<br>
+          send the exact amount to the Zelle handle above,<br>
+          then confirm receipt below.
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeZelleModal()">Cancel</button>
+      <button class="btn-save" onclick="confirmZelle()">✓ Payment Received</button>
+    </div>
+  </div>
+</div>
+
+<!-- Check modal -->
+<div class="modal-overlay" id="checkModal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h2>📄 Check Payment</h2>
+      <button class="modal-close" onclick="closeCheckModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="cash-display">
+        <div class="cash-due">Amount due</div>
+        <div class="cash-amount" id="checkModalAmount">$0.00</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Check number</label>
+        <input type="text" class="form-input" id="checkNumber" placeholder="e.g. 1042" inputmode="numeric"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Name on check (optional)</label>
+        <input type="text" class="form-input" id="checkName" placeholder="Payee name"/>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeCheckModal()">Cancel</button>
+      <button class="btn-save" onclick="confirmCheck()">✓ Record Check</button>
+    </div>
+  </div>
+</div>
+
+<!-- Custom item modal -->
+<div class="modal-overlay" id="customItemModal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h2 id="customItemTitle">➕ Custom Item</h2>
+      <button class="modal-close" onclick="document.getElementById('customItemModal').classList.remove('open')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Item name</label>
+        <input type="text" class="form-input" id="customItemName" placeholder="e.g. Logo polo shirt"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Price</label>
+        <div class="price-presets" id="pricePresets"></div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:18px;font-weight:700;color:var(--ink-muted)">$</span>
+          <input type="number" class="form-input" id="customItemPrice" placeholder="0.00" min="0" step="0.01" style="font-size:18px;font-weight:700"/>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="document.getElementById('customItemModal').classList.remove('open')">Cancel</button>
+      <button class="btn-save" onclick="confirmCustomItem()">Add to Order</button>
+    </div>
+  </div>
+</div>
+
+<!-- Receipt modal -->
+<div class="modal-overlay" id="receiptModal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h2>🧾 Receipt</h2>
+      <button class="modal-close" onclick="closeReceiptModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="receipt-preview" id="receiptPreview"></div>
+      <div class="form-group">
+        <label class="form-label">Email receipt to</label>
+        <input type="email" class="form-input" id="receiptEmail" placeholder="customer@email.com"/>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="window.print()">🖨 Print</button>
+      <button class="btn-save" id="sendReceiptBtn" onclick="sendReceipt()">📧 Send Email</button>
+      <button class="btn-cancel" onclick="closeReceiptModal()">Skip</button>
+    </div>
+  </div>
+</div>
+
+<!-- Cash modal -->
+<div class="modal-overlay" id="cashModal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h2>💵 Cash Payment</h2>
+      <button class="modal-close" onclick="closeCashModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="cash-display">
+        <div class="cash-due">Amount due</div>
+        <div class="cash-amount" id="cashModalAmount">$0.00</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Amount tendered (optional)</label>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:18px;font-weight:700;color:var(--ink-muted)">$</span>
+          <input type="number" class="form-input" id="cashTendered" placeholder="0.00" min="0" step="0.01"
+            style="font-size:18px;font-weight:700" oninput="updateCashChange()"/>
+        </div>
+      </div>
+      <div id="cashChangeRow" style="display:none;background:var(--green-50);border:1px solid var(--green-200);border-radius:10px;padding:14px 16px;margin-top:4px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:14px;color:var(--ink-muted);font-weight:500;">Change due</span>
+          <span id="cashChangeDue" style="font-size:22px;font-weight:800;color:var(--green-700);">$0.00</span>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeCashModal()">Cancel</button>
+      <button class="btn-save" onclick="confirmCash()">✓ Record Cash</button>
+    </div>
+  </div>
+</div>
+
+<!-- Till modal -->
+<div class="modal-overlay" id="tillModal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h2 id="tillModalTitle">💰 Open Till</h2>
+      <button class="modal-close" onclick="document.getElementById('tillModal').classList.remove('open')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label" id="tillAmountLabel">Starting float</label>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:18px;font-weight:700;color:var(--ink-muted)">$</span>
+          <input type="number" class="form-input" id="tillAmount" placeholder="200.00" min="0" step="0.01" style="font-size:18px;font-weight:700"/>
+        </div>
+      </div>
+      <div id="tillSummary" style="display:none"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="document.getElementById('tillModal').classList.remove('open')">Cancel</button>
+      <button class="btn-save" id="tillConfirmBtn" onclick="confirmTill()">Open Till</button>
+    </div>
+  </div>
+</div>
+
+<!-- Success flash -->
+<div class="success-flash" id="successFlash">
+  <div class="success-ico">✅</div>
+  <div class="success-msg" id="successMsg">Payment complete</div>
+  <div class="success-sub" id="successSub"></div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+// ─── Config ──────────────────────────────────────────────────────
+const SB_URL = 'https://ojgxfeaesnaohskxdvam.supabase.co';
+const SB_KEY = 'sb_publishable_4UVFMXQWGOt4XNgHVNzWoQ_Id6TBqcu';
+const SB_H   = { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` };
+const ZELLE_HANDLE = 'dave@swingfirst.co'; // TODO: replace per-course before go-live
+const SURCHARGE_RATE = 0.03; // 3% credit card surcharge
+
+// ─── State ───────────────────────────────────────────────────────
+let cart       = [];           // [{id, name, price, qty, category}]
+let teeSlots   = [];           // available tee times for selected date
+let selectedTT = null;         // selected tee_time object
+let playerCount = 1;
+let tillOpen   = false;
+let tillFloat  = 0;
+let pendingPaymentMethod = null;
+let lastTxn    = null;         // last completed transaction for receipt
+let customItemCategory = 'merch';
+let courses    = [];
+let currentCourseId = null;
+
+// ─── Init ────────────────────────────────────────────────────────
+(async function init() {
+  // Set today's date
+  const today = new Date();
+  document.getElementById('todayLabel').textContent = today.toLocaleDateString('en-US', { weekday: 'short', month: 'long', day: 'numeric' });
+  const iso = today.toISOString().slice(0, 10);
+  document.getElementById('teeDate').value = iso;
+  document.getElementById('teeDate').min   = iso;
+
+  // Load courses, default to palmbrook
+  try {
+    const r = await fetch(`${SB_URL}/rest/v1/courses?select=id,name,slug&order=name.asc`, { headers: SB_H });
+    courses = await r.json();
+    const pb = courses.find(c => c.slug === 'palmbrook') || courses[0];
+    if (pb) currentCourseId = pb.id;
+  } catch(e) { console.warn('Could not load courses', e); }
+
+  loadTeeTimes();
+  updateReaderStatus();
+})();
+
+// ─── Catalog tabs ────────────────────────────────────────────────
+document.querySelectorAll('.cat-tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.cat-tab').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.cat-page').forEach(p => p.classList.remove('visible'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('visible');
+  });
+});
+
+function switchCatalogTo(tab) {
+  document.querySelectorAll('.cat-tab').forEach(b => { b.classList.toggle('active', b.dataset.tab === tab); });
+  document.querySelectorAll('.cat-page').forEach(p => p.classList.remove('visible'));
+  document.getElementById('tab-' + tab).classList.add('visible');
+}
+
+// ─── Tee times ───────────────────────────────────────────────────
+async function loadTeeTimes() {
+  const date = document.getElementById('teeDate').value;
+  const list  = document.getElementById('ttList');
+  if (!currentCourseId) { list.innerHTML = '<div class="tt-empty">No course selected</div>'; return; }
+  list.innerHTML = '<div class="tt-empty">Loading…</div>';
+  try {
+    const url = `${SB_URL}/rest/v1/tee_times?select=id,hour,minute,rack_cents,status,bookings(id,status,player_count)&course_id=eq.${currentCourseId}&date=eq.${date}&order=hour.asc,minute.asc`;
+    const r = await fetch(url, { headers: SB_H });
+    teeSlots = await r.json();
+
+    const nowPhx = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Phoenix' }));
+    const isToday = date === nowPhx.toISOString().slice(0,10);
+
+    const available = teeSlots.filter(t => {
+      if (t.status === 'blocked') return false;
+      const activeBookings = (t.bookings || []).filter(b => b.status !== 'cancelled');
+      if (activeBookings.length > 0) return false;
+      if (isToday && t.hour * 60 + t.minute <= nowPhx.getHours() * 60 + nowPhx.getMinutes()) return false;
+      return true;
+    });
+
+    if (!available.length) { list.innerHTML = '<div class="tt-empty">No available tee times</div>'; return; }
+
+    list.innerHTML = available.map(t => `
+      <div class="tt-item${selectedTT?.id===t.id?' selected':''}" onclick="selectTeeTime('${t.id}')">
+        <span class="tt-time">${fmt12(t.hour, t.minute)}</span>
+        <span class="tt-avail">4 open</span>
+        <span class="tt-price">$${(t.rack_cents/100).toFixed(0)}/player</span>
+      </div>`).join('');
+  } catch(e) {
+    list.innerHTML = '<div class="tt-empty">Could not load tee times</div>';
+  }
+}
+
+function selectTeeTime(id) {
+  selectedTT = teeSlots.find(t => t.id === id) || null;
+  document.querySelectorAll('.tt-item').forEach(el => el.classList.remove('selected'));
+  if (selectedTT) {
+    document.querySelectorAll('.tt-item').forEach(el => {
+      if (el.onclick?.toString().includes(id)) el.classList.add('selected');
+    });
+    // Auto-add (or update) greens fee in cart at selected tee time's rate
+    cart = cart.filter(i => i.category !== 'greens');
+    cart.push({ id: 'greens-' + Date.now(), name: 'Greens Fee', category: 'greens', price: selectedTT.rack_cents, qty: playerCount });
+    document.getElementById('teeSection').style.display = '';
+    renderPlayerInputs();
+    updateTeeDisplay();
+    renderCart();
+    toast(`Tee time selected: ${fmt12(selectedTT.hour, selectedTT.minute)}`);
+  }
+}
+
+function updateTeeDisplay() {
+  const display = document.getElementById('teeTimeDisplay');
+  if (selectedTT) {
+    display.innerHTML = `
+      <div class="cart-tee-time">
+        <div class="cart-tee-val">⛳ ${fmt12(selectedTT.hour, selectedTT.minute)}</div>
+        <div class="cart-tee-change" onclick="switchCatalogTo('greens')">Change</div>
+      </div>`;
+  } else {
+    display.innerHTML = `<div class="cart-tee-placeholder" onclick="switchCatalogTo('greens')"><span>📅</span> Select a tee time →</div>`;
+  }
+}
+
+// ─── Cart management ─────────────────────────────────────────────
+function addItem(item) {
+  // Greens fee: add one per player (or just one, then multiply by player count)
+  if (item.category === 'greens') {
+    // Replace any existing greens fee block
+    cart = cart.filter(i => i.category !== 'greens');
+    const price = selectedTT ? selectedTT.rack_cents : item.price;
+    cart.push({ ...item, price, qty: playerCount, id: 'greens-' + Date.now() });
+    document.getElementById('teeSection').style.display = '';
+    renderPlayerInputs();
+    renderCart();
+    return;
+  }
+  // Other items: stack qty
+  const existing = cart.find(i => i.id === item.id);
+  if (existing) { existing.qty++; }
+  else { cart.push({ ...item, qty: 1 }); }
+  renderCart();
+  toast(`Added: ${item.name}`);
+}
+
+function setPlayerCount(n) {
+  playerCount = n;
+  document.querySelectorAll('.pc-btn').forEach(b => b.classList.toggle('active', parseInt(b.dataset.n) === n));
+  // Update greens fee qty in cart
+  const gf = cart.find(i => i.category === 'greens');
+  if (gf) gf.qty = n;
+  renderPlayerInputs();
+  renderCart();
+}
+
+function renderPlayerInputs() {
+  const container = document.getElementById('playerInputs');
+  const labels = ['Lead', 'Player 2', 'Player 3', 'Player 4'];
+  container.innerHTML = Array.from({length: playerCount}, (_, i) => `
+    <div class="player-input-row">
+      <div class="player-input-label">${labels[i]}</div>
+      <input class="player-input" type="text" placeholder="${i === 0 ? 'Last name *' : 'Last name (opt.)'}"
+        id="player-${i}" ${i === 0 ? 'required' : ''}/>
+    </div>`).join('');
+}
+
+function getPlayerNames() {
+  return Array.from({length: playerCount}, (_, i) => {
+    const val = document.getElementById(`player-${i}`)?.value.trim();
+    return val || (i === 0 ? null : `Guest ${i + 1}`);
+  });
+}
+
+function changeQty(id, delta) {
+  const item = cart.find(i => i.id === id);
+  if (!item) return;
+  if (item.category === 'greens') return; // controlled by player count
+  item.qty += delta;
+  if (item.qty <= 0) cart = cart.filter(i => i.id !== id);
+  renderCart();
+}
+
+function removeItem(id) {
+  const item = cart.find(i => i.id === id);
+  if (item?.category === 'greens') {
+    document.getElementById('teeSection').style.display = 'none';
+  }
+  cart = cart.filter(i => i.id !== id);
+  renderCart();
+}
+
+function clearCart() {
+  cart = [];
+  selectedTT = null;
+  playerCount = 1;
+  document.getElementById('teeSection').style.display = 'none';
+  renderCart();
+  // Re-render tee time list to deselect
+  document.querySelectorAll('.tt-item').forEach(el => el.classList.remove('selected'));
+  updateTeeDisplay();
+}
+
+function calcTotals(withSurcharge = false) {
+  const sub = cart.reduce((s, i) => s + i.price * i.qty, 0);
+  const surcharge = withSurcharge ? Math.round(sub * SURCHARGE_RATE) : 0;
+  return { sub, surcharge, total: sub + surcharge };
+}
+
+function renderCart() {
+  const empty   = document.getElementById('cartEmpty');
+  const items   = document.getElementById('cartItems');
+  const totals  = document.getElementById('cartTotals');
+  const count   = document.getElementById('itemCount');
+  const hasCart = cart.length > 0;
+
+  empty.style.display  = hasCart ? 'none' : '';
+  totals.style.display = hasCart ? '' : 'none';
+  count.textContent    = hasCart ? `${cart.reduce((s,i)=>s+i.qty,0)} item${cart.reduce((s,i)=>s+i.qty,0)!==1?'s':''}` : '';
+
+  items.innerHTML = cart.map(item => `
+    <div class="cart-row">
+      <div class="cart-row-info">
+        <div class="cart-row-name">${item.name}</div>
+        <div class="cart-row-sub">$${(item.price/100).toFixed(2)} each${item.category==='greens'?' · '+playerCount+' player'+(playerCount!==1?'s':''):''}</div>
+      </div>
+      <div class="cart-row-right">
+        ${item.category !== 'greens' ? `
+        <div class="cart-qty">
+          <button class="qty-btn" onclick="changeQty('${item.id}',-1)">−</button>
+          <span class="qty-num">${item.qty}</span>
+          <button class="qty-btn" onclick="changeQty('${item.id}',1)">+</button>
+        </div>` : `<span class="qty-num" style="min-width:18px;text-align:center">${item.qty}×</span>`}
+        <span class="cart-price">$${(item.price * item.qty / 100).toFixed(2)}</span>
+        <button class="cart-remove" onclick="removeItem('${item.id}')">✕</button>
+      </div>
+    </div>`).join('');
+
+  // Totals (show without surcharge — surcharge shown per payment method)
+  const { sub } = calcTotals(false);
+  document.getElementById('subtotalAmt').textContent = money(sub);
+  document.getElementById('surchargeRow').style.display = 'none';
+  document.getElementById('totalAmt').textContent = money(sub);
+
+  // Update payment buttons
+  updatePaymentButtons(sub);
+}
+
+function updatePaymentButtons(sub) {
+  const hasItems = sub > 0;
+  const withSurcharge = Math.round(sub * (1 + SURCHARGE_RATE));
+  document.getElementById('btnCredit').disabled = !hasItems;
+  document.getElementById('btnDebit').disabled  = !hasItems;
+  document.getElementById('btnCash').disabled   = !hasItems;
+  document.getElementById('btnZelle').disabled  = !hasItems;
+  document.getElementById('btnCheck').disabled  = !hasItems;
+  document.getElementById('creditAmt').textContent = hasItems ? money(withSurcharge) : '—';
+  document.getElementById('debitAmt').textContent  = hasItems ? money(sub) : '—';
+  document.getElementById('cashAmt').textContent   = hasItems ? money(sub) : '—';
+  document.getElementById('zelleAmt').textContent  = hasItems ? money(sub) : '—';
+  document.getElementById('checkAmt').textContent  = hasItems ? money(sub) : '—';
+  document.getElementById('creditSub').textContent = hasItems ? `+${money(Math.round(sub * SURCHARGE_RATE))} surcharge` : '3% surcharge applies';
+}
+
+// ─── Custom item ─────────────────────────────────────────────────
+function openCustomItem(category) {
+  customItemCategory = category;
+  document.getElementById('customItemTitle').textContent = category === 'food' ? '➕ Custom Food Item' : '➕ Custom Merchandise';
+  document.getElementById('customItemName').value = '';
+  document.getElementById('customItemPrice').value = '';
+  const presets = category === 'food'
+    ? [3, 4, 5, 6, 8]
+    : [10, 15, 20, 25, 35, 50];
+  document.getElementById('pricePresets').innerHTML = presets.map(p =>
+    `<button class="price-preset" onclick="document.getElementById('customItemPrice').value='${p}.00'">$${p}</button>`
+  ).join('');
+  document.getElementById('customItemModal').classList.add('open');
+  setTimeout(() => document.getElementById('customItemName').focus(), 100);
+}
+
+function confirmCustomItem() {
+  const name  = document.getElementById('customItemName').value.trim();
+  const price = parseFloat(document.getElementById('customItemPrice').value);
+  if (!name) { toast('Please enter an item name'); return; }
+  if (!price || price <= 0) { toast('Please enter a valid price'); return; }
+  addItem({ id: 'custom-' + Date.now(), name, price: Math.round(price * 100), category: customItemCategory });
+  document.getElementById('customItemModal').classList.remove('open');
+}
+
+// ─── Payment flows ────────────────────────────────────────────────
+
+// ── Card (Stripe Terminal stub) ──
+function startCardPayment(type) {
+  pendingPaymentMethod = type;
+  const { sub } = calcTotals(false);
+  const total = type === 'credit' ? Math.round(sub * (1 + SURCHARGE_RATE)) : sub;
+  document.getElementById('terminalAmount').textContent = money(total);
+  document.getElementById('terminalTypeLabel').textContent = type === 'credit'
+    ? `Credit card · 3% surcharge included` : `Debit card · no surcharge`;
+  resetTerminalSteps();
+  document.getElementById('terminalModal').classList.add('open');
+  simulateTerminal(total, type);
+}
+
+function resetTerminalSteps() {
+  ['connect','present','process'].forEach(s => {
+    const el = document.getElementById('tstep-' + s);
+    el.classList.remove('active','done');
+  });
+  document.getElementById('tstep-connect').classList.add('active');
+}
+
+async function simulateTerminal(totalCents, type) {
+  // Step 1: Connect
+  document.getElementById('tstep-connect-sub').textContent = 'Connecting to reader…';
+  await sleep(1200);
+  if (!document.getElementById('terminalModal').classList.contains('open')) return;
+  document.getElementById('tstep-connect').classList.replace('active','done');
+  document.getElementById('tstep-connect').innerHTML += '<span class="step-check">✓</span>';
+  document.getElementById('tstep-present').classList.add('active');
+
+  // Step 2: Wait for card
+  await sleep(2000);
+  if (!document.getElementById('terminalModal').classList.contains('open')) return;
+  document.getElementById('tstep-present').classList.replace('active','done');
+  document.getElementById('tstep-present').innerHTML += '<span class="step-check">✓</span>';
+  document.getElementById('tstep-process').classList.add('active');
+
+  // Step 3: Process
+  await sleep(1500);
+  if (!document.getElementById('terminalModal').classList.contains('open')) return;
+  document.getElementById('tstep-process').classList.replace('active','done');
+  document.getElementById('tstep-process').innerHTML += '<span class="step-check">✓</span>';
+
+  await sleep(300);
+  closeTerminalModal();
+  await completeTransaction({ method: type, totalCents, ref: 'pi_' + randId() });
+}
+
+function closeTerminalModal() {
+  document.getElementById('terminalModal').classList.remove('open');
+}
+
+// ── Zelle ──
+function startZellePayment() {
+  const { sub } = calcTotals(false);
+  document.getElementById('zelleHandle').textContent = ZELLE_HANDLE;
+  document.getElementById('zelleModalAmount').textContent = `Send exactly ${money(sub)}`;
+  document.getElementById('zelleModal').classList.add('open');
+}
+function closeZelleModal() { document.getElementById('zelleModal').classList.remove('open'); }
+async function confirmZelle() {
+  const { sub } = calcTotals(false);
+  closeZelleModal();
+  await completeTransaction({ method: 'zelle', totalCents: sub, ref: 'ZL-' + randId() });
+}
+
+// ── Cash ──
+function startCashPayment() {
+  const { sub } = calcTotals(false);
+  document.getElementById('cashModalAmount').textContent = money(sub);
+  document.getElementById('cashTendered').value = '';
+  document.getElementById('cashChangeRow').style.display = 'none';
+  document.getElementById('cashModal').classList.add('open');
+  setTimeout(() => document.getElementById('cashTendered').focus(), 100);
+}
+function closeCashModal() { document.getElementById('cashModal').classList.remove('open'); }
+function updateCashChange() {
+  const { sub } = calcTotals(false);
+  const tendered = Math.round(parseFloat(document.getElementById('cashTendered').value || 0) * 100);
+  const row = document.getElementById('cashChangeRow');
+  if (tendered >= sub) {
+    document.getElementById('cashChangeDue').textContent = money(tendered - sub);
+    row.style.display = '';
+  } else {
+    row.style.display = 'none';
+  }
+}
+async function confirmCash() {
+  const { sub } = calcTotals(false);
+  closeCashModal();
+  await completeTransaction({ method: 'cash', totalCents: sub, ref: 'CASH-' + randId() });
+}
+
+// ── Check ──
+function startCheckPayment() {
+  const { sub } = calcTotals(false);
+  document.getElementById('checkModalAmount').textContent = money(sub);
+  document.getElementById('checkNumber').value = '';
+  document.getElementById('checkName').value = '';
+  document.getElementById('checkModal').classList.add('open');
+  setTimeout(() => document.getElementById('checkNumber').focus(), 100);
+}
+function closeCheckModal() { document.getElementById('checkModal').classList.remove('open'); }
+async function confirmCheck() {
+  const num = document.getElementById('checkNumber').value.trim();
+  if (!num) { toast('Please enter the check number'); return; }
+  const { sub } = calcTotals(false);
+  closeCheckModal();
+  await completeTransaction({ method: 'check', totalCents: sub, ref: 'CHK-' + num });
+}
+
+// ─── Complete transaction ─────────────────────────────────────────
+async function completeTransaction({ method, totalCents, ref }) {
+  lastTxn = { method, totalCents, ref, items: [...cart], timestamp: new Date() };
+
+  // If greens fee in cart, create Supabase booking
+  const gf = cart.find(i => i.category === 'greens');
+  if (gf && selectedTT) {
+    const names = getPlayerNames();
+    const lead = names[0];
+    if (lead) {
+      await createBooking({ names, totalCents, ref, method });
+    }
+  }
+
+  // Show success flash
+  const methodLabel = { credit: 'Card', debit: 'Debit', cash: 'Cash', zelle: 'Zelle', check: 'Check' }[method] || method;
+  showSuccess(`Payment complete`, `${money(totalCents)} via ${methodLabel} · ${ref}`);
+
+  // Open receipt modal after flash
+  setTimeout(() => openReceiptModal(), 1800);
+}
+
+// ─── Supabase booking creation ─────────────────────────────────────
+async function createBooking({ names, totalCents, ref, method }) {
+  try {
+    const lead = names[0] || 'Walk-in';
+    // Create booking
+    const bRes = await fetch(`${SB_URL}/rest/v1/bookings`, {
+      method: 'POST',
+      headers: { ...SB_H, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+      body: JSON.stringify({
+        tee_time_id:  selectedTT.id,
+        lead_name:    lead,
+        player_count: names.length,
+        total_cents:  totalCents,
+        status:       'paid',
+        booking_ref:  ref,
+        stripe_payment_intent: method === 'credit' || method === 'debit' ? ref : null,
+      }),
+    });
+    if (!bRes.ok) { console.error('Booking create failed', await bRes.text()); return; }
+    const [booking] = await bRes.json();
+
+    // Create booking_players
+    const players = names.map((name, i) => ({
+      booking_id:   booking.id,
+      tee_time_id:  selectedTT.id,
+      name:         name || `Guest ${i + 1}`,
+      status:       'paid',
+      rate_type:    'Public',
+      price_cents:  selectedTT.rack_cents,
+      is_lead:      i === 0,
+    }));
+    await fetch(`${SB_URL}/rest/v1/booking_players`, {
+      method: 'POST',
+      headers: { ...SB_H, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      body: JSON.stringify(players),
+    });
+  } catch(e) {
+    console.error('createBooking error:', e);
+    toast('⚠️ Payment recorded but booking sync failed');
+  }
+}
+
+// ─── Receipt ─────────────────────────────────────────────────────
+function openReceiptModal() {
+  if (!lastTxn) return;
+  const { items, totalCents, ref, method, timestamp } = lastTxn;
+  const timeStr = timestamp.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  const dateStr = timestamp.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const methodLabel = { credit: 'Credit Card', debit: 'Debit Card', cash: 'Cash', zelle: 'Zelle', check: 'Check' }[method] || method;
+  const itemRows = items.map(i =>
+    `<div class="receipt-item"><span>${i.name} ×${i.qty}</span><span>$${(i.price*i.qty/100).toFixed(2)}</span></div>`
+  ).join('');
+  document.getElementById('receiptPreview').innerHTML = `
+    <div class="receipt-header">
+      <div class="receipt-title">⛳ SwingFirst</div>
+      <div class="receipt-sub">Pro Shop · ${dateStr} · ${timeStr}</div>
+    </div>
+    <div class="receipt-items">${itemRows}</div>
+    <div class="receipt-total-row"><span>Method</span><span>${methodLabel}</span></div>
+    <div class="receipt-total-row bold"><span>Total</span><span>$${(totalCents/100).toFixed(2)}</span></div>
+    <div class="receipt-ref">Ref: <strong>${ref}</strong></div>`;
+  document.getElementById('receiptEmail').value = '';
+  document.getElementById('receiptModal').classList.add('open');
+}
+
+async function sendReceipt() {
+  const email = document.getElementById('receiptEmail').value.trim();
+  if (!email || !email.includes('@')) { toast('Please enter a valid email'); return; }
+  const btn = document.getElementById('sendReceiptBtn');
+  btn.textContent = 'Sending…'; btn.disabled = true;
+  try {
+    const { items, totalCents, method, ref } = lastTxn;
+    const payload = {
+      to:         email,
+      items:      items.map(i => ({ name: i.name, qty: i.qty, price: i.price })),
+      totalCents,
+      method,
+      ref,
+      courseName: 'SwingFirst Pro Shop',
+    };
+    const res = await fetch('/.netlify/functions/send-pos-receipt', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Send failed');
+    toast(`Receipt sent to ${email}`);
+    closeReceiptModal();
+    finishAndReset();
+  } catch(e) {
+    console.error('sendReceipt error:', e);
+    toast('Could not send receipt — try again');
+  } finally {
+    btn.textContent = '📧 Send Email'; btn.disabled = false;
+  }
+}
+
+function closeReceiptModal() {
+  document.getElementById('receiptModal').classList.remove('open');
+  finishAndReset();
+}
+
+function finishAndReset() {
+  clearCart();
+  lastTxn = null;
+}
+
+// ─── Till management ─────────────────────────────────────────────
+function openTillModal() {
+  if (tillOpen) {
+    document.getElementById('tillModalTitle').textContent = '💰 Close Till';
+    document.getElementById('tillAmountLabel').textContent = 'Counted cash in drawer';
+    document.getElementById('tillConfirmBtn').textContent = 'Close Till';
+    document.getElementById('tillAmount').value = '';
+  } else {
+    document.getElementById('tillModalTitle').textContent = '💰 Open Till';
+    document.getElementById('tillAmountLabel').textContent = 'Starting float';
+    document.getElementById('tillConfirmBtn').textContent = 'Open Till';
+    document.getElementById('tillAmount').value = '200.00';
+  }
+  document.getElementById('tillModal').classList.add('open');
+  setTimeout(() => document.getElementById('tillAmount').select(), 100);
+}
+
+function confirmTill() {
+  const amt = parseFloat(document.getElementById('tillAmount').value);
+  if (isNaN(amt) || amt < 0) { toast('Enter a valid amount'); return; }
+  tillOpen = !tillOpen;
+  tillFloat = tillOpen ? amt : 0;
+  document.getElementById('tillDot').className = 'till-dot' + (tillOpen ? ' connected' : ' closed');
+  document.getElementById('tillLabel').textContent = tillOpen ? `Till open · $${amt.toFixed(2)} float` : 'Till closed';
+  document.getElementById('tillModal').classList.remove('open');
+  toast(tillOpen ? `Till opened · $${amt.toFixed(2)} float` : 'Till closed');
+}
+
+// ─── Success flash ────────────────────────────────────────────────
+function showSuccess(msg, sub) {
+  document.getElementById('successMsg').textContent = msg;
+  document.getElementById('successSub').textContent = sub;
+  const el = document.getElementById('successFlash');
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 1700);
+}
+
+// ─── Reader status (stub) ─────────────────────────────────────────
+function updateReaderStatus() {
+  // In production this will use Stripe Terminal SDK
+  document.getElementById('readerDot').className = 'reader-dot';
+  document.getElementById('readerLabel').textContent = 'No reader connected · demo mode';
+}
+
+// ─── Helpers ─────────────────────────────────────────────────────
+function fmt12(h, m) {
+  const ampm = h < 12 ? 'AM' : 'PM';
+  const h12  = h % 12 || 12;
+  return `${h12}:${String(m).padStart(2,'0')} ${ampm}`;
+}
+function money(cents) {
+  return '$' + (cents / 100).toFixed(2);
+}
+function randId() {
+  return Math.random().toString(36).slice(2, 10).toUpperCase();
+}
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+let _toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+// Keyboard shortcut: Escape closes modals
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    ['terminalModal','zelleModal','checkModal','customItemModal','receiptModal','tillModal']
+      .forEach(id => document.getElementById(id).classList.remove('open'));
+  }
+});
+</script>
+</body>
+</html>
