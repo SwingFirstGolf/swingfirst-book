@@ -1,0 +1,937 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>SwingFirst — Changelog</title>
+<style>
+:root {
+  --ink:#0d1f17; --ink-soft:#3b4a42; --ink-muted:#6b7a72;
+  --line:#e4e9e6; --paper:#fbfaf7; --card:#ffffff;
+  --green-900:#0b3d2e; --green-700:#1b6b4f; --green-100:#e3f2ec; --green-50:#f2f9f5;
+  --radius:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;background:var(--paper);color:var(--ink);font-size:14px;line-height:1.5;}
+
+/* Header */
+.header{background:var(--green-900);padding:28px 36px;color:#fff;}
+.header h1{font-size:20px;font-weight:800;letter-spacing:-.01em;}
+.header p{font-size:13px;color:rgba(255,255,255,.55);margin-top:4px;}
+
+/* Legend */
+.legend{padding:16px 36px;background:var(--card);border-bottom:1px solid var(--line);display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+.legend-label{font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.06em;margin-right:4px;}
+
+/* File tags */
+.tag{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:.03em;white-space:nowrap;}
+.tag-live    {background:#dbeafe;color:#1e40af;}
+.tag-operator{background:#dcfce7;color:#166534;}
+.tag-qr      {background:#fef9c3;color:#854d0e;}
+.tag-email   {background:#fce7f3;color:#9d174d;}
+.tag-pricing {background:#ede9fe;color:#5b21b6;}
+.tag-generate{background:#ffedd5;color:#9a3412;}
+.tag-cross    {background:#f1f5f9;color:#334155;}
+.tag-pos      {background:#fdf4ff;color:#7e22ce;}
+.tag-settings {background:#fff7ed;color:#c2410c;}
+
+/* Session block */
+.session{padding:28px 36px;border-bottom:2px solid var(--line);}
+.session-date{font-size:13px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:16px;}
+
+/* Entry */
+.entry{display:grid;grid-template-columns:110px 1fr;gap:0;border-left:2px solid var(--line);margin-bottom:0;}
+.entry+.entry{border-top:1px solid var(--line);}
+.entry-time{padding:12px 14px 12px 16px;font-size:12px;color:var(--ink-muted);font-variant-numeric:tabular-nums;white-space:nowrap;font-weight:500;}
+.entry-body{padding:12px 16px;}
+.entry-tags{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px;}
+.entry-title{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:3px;}
+.entry-desc{font-size:13px;color:var(--ink-soft);line-height:1.55;}
+.entry-desc code{background:var(--green-50);border:1px solid var(--line);border-radius:4px;padding:1px 5px;font-size:12px;font-family:ui-monospace,monospace;color:var(--green-900);}
+
+/* Category divider */
+.cat{padding:6px 36px;background:var(--green-50);border-top:1px solid var(--line);border-bottom:1px solid var(--line);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--green-700);}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>SwingFirst — Change Log</h1>
+  <p>Maintained automatically. Updated after every session. Newest entries at top.</p>
+</div>
+
+<div class="legend">
+  <span class="legend-label">File tags:</span>
+  <span class="tag tag-live">Live Sheet</span>
+  <span class="tag tag-operator">Operator Sheet</span>
+  <span class="tag tag-qr">QR Scanner</span>
+  <span class="tag tag-email">Email / SMS</span>
+  <span class="tag tag-pricing">Pricing Page</span>
+  <span class="tag tag-generate">Generate Tees</span>
+  <span class="tag tag-cross">Cross-cutting</span>
+  <span class="tag tag-pos">POS / Kiosk</span>
+  <span class="tag tag-settings">Settings</span>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="session">
+  <div class="session-date">Sunday, April 26 – Monday, April 27, 2026 — Session 9</div>
+
+  <div class="entry" style="background:#f2f9f5;">
+    <div class="entry-time" style="color:#1b6b4f;font-weight:700;">🚀 Deployed</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-live">Live Sheet</span><span class="tag tag-operator">Operator Sheet</span></div>
+      <div class="entry-title">Session 9 (overnight) — Week-strip date picker, sunrise start times, time-of-day gradient, size bar removed</div>
+      <div class="entry-desc">
+        <strong>Week-strip date picker</strong> · Replaced the time-jump bar on the live tee sheet with a compact, scroll-free week strip showing the current day prominently plus the surrounding 7 days ·
+        Single-tap any day pill to jump there; left/right chevrons page a full week; the active day is highlighted in deep green ·
+        Removed the separate time-jump bar entirely (not needed with the new picker) ·<br><br>
+
+        <strong>Sunrise-based first tee time</strong> · Both the live and operator tee sheets now start at 10 minutes before astronomical sunrise for Phoenix (lat 33.45°, lon −112.07°, no DST) ·
+        Sunrise is calculated using a compact NOAA-based algorithm (<code>phoenixSunrise</code>) from Julian date, equation of time, and hour angle ·
+        The start time is snapped to the nearest 10-minute slot and recalculated every two weeks (<code>getFirstTeeTimeOfDay</code>), so the sheet silently adjusts as the seasons change without needing any operator action ·
+        All earlier slots are filtered out of the rendered grid ·<br><br>
+
+        <strong>Time-of-day color gradient — time column</strong> · The far-left time label cell on both sheets now carries a subtle background color that shifts through the day ·
+        Pre-dawn starts in deep forest tones; colours warm and lighten through early morning, peak brightness at midday, then gently fade through afternoon into twilight and evening ·
+        24 colour stops define the gradient; values are linearly interpolated per-slot · Only the time column is affected — no impact on booking cells or layout ·<br><br>
+
+        <strong>Player-count size bar removed</strong> · The "How many players?" pill row (1 / 2 / 3 / 4 / Any) has been hidden from the live tee sheet ·
+        Code is preserved in a comment block so it can be re-enabled if needed, but the filter added friction without meaningfully guiding bookings ·
+      </div>
+    </div>
+  </div>
+
+  <div class="entry" style="background:#f2f9f5;">
+    <div class="entry-time" style="color:#1b6b4f;font-weight:700;">🚀 Complete</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-live">Live Sheet</span><span class="tag tag-operator">Operator Sheet</span><span class="tag tag-cross">Cross-cutting</span></div>
+      <div class="entry-title">Session 9 — Stripe payments live, self-serve cancellation, welcome-back banner, UX polish</div>
+      <div class="entry-desc">
+        <strong>Stripe payments end-to-end</strong> · Fixed Netlify Functions deployment (ZIP deploy does not bundle functions; switched to Netlify CLI deploy which correctly packages all six functions) ·
+        <code>STRIPE_SECRET_KEY</code> confirmed present in Netlify env vars · <code>create-payment-intent</code> and all functions tested programmatically before release ·
+        Fixed critical JS scoping bug: <code>lastName</code> was missing from the step-2 destructure of <code>pendingBooking</code>, causing a silent <code>ReferenceError</code> that kept the modal open after payment and suppressed all confirmations ·
+        Added <code>stripe_payment_intent</code> field to Supabase booking insert so refunds work correctly on cancellation ·<br><br>
+
+        <strong>Self-serve cancellation</strong> · New <code>lookup-booking</code> Netlify Function (read-only): accepts booking ref, returns safe booking details including <code>canCancel</code> flag (requires &gt;24h until tee time) ·
+        New <code>cancel-booking</code> Netlify Function: server-side 24h window validation, automatic Stripe refund if <code>stripe_payment_intent</code> on record, PATCHes bookings + booking_players to <code>status='cancelled'</code> ·
+        Fixed Supabase auth: functions were using a legacy JWT anon key returning 401; updated to publishable key fallback (<code>sb_publishable_…</code>) which is already public in the client ·
+        Added two targeted Supabase RLS policies: <code>bookings_self_cancel</code> (anon may UPDATE to <code>cancelled</code> only) and <code>booking_players_self_cancel</code> ·
+        Live sheet now filters cancelled bookings from slot rendering so the spot appears open immediately after cancellation ·
+        Manage booking modal: look up by ref, view booking details, cancel with confirmation step, refund message ("within 3–5 business days") ·<br><br>
+
+        <strong>"Manage booking" button</strong> · Moved from topbar to the filters row (right of the "Find a last name…" search field) for visibility ·
+        Button height matches the search field; color tints to match the active course header color (CSS custom properties set via <code>applyCourseBanner</code>) ·<br><br>
+
+        <strong>Welcome-back banner</strong> · Booking modal no longer silently pre-fills returning visitor fields ·
+        If <code>sf_guest_first</code> exists in localStorage, a compact banner appears: "👋 Welcome back, [Name]! Use your saved details?" with "Yes, use them" / "Start fresh" buttons (right-justified) ·
+        Fields start empty (placeholders visible) regardless; "Yes, use them" fills them in ·<br><br>
+
+        <strong>Booking ref format split</strong> · Pay-now bookings keep structured ref <code>PB26AP27MO005</code> ·
+        Pay-at-course bookings now get a simpler <code>PB-WX1234</code> format (course abbrev + 2 random letters + 4 digits, I/O excluded to avoid confusion with 1/0) ·<br><br>
+
+        <strong>Post-payment confirmation</strong> · After a successful "Pay now" booking the modal closes immediately; a green success toast appears: "You're booked! A confirmation [email/text] has been sent. Have a great time! ⛳" (stays 6 seconds) ·
+        Pay-at-course flow unchanged (still shows QR code confirmation screen) ·<br><br>
+
+        <strong>Email &amp; SMS confirmations</strong> · Both <code>send-booking-email</code> and <code>send-booking-sms</code> functions tested and confirmed working ·
+        Hint text in manage modal updated to "Your reference is at the top of your confirmation email or text." ·<br><br>
+
+        <strong>Rate column removed</strong> from the live tee sheet (rate is shown in the booking modal and per open slot; a separate column was redundant) ·<br><br>
+
+        <strong>ESC key closes all modals</strong> · Live sheet: booking modal and manage modal · Operator sheet: all seven modal types (context menu, QR, add booking, tee-off time, block, price, player context) consolidated into a single keydown handler ·<br><br>
+
+        <strong>Operator sheet UX</strong> · Tip banner (yellow pill) now has an ✕ dismiss button; dismissal stored in <code>sessionStorage</code> (resets on new tab, survives refresh) ·
+        Course-specific header tint applied to operator sheet (soft gradient matching each course's color) ·
+        Course selection and day offset persisted in <code>localStorage</code> on both sheets — page refreshes restore the last-viewed course and date ·
+        Booking display delay fixed: a <code>_writeInFlight</code> counter prevents <code>loadSheetFromSupabase()</code> from firing during Supabase writes, eliminating the race condition that overwrote optimistic state ·
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="session">
+  <div class="session-date">Friday, April 24, 2026 — Session 8</div>
+
+  <div class="entry" style="background:#f2f9f5;">
+    <div class="entry-time" style="color:#1b6b4f;font-weight:700;">🚀 Complete</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-live">Live Sheet</span><span class="tag tag-pos">POS / Kiosk</span></div>
+      <div class="entry-title">Session 8 — "Pay at course" booking flow: toggle, QR confirmation, tee sheet indicator</div>
+      <div class="entry-desc">
+        #1 Live sheet booking modal: added <strong>Payment toggle</strong> — "💳 Pay now" (existing Stripe flow) vs "🏌️ Pay at course" (new) ·
+        #2 Pay at course flow: on confirmation, saves booking to Supabase with <code>status='booked'</code> and all <code>booking_players.status='pending'</code> — no Stripe involved ·
+        #3 QR code shown in booking confirmation for pay-at-course bookings — encodes <code>SF:{booking.uuid}</code> for kiosk lookup · QR hidden for online-paid bookings (those show confirmation code only) ·
+        #4 Pay-at-course confirmation: 📱 icon, "Booking confirmed!" title, "Scan QR at pro shop kiosk to pay &amp; check in" instruction, Add to Calendar link ·
+        #5 Tee sheet: pending (pay-at-course) slots now show orange <code>taken-pending</code> cells with a small orange <strong>PAY</strong> badge so staff can see at a glance who still owes · previously all pending slots showed no badge ·
+        #6 Toggle wiring: changing payment method also updates the submit button label ("Continue to Payment →" vs "Book — Pay at Course →") and shows/hides an informational amber note about the QR code ·
+        #7 Notification calls for pay-at-course pass <code>payAtCourse: true</code> flag so email/SMS templates can be customised in future
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="session">
+  <div class="session-date">Friday, April 24, 2026 — Session 7</div>
+
+  <div class="entry" style="background:#f2f9f5;">
+    <div class="entry-time" style="color:#1b6b4f;font-weight:700;">🚀 Complete</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-cross">Cross-cutting</span><span class="tag tag-pos">POS / Kiosk</span><span class="tag tag-settings">Settings</span></div>
+      <div class="entry-title">Session 7 — POS spec, self-pay kiosk, tee sheet + live sheet fixes</div>
+      <div class="entry-desc">
+        #1 Tee sheet: 18-hole tee times now start at 6:00 AM · B9 classification switched to rate-based (not time-based) · "Back 9 &amp; Breakfast" header text · sheet mode persisted across refreshes · 9-hole Generate button removed ·
+        #2 Live sheet: removed "2 left" / "FULL" text from time cells · per-course color banners · status key sidebar replaced with Course Info panel (address, phone, par, yards, year built, architect) ·
+        #3 Settings: added par, yards, year_built, architect, cart_policy fields · course tab color system (active = course color, inactive = default) · fixed 400 save error (missing DB columns) · SQL migration files generated ·
+        #4 POS spec: <code>swingfirst-pos-spec.docx</code> — 12-section product specification covering hardware, payment flows, tee sheet integration, open questions, and Stripe Connect vs Terminal clarification ·
+        #5 Self-pay kiosk: <code>swingfirst-kiosk.html</code> — full-screen customer-facing kiosk with idle/scan/booking/processing/success/error states, USB QR scanner detection, Supabase booking lookup, Stripe Terminal payment flow, proper confirmation code format (e.g. CL26AP17TH204) ·
+        #6 Netlify Functions: <code>terminal-token.js</code> + <code>create-payment-intent.js</code> — required backend for Stripe Terminal (connection tokens + PaymentIntent creation server-side) ·
+        #7 Kiosk payment choice: "Pay for everyone" vs "Pay for just myself" buttons for multi-player bookings · solo bookings skip choice · pre-paid bookings skip reader entirely · partial payment updates only lead player in booking_players · amber unpaid-party notice on success screen ("3 players in your group have not yet paid")
+      </div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Session 7 · #1</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-operator">Operator Sheet</span></div>
+      <div class="entry-title">Tee sheet fixes — start time, B9 classification, sheet mode persistence</div>
+      <div class="entry-desc">18-hole tee times always start at 6:00 AM (<code>generateTeeTimesForDate</code> now hardcodes <code>6*60</code>). B9 slot classification switched from time-based (before cutoff) to rate-based (<code>tt.rack_cents === _b9.rateCents</code>) so 18-hole sheet is never truncated when B9 is configured. B9 tab header reads "☀️ Back 9 &amp; Breakfast". <code>sheetMode</code> persisted in <code>localStorage</code> under <code>sf_op_sheet_mode</code> — survives page refresh. 9-hole Generate button removed from header and empty state.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Session 7 · #2</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-live">Live Sheet</span></div>
+      <div class="entry-title">Live sheet — color banners, course info panel, cell cleanup</div>
+      <div class="entry-desc">"2 left" / "FULL" text removed from time cells (was causing uneven row heights). Per-course color banner added above page header (<code>COURSE_COLORS</code> map + <code>applyCourseBanner()</code>). Status Key sidebar replaced with Course Info panel showing address, phone, par, yards, cart policy, year built, and architect. <code>COURSE_INFO</code> hardcoded for all 6 courses, overridden from DB on load. All <code>built</code> field references normalized to <code>year_built</code>. Courses reordered: Scottsdale CC, San Tan, Coyote Lakes, Palmbrook, Union Hills, Briarwood.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Session 7 · #3</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-settings">Settings</span></div>
+      <div class="entry-title">Settings page — course info fields, tab colors, save fix</div>
+      <div class="entry-desc">Added par, yards, year_built, architect, and cart_policy fields to the Course Info section. Tab color system: active tab gets inline course color; inactive tabs use default CSS. Clicking a tab re-renders all tabs to update colors. Fixed 400 error on save (missing DB columns) — required SQL migration <code>supabase-course-settings.sql</code>. Removed misleading "Saved locally" fallback that was hiding the real error.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Session 7 · #4</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-pos">POS / Kiosk</span></div>
+      <div class="entry-title">POS product specification — swingfirst-pos-spec.docx</div>
+      <div class="entry-desc">12-section Word document: goals &amp; non-goals, who uses it, hardware (WisePOS E + M2), payment flows (pre-booked check-in, walk-up, merchandise), tee sheet integration rationale, staff interface, receipts, Stripe-based reporting, technical architecture, open questions table (8 items with priority), 4-week timeline, and questions for the Stripe rep. Includes clarification that Stripe Connect (for platforms) is different from Stripe Terminal (in-person hardware) and not in conflict.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Session 7 · #5</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-pos">POS / Kiosk</span></div>
+      <div class="entry-title">Self-pay kiosk — swingfirst-kiosk.html</div>
+      <div class="entry-desc">Full-screen dark-themed customer-facing kiosk page. Five states: idle (pulsing QR ring, "Haven't paid yet? Scan your QR code"), scanning (dots animation), booking found (course, name, time, players, amount), processing (spinner), success (check + confirmation code + draining reset bar), error. USB QR scanner detected via hidden input with timing-based buffer (keyboard events, Enter triggers lookup). Confirmation code format: <code>CL26AP17TH204</code> = course abbreviation + 2-digit year + month code + day + day-of-week + 3-digit daily golfer sequence. Invisible dev button (bottom-right corner) for testing without hardware. <code>SIMULATED = true</code> flag for testing without physical reader.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Session 7 · #6</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-pos">POS / Kiosk</span></div>
+      <div class="entry-title">Netlify Functions — terminal-token.js + create-payment-intent.js</div>
+      <div class="entry-desc">Two serverless functions required by Stripe Terminal. <code>terminal-token.js</code>: creates a Stripe Terminal connection token (Stripe security requirement — cannot be done from browser). <code>create-payment-intent.js</code>: creates a PaymentIntent server-side with <code>payment_method_types: ['card_present']</code> and returns client secret to the kiosk. Both include CORS headers. Env var required: <code>STRIPE_SECRET_KEY</code> set in Netlify → Site → Environment Variables. Deploy to <code>netlify/functions/</code>.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Session 7 · #7</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-pos">POS / Kiosk</span></div>
+      <div class="entry-title">Kiosk payment choice — pay for everyone vs. pay for just myself</div>
+      <div class="entry-desc">Multi-player bookings now show two buttons: "Everyone in my group" (full amount, green, pulsing) and "Just myself" (per-player rate, subtle). Solo bookings skip the choice and go straight to card tap. Pre-paid bookings skip the reader entirely and show the existing confirmation code. Supabase updates differ by choice: pay-all marks <code>bookings.status='paid'</code> and all <code>booking_players.status='paid'</code>; pay-self marks only the lead player paid and sets <code>bookings.status='partial'</code>. Success screen shows amber warning box when paying for self in a group: "X players in your group have not yet paid — they must check in at the pro shop counter before teeing off."</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="session">
+  <div class="session-date">Thursday, April 23, 2026 — Session 6</div>
+
+  <div class="entry" style="background:#f2f9f5;">
+    <div class="entry-time" style="color:#1b6b4f;font-weight:700;">🚀 Complete</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-cross">Cross-cutting</span></div>
+      <div class="entry-title">Session 6 — 10 improvements complete</div>
+      <div class="entry-desc">
+        #1 Compact stat pills on operator tee sheet ·
+        #2 Rate-type pricing rules (YoC=$5 flat, SF=rack×0.85/0.90 at SCC; auto-fills in Add Booking modal) ·
+        #3 Export bookings to CSV from Bookings page ·
+        #4 Print tee sheet (🖨 Print button + print-optimized CSS) ·
+        #5 Booking success page: ref display, "Add to Calendar" ICS, "Manage Booking" deep link ·
+        #6 24h reminder SMS + email via Netlify scheduled function (7pm, skips bookings made after 4pm) + SQL migration for comm_pref ·
+        #7 Date picker on tee sheet (click date label opens calendar popover) ·
+        #8 Search on both operator sheet (full name) and live sheet (last name only for privacy) ·
+        #9 Lookup page: full booking history with Upcoming / Past sections ·
+        #10 Course settings page (swingfirst-settings.html)
+      </div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Session 6 · #1</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-operator">Operator Sheet</span></div>
+      <div class="entry-title">Compact stat pills</div>
+      <div class="entry-desc">Reduced font, padding, and gap on the four summary stat pills so they take up less vertical space. Value font: 17px → 14px, padding: 6px 14px → 4px 10px.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Session 6 · #2</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-operator">Operator Sheet</span></div>
+      <div class="entry-title">Rate-type pricing rules</div>
+      <div class="entry-desc">YoC always = $5 flat. SF = rack × 0.85 (rack × 0.90 at Scottsdale CC). All other types = rack. Add Booking modal auto-recalculates the total and shows a per-player hint when rate differs from rack. Saves discounted price to booking_players.price_cents.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Session 6 · #3</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-bookings">Bookings</span></div>
+      <div class="entry-title">Export bookings to CSV</div>
+      <div class="entry-desc">⬇ Export CSV button added to Bookings page header. Exports all currently-filtered rows (respects search, status, course, and date filters). File named swingfirst-bookings-YYYY-MM-DD.csv.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Session 6 · #4</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-operator">Operator Sheet</span></div>
+      <div class="entry-title">Print tee sheet</div>
+      <div class="entry-desc">🖨 Print button added to topbar. Print CSS hides UI chrome, collapses rows, and shows a print header with course name, date, and timestamp. Works via window.print() with beforeprint hook to populate header.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Session 6 · #5</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-golfer">Golfer</span></div>
+      <div class="entry-title">Booking success screen improvements</div>
+      <div class="entry-desc">Step 3 of swingfirst-book.html now shows: confirmation ref prominently, "Confirmation sent to your email" notice, 📅 Add to Calendar button (downloads .ics file), 📋 Manage Booking deep link to lookup.html pre-filled with ref + email.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Session 6 · #6</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-cross">Cross-cutting</span></div>
+      <div class="entry-title">24h reminder SMS + email</div>
+      <div class="entry-desc">New Netlify scheduled function (netlify/functions/send-reminder.js) fires at 02:00 UTC (7pm MST) every night. Queries tomorrow's bookings, skips any booked after 4pm that same evening, sends SMS + email based on booking.comm_pref. netlify.toml updated with cron schedule. SQL migration adds comm_pref column (DEFAULT 'both').</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Session 6 · #7</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-operator">Operator Sheet</span></div>
+      <div class="entry-title">Date picker on tee sheet</div>
+      <div class="entry-desc">The date label in the navigation bar is now clickable (▾ indicator). Clicking it opens the native browser calendar picker. Selecting a date jumps directly to that day without needing to click ‹ › repeatedly.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Session 6 · #8</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-operator">Operator Sheet</span><span class="tag tag-golfer">Golfer</span></div>
+      <div class="entry-title">Search on both tee sheets</div>
+      <div class="entry-desc">Operator sheet: search by full player name — non-matching rows dim, matching rows get a green outline. Live (golfer) sheet: search by last name only for privacy — same dimming/highlight. "Find my buddy's tee time" use case now works on the public-facing sheet.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Session 6 · #9</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-golfer">Golfer</span></div>
+      <div class="entry-title">Lookup page — full booking history</div>
+      <div class="entry-desc">lookup.html now fetches up to 200 bookings ordered chronologically and splits into Upcoming and Past sections. Upcoming shows cancel/calendar buttons; Past shows "Book again" link. Personalized greeting with first name + booking count.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Session 6 · #10</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-operator">Operator Sheet</span></div>
+      <div class="entry-title">Course settings page</div>
+      <div class="entry-desc">New swingfirst-settings.html: full operator settings UI with course info, operating hours, tee interval, booking window, rate type toggles, SF card discount config, reminder settings, cancellation policy, and booking page URL. Saves to Supabase courses table (with localStorage fallback). Linked from Settings nav in the tee sheet sidebar.</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="session">
+  <div class="session-date">Thursday, April 23, 2026 — Session 5</div>
+
+  <div class="entry" style="background:#f2f9f5;">
+    <div class="entry-time" style="color:#1b6b4f;font-weight:700;">🚀 Deployed</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-cross">Cross-cutting</span></div>
+      <div class="entry-title">Session 5 — 10 improvements ready to deploy</div>
+      <div class="entry-desc">PIN gate on all operator pages, manage/cancel links in email &amp; SMS, customer notes to Supabase, new Reports page, booking detail panel, Jump to Now, operator booking notes, last-updated indicator, remaining spots on live sheet.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Session 5</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-operator">Operator Sheet</span><span class="tag tag-qr">QR Scanner</span><span class="tag tag-cross">Cross-cutting</span></div>
+      <div class="entry-title">#1 — PIN gate on all remaining operator pages</div>
+      <div class="entry-desc">QR Scanner, Customers, and Bookings pages now each have the same PIN gate as the tee sheet. Entering the PIN once unlocks all tabs for the session. 🔒 Lock button added to each page's topbar.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Session 5</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-email">Email</span></div>
+      <div class="entry-title">#2 — "Manage my booking" link in confirmation email</div>
+      <div class="entry-desc">Confirmation emails now include a green <strong>🗂 Manage my booking →</strong> button that links directly to <code>lookup.html</code> with the ref and email pre-filled. The existing cancel link in the footer is unchanged.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Session 5</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-email">Email / SMS</span></div>
+      <div class="entry-title">#3 — Cancel + lookup links in booking SMS</div>
+      <div class="entry-desc">The Twilio SMS now includes three links: check-in QR, manage booking (with ref &amp; email pre-filled), and cancel. The <code>email</code> field is now passed through from <code>swingfirst-live.html</code> to <code>send-booking-sms.js</code> so the lookup URL arrives pre-filled.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Session 5</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-operator">Operator Sheet</span></div>
+      <div class="entry-title">#4 — Customer notes wired to Supabase</div>
+      <div class="entry-desc">Staff notes entered on the Customers page are now persisted to the <code>notes</code> column (JSON string) on the <code>customers</code> table. Notes load from Supabase on page load (parsed from JSON). Notes are cleared from the textarea on save and appear instantly in the notes list.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Session 5</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-operator">Operator Sheet</span></div>
+      <div class="entry-title">#5 — Reports page</div>
+      <div class="entry-desc">New <code>swingfirst-reports.html</code> with KPI strip (revenue, bookings, players, avg booking, cancellations, check-in rate), daily revenue bar chart, tee time utilization by day-of-week, and a full bookings table. Time range picker: 7 / 30 / 90 days or custom date range. PIN-gated like all other operator pages.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Session 5</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-operator">Operator Sheet</span></div>
+      <div class="entry-title">#6 — Booking detail panel in bookings list</div>
+      <div class="entry-desc">Clicking any row in the Bookings page opens a slide-in detail panel on the right showing: lead name, email, phone, players, total paid, status, and booked-on date. Panel has "Golfer view" and "Cancel booking" action buttons. Closes on Escape or clicking the overlay.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Session 5</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-operator">Operator Sheet</span></div>
+      <div class="entry-title">#7 — "Jump to now" button on tee sheet</div>
+      <div class="entry-desc">⏱ Now button in the tee sheet topbar scrolls to the tee time closest to the current clock time and briefly highlights it with a green outline. Each row is stamped with <code>data-hour</code> and <code>data-minute</code> attributes on render for O(n) lookup.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Session 5</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-operator">Operator Sheet</span></div>
+      <div class="entry-title">#8 — Operator booking notes from tee sheet</div>
+      <div class="entry-desc">📝 Add/Edit Note added to the tee-time context menu. Opens a modal with a textarea pre-filled with any existing note. Saving writes to <code>slot.bookingNotes</code> and PATCHes <code>bookings.booking_notes</code> in Supabase. "Clear note" button removes it. The notes-dot indicator and hover tooltip remain unchanged.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Session 5</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-operator">Operator Sheet</span></div>
+      <div class="entry-title">#9 — Last-updated indicator on tee sheet</div>
+      <div class="entry-desc">A subtle "Updated HH:MM" timestamp appears in the tee sheet topbar after each <code>loadTeeSheet()</code> call completes (both initial load and background refreshes). Gives operators confidence that the data is current.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Session 5</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-live">Live Sheet</span></div>
+      <div class="entry-title">#10 — Remaining spots on live sheet</div>
+      <div class="entry-desc">Time cells on the golfer-facing tee sheet now show a small indicator below the time: "<em>X spots left</em>" (amber) for partially-filled tee times, and "<em>FULL</em>" (red) for completely booked ones. No badge shown for fully open or past/unavailable slots.</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="session">
+  <div class="session-date">Thursday, April 23, 2026 — Session 4</div>
+
+  <div class="entry" style="background:#f2f9f5;">
+    <div class="entry-time" style="color:#1b6b4f;font-weight:700;">🚀 Deployed</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-cross">Cross-cutting</span></div>
+      <div class="entry-title">Session 4 deployed to Netlify</div>
+      <div class="entry-desc">10 improvements: PIN gate, cancellation flow, browser back fix, block range, check-in all, customer schema, bookings list, no-show marking, golfer lookup page, and scroll persistence.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Session 4</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-operator">Operator Sheet</span></div>
+      <div class="entry-title">#1 — PIN gate on operator tools</div>
+      <div class="entry-desc">All operator pages now require a PIN to access. The gate appears on load if not authenticated. Correct PIN stores auth in <code>sessionStorage</code> for the tab's lifetime. A 🔒 Lock button in the topbar lets staff lock the screen between shifts. Default PIN: <code>golf</code> — change <code>OPERATOR_PIN</code> in the script to update it.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Session 4</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-live">Live Sheet</span><span class="tag tag-email">Email</span></div>
+      <div class="entry-title">#2 — Cancellation flow for golfers</div>
+      <div class="entry-desc">New <code>cancel.html</code> page where golfers enter their confirmation code + email to cancel. A Netlify function (<code>cancel-booking.js</code>) verifies the match, checks the booking isn't already cancelled/checked in, sets status to <code>cancelled</code> in Supabase, and sends a confirmation email via Resend. A "Cancel this booking →" link now appears in the footer of every confirmation email. URL pre-fills the ref when linked from email.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Session 4</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-live">Live Sheet</span></div>
+      <div class="entry-title">#3 — Browser back button intercepted during payment</div>
+      <div class="entry-desc">Previously, pressing browser back during Step 2 (payment) navigated away from the page entirely. Now a <code>pushState</code> entry is added when the modal opens, and a <code>popstate</code> listener catches browser back: on Step 2 it goes back to Step 1; on Step 1 it closes the modal. No more accidental page navigation mid-checkout.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Session 4</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-operator">Operator Sheet</span></div>
+      <div class="entry-title">#4 — Block range: block multiple tee times at once</div>
+      <div class="entry-desc">The Block Tee Times modal now includes a "Block through" dropdown, populated with all later tee times for the day. Selecting an end time blocks every slot from the chosen start through the end — in one action. Label and reason apply to all blocked slots. Each slot is written to Supabase individually.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Session 4</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-operator">Operator Sheet</span></div>
+      <div class="entry-title">#5 — "Check In All" in tee time context menu</div>
+      <div class="entry-desc">Right-clicking a tee time now shows "✅ Check In All" when there are any players not yet checked in. One tap checks in the entire group at once. The option is hidden when all players are already checked in or the slot is blocked. Writes <code>checked_in</code> to Supabase for each player's <code>booking_players</code> row.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Session 4</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-cross">Customers</span></div>
+      <div class="entry-title">#6 — Customer schema extended + edit modal fully wired</div>
+      <div class="entry-desc">Added <code>handicap</code>, <code>rate_type</code>, <code>is_member</code>, <code>has_sf_card</code>, <code>is_flagged</code> columns to the Supabase <code>customers</code> table (SQL file: <code>supabase-customers-schema-update.sql</code>). The edit modal now saves all fields to Supabase — not just name/phone. <code>loadCustomers()</code> reads these fields on load, so member status, SF Card, and flagged state persist across sessions.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Session 4</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-operator">Operator Sheet</span></div>
+      <div class="entry-title">#7 — Bookings list page (<code>swingfirst-bookings.html</code>)</div>
+      <div class="entry-desc">New dedicated bookings list view showing all bookings from Supabase in a sortable table: date, time, course, lead name, ref code, player count, amount, and status. Filterable by course, status, and date range (7/30/90 days / all time). Live search by name, ref, or email. Stats strip shows booking count, total players, revenue, and checked-in count for the current filter. "Bookings" nav link in the operator sidebar now points here.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Session 4</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-operator">Operator Sheet</span></div>
+      <div class="entry-title">#8 — No-show marking from player context menu</div>
+      <div class="entry-desc">Right-clicking a player cell now shows "⚑ Mark No-Show" in addition to Edit and Cancel. Marks the player's status as <code>no_show</code> in Supabase <code>booking_players</code>, updates the cell styling (faded rose border), and records the activity. No-show appears in the bookings list and customer history with a rose badge.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Session 4</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-live">Live Sheet</span></div>
+      <div class="entry-title">#9 — Golfer booking lookup page (<code>lookup.html</code>)</div>
+      <div class="entry-desc">New self-service page where golfers enter their email (and optionally their ref) to retrieve any of their bookings. Shows full booking details: course, date, time, players, amount, status, and course phone number. Includes Add to Calendar and Cancel links. Can be pre-filled via URL params <code>?ref=XXX&email=xxx</code>. Queries Supabase directly with anon key (email-filtered, no auth needed).</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Session 4</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-live">Live Sheet</span><span class="tag tag-operator">Operator Sheet</span></div>
+      <div class="entry-title">#10 — Scroll position restored after page refresh</div>
+      <div class="entry-desc">Both the live sheet and operator tee sheet now save scroll position to <code>sessionStorage</code> continuously (debounced 150ms) and on <code>beforeunload</code>. After the initial tee time render on page load, scroll is restored once to the saved position using <code>behavior: instant</code> — no flash. Subsequent auto-poll re-renders don't interfere with scroll position.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Afternoon</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-live">Live Sheet</span><span class="tag tag-cross">Customers</span></div>
+      <div class="entry-title">Customer upsert on booking — real golfer data stored in Supabase</div>
+      <div class="entry-desc">After every successful payment, the booker's first name, last name, email and phone are upserted into the <code>customers</code> table (resolution=merge-duplicates). Returning customers update their record; new customers create one. Entirely non-blocking — fire-and-forget so payment flow is unaffected if the upsert fails.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Afternoon</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-cross">Customers</span></div>
+      <div class="entry-title">Customers page wired to live Supabase data</div>
+      <div class="entry-desc">Replaced the 20-entry mock array with a live <code>loadCustomers()</code> function that queries <code>bookings</code> joined to <code>tee_times → courses</code>, then supplements with <code>customers</code> table for clean name/phone. Customers are grouped by <code>lead_email</code> with rounds, spend, last-visit, since-date, course history and history table all calculated from real booking data. Shows "Loading customers…" while fetching and an amber error message if Supabase is unreachable.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Afternoon</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-cross">Customers</span></div>
+      <div class="entry-title">Edit Customer modal wired to Supabase PATCH</div>
+      <div class="entry-desc">Saving the edit modal now sends a <code>PATCH</code> to <code>customers?email=eq.{email}</code> updating <code>first_name</code>, <code>last_name</code>, <code>phone</code>, and <code>email</code>. Updates are applied optimistically in the UI immediately; a toast confirms success or shows an inline DB error. Handicap, rate type, member, SF Card, and flagged fields remain local-only until those columns are added to the schema.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Afternoon</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-live">Live Sheet</span></div>
+      <div class="entry-title">New booking confirmation code format</div>
+      <div class="entry-desc">Ref codes now follow the format <code>[Course][YY][Mo][DD][DW][###]</code> — e.g. <code>CL26AP23TH204</code> = Coyote Lakes, 2026, April, 23rd, Thursday, 204th booking. Course abbrevs: PB ST CL UH CC BR. Month codes: JA FE MR AP MY JN JL AU SE OC NV DC. Day codes: SU MO TU WE TH FR SA. Sequential daily booking number queried from Supabase tee_times. All single-digit components zero-padded.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Afternoon</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-live">Live Sheet</span></div>
+      <div class="entry-title">Returning visitor pre-fill</div>
+      <div class="entry-desc">On successful booking, first name, last name, email, phone and player count are saved to localStorage. On the next visit, the booking form pre-populates these fields automatically. No account or login required.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Afternoon</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-live">Live Sheet</span></div>
+      <div class="entry-title">Add to Calendar button on confirmation screen</div>
+      <div class="entry-desc">After a successful booking, the in-page confirmation screen now shows a "📅 Add to Calendar" button generating a Google Calendar link with course name, tee time, 4-hour duration, and confirmation ref pre-filled in America/Phoenix timezone.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Afternoon</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-live">Live Sheet</span></div>
+      <div class="entry-title">Group size preference persists across visits</div>
+      <div class="entry-desc">Player count selection is saved to localStorage and restored when the booking modal opens next time. Capped at available spots in the selected tee time.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Afternoon</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-live">Live Sheet</span></div>
+      <div class="entry-title">Mobile course switcher — horizontal pill bar</div>
+      <div class="entry-desc">On screens under 900px (where the left sidebar hides), a horizontal scrolling pill bar now appears above the group size selector, showing short course names. Tapping a pill switches the course. Pills sync active state with the desktop sidebar.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Afternoon</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-live">Live Sheet</span></div>
+      <div class="entry-title">Connection error state — Supabase unreachable</div>
+      <div class="entry-desc">If Supabase fails to respond, the tee sheet now shows "⚠ Connection issue — retrying in 30 seconds…" in amber instead of silently showing empty rows (which looked like a closed course).</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Afternoon</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-operator">Operator Sheet</span></div>
+      <div class="entry-title">Past tee times blocked from new bookings</div>
+      <div class="entry-desc">Clicking an open player cell on a past tee time now shows a toast "Cannot add a booking to a past tee time" and prevents the modal from opening. Checks both date and hour:minute against current local time.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Afternoon</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-operator">Operator Sheet</span></div>
+      <div class="entry-title">Add Booking modal — stepper replaces player pills</div>
+      <div class="entry-desc">Replaced the 1/2/3/4 pill row with a compact <code>− n +</code> stepper. Players, Cancel, and Add Player all fit on one footer line. Stepper dims at bounds. Button label updates dynamically.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Afternoon</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-operator">Operator Sheet</span></div>
+      <div class="entry-title">Add Booking modal — multi-player support</div>
+      <div class="entry-desc">Modal adds 1–4 players in one action. Lead player uses the entered name; additional spots fill as "Guest 2", "Guest 3", etc. Total price updates live. All players written to Supabase sequentially.</div>
+    </div>
+  </div>
+
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="session">
+  <div class="session-date">Thursday, April 23, 2026 — Session 2 (Quick wins batch)</div>
+
+  <div class="entry">
+    <div class="entry-time">Morning</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-live">Live Sheet</span><span class="tag tag-operator">Operator Sheet</span></div>
+      <div class="entry-title">UTC timezone bug fix — date queries now use local Phoenix time</div>
+      <div class="entry-desc">Both <code>getDateStr()</code> (live) and <code>getSelectedDate()</code> (operator) were using <code>.toISOString().slice(0,10)</code> which returns the UTC date. After 5 PM Phoenix (UTC−7) this rolled over to tomorrow, causing evening bookings to land on the wrong date. Fixed by using <code>getFullYear()</code> / <code>getMonth()</code> / <code>getDate()</code> which read local time.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Morning</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-generate">Generate Tees</span></div>
+      <div class="entry-title">UTC timezone bug fix — tee time generation uses local dates</div>
+      <div class="entry-desc">Same <code>toISOString()</code> bug patched in <code>generate-tees.html</code> so future tee time generation doesn't store dates offset by one day when run after 5 PM.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Morning</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-live">Live Sheet</span></div>
+      <div class="entry-title">Date picker repositioned — inline with course name</div>
+      <div class="entry-desc">Date nav moved from right-justified corner to sit inline with the course title in the same row, within the first half of the page. Removes the need to hunt for it. Subtitle simplified to timezone line only.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Morning</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-live">Live Sheet</span><span class="tag tag-operator">Operator Sheet</span></div>
+      <div class="entry-title">Date label shows full day of week</div>
+      <div class="entry-desc">Date nav label now reads "Thursday, April 23, 2026" (live) and "Thu, April 23, 2026" (operator) so day of week is always visible without mental calculation. Min-width widened to 200–210px to accommodate long weekday names.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Morning</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-live">Live Sheet</span></div>
+      <div class="entry-title">Hint bar — dismissible with ✕ button</div>
+      <div class="entry-desc">Added a close button to the green "Click any open slot to book" bar. Dismissal stored in localStorage so it stays hidden across refreshes. Bar also correctly re-appears (in amber) when navigating beyond the 90-day window.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Morning</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-live">Live Sheet</span></div>
+      <div class="entry-title">"Today" button removed</div>
+      <div class="entry-desc">Removed the Today button from the live booking sheet. It caused confusion — showing "Today" while viewing a different date felt like an assertion rather than an action. The ‹ / › arrows are sufficient navigation.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Morning</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-operator">Operator Sheet</span></div>
+      <div class="entry-title">Left nav — dead links wired up</div>
+      <div class="entry-desc">Check-ins now links to <code>swingfirst-qr-scanner.html</code>. Bookings now links to <code>swingfirst-customers.html</code>. Remaining dead links (Pro shop, Blocks, Settings, Reports) left as <code>#</code> pending those pages being built.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Morning</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-operator">Operator Sheet</span></div>
+      <div class="entry-title">Golfer View link fixed</div>
+      <div class="entry-desc">Header link was pointing to <code>swingfirst-book.html</code> (broken). Now correctly points to <code>https://book.swingfirst.ai/swingfirst-live.html</code>.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Morning</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-operator">Operator Sheet</span></div>
+      <div class="entry-title">Selected course persists across refreshes</div>
+      <div class="entry-desc">Course selection now saved to localStorage as <code>sf_op_course</code>. On next load the dropdown and tee sheet restore to whichever course was last viewed, rather than always defaulting to Palmbrook.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Morning</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-qr">QR Scanner</span></div>
+      <div class="entry-title">Camera auto-starts on page load</div>
+      <div class="entry-desc">Camera now starts automatically when the page loads. If permission is denied, the overlay reappears with an error message and the manual entry fallback. Eliminates the extra tap for every check-in session.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Morning</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-qr">QR Scanner</span></div>
+      <div class="entry-title">Demo/simulate buttons removed</div>
+      <div class="entry-desc">Removed the "Demo — simulate a scan" section and its four buttons (Paid booking / Member / SF Card / Invalid). Production-only from here.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Morning</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-qr">QR Scanner</span></div>
+      <div class="entry-title">Manual ID input auto-uppercases</div>
+      <div class="entry-desc">Typing "sf-1234" now auto-converts to "SF-1234" on input. Eliminates case-sensitive lookup failures.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Morning</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-live">Live Sheet</span></div>
+      <div class="entry-title">"Book" label removed from open slots</div>
+      <div class="entry-desc">Every open cell previously showed the price + the word "BOOK". The label was redundant — the price is the signal and click intent is implied. Removed. "Join group" label kept for completing-a-group slots.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Morning</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-live">Live Sheet</span></div>
+      <div class="entry-title">Phone field — numeric keyboard on mobile</div>
+      <div class="entry-desc">Added <code>inputmode="numeric"</code> to the phone input so mobile users get the number pad automatically rather than the full keyboard.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Morning</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-email">Email / SMS</span></div>
+      <div class="entry-title">Add to Calendar button in confirmation email</div>
+      <div class="entry-desc">Booking confirmation email now includes a "📅 Add to Calendar" button that generates a Google Calendar link pre-filled with course name, tee time, 4-hour duration, confirmation ref, and America/Phoenix timezone. Date, hour, and minute are now passed from the live sheet to the email function.</div>
+    </div>
+  </div>
+
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="session">
+  <div class="session-date">Wednesday, April 22, 2026 — Session 1 (Foundation)</div>
+
+  <div class="entry">
+    <div class="entry-time">Evening</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-cross">Cross-cutting</span></div>
+      <div class="entry-title">Overnight improvement review — 85-item list compiled</div>
+      <div class="entry-desc">Full source review of both live URLs. Produced <code>swingfirst-improvements.md</code> with 85 itemised improvements across booking sheet, operator sheet, QR scanner, customers page, pricing page, and infrastructure. Includes quick wins list at the bottom.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Evening</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-operator">Operator Sheet</span></div>
+      <div class="entry-title">Pricing page wired to Supabase</div>
+      <div class="entry-desc">Save buttons on <code>swingfirst-pricing.html</code> now write rack rates to Supabase via bulk PATCH filtered by course_id and hour range. Course UUIDs loaded on init. Toast confirms how many courses were updated.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Evening</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-live">Live Sheet</span></div>
+      <div class="entry-title">30-second poll for live price sync</div>
+      <div class="entry-desc">Live sheet now re-queries Supabase every 30 seconds (when tab is visible) so price changes made in the operator sheet appear without a manual refresh.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Afternoon</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-cross">Cross-cutting</span></div>
+      <div class="entry-title">Custom domains live — book.swingfirst.ai and operator.swingfirst.ai</div>
+      <div class="entry-desc">GoDaddy CNAME records added. Netlify SSL provisioned. netlify.toml redirect added for <code>operator.swingfirst.ai/</code> → tee sheet. Both domains fully operational.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Afternoon</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-qr">QR Scanner</span></div>
+      <div class="entry-title">Real camera QR scanning via html5-qrcode</div>
+      <div class="entry-desc">Replaced CSS-animated mock viewfinder with real camera scanning using <code>html5-qrcode@2.3.8</code>. Successful scans look up booking ref in Supabase and check in players. Short course name map for the flash message.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Afternoon</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-email">Email / SMS</span></div>
+      <div class="entry-title">QR check-in link added to confirmation email and SMS</div>
+      <div class="entry-desc">Email confirmation now includes the check-in QR code image (via api.qrserver.com) and a "Tap here to open on your phone" link. SMS confirmation includes the checkin.html URL so golfers can pull up the QR on their phone.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Afternoon</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-live">Live Sheet</span></div>
+      <div class="entry-title">checkin.html — mobile QR display page</div>
+      <div class="entry-desc">New page at <code>book.swingfirst.ai/checkin.html?ref=SF-XXXX</code>. Fetches booking from Supabase by ref, displays course, date, time, players, total, and a large QR code encoding the booking ref for staff to scan.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Afternoon</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-cross">Cross-cutting</span></div>
+      <div class="entry-title">Twilio SMS operational — toll-free 877 number</div>
+      <div class="entry-desc">Twilio credentials added to Netlify env vars (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER). Upgraded from trial to paid account to send to unverified numbers. SMS confirmations now delivering.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Morning</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-live">Live Sheet</span></div>
+      <div class="entry-title">90-day booking window enforced</div>
+      <div class="entry-desc">Slots beyond 90 days show as greyed out and unclickable. Hint bar turns amber with a "not yet available" message. Date nav can still navigate but bookings are blocked.</div>
+    </div>
+  </div>
+
+  <div class="entry">
+    <div class="entry-time">Morning</div>
+    <div class="entry-body">
+      <div class="entry-tags"><span class="tag tag-generate">Generate Tees</span></div>
+      <div class="entry-title">generate-tees.html — bulk tee time generation tool</div>
+      <div class="entry-desc">Browser-based admin tool that generates 80 tee time slots per day (6 AM–4:32 PM, 8-min intervals) for all 6 courses from tomorrow through Dec 31, 2026. Uses Supabase upsert with conflict handling on course_id + date + hour + minute.</div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
