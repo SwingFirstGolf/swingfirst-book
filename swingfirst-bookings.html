@@ -1,0 +1,545 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>SwingFirst — Bookings</title>
+<style>
+:root{
+  --ink:#0d1f17;--ink-soft:#3b4a42;--ink-muted:#6b7a72;
+  --line:#e4e9e6;--paper:#fbfaf7;--card:#ffffff;
+  --green-900:#0b3d2e;--green-700:#1b6b4f;--green-600:#2a8a6a;
+  --green-200:#a8d5bc;--green-100:#e3f2ec;--green-50:#f2f9f5;
+  --amber-700:#B45309;--amber-100:#FEF3C7;
+  --rose-700:#9A2A42;--rose-100:#fbe0e6;--rose-50:#fff1f4;
+  --sky-700:#175e8c;--sky-100:#dbeaf5;
+  --slate-100:#eef1ee;
+  --shadow-md:0 2px 8px rgba(13,31,23,.08),0 8px 24px rgba(13,31,23,.06);
+  --radius:12px;--radius-sm:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Inter",sans-serif;
+  color:var(--ink);background:var(--paper);font-size:14px;line-height:1.45;}
+button{font:inherit;color:inherit;cursor:pointer;}
+a{color:inherit;text-decoration:none;}
+
+/* TOP BAR */
+.topbar{display:flex;align-items:center;justify-content:space-between;
+  padding:0 24px;height:52px;border-bottom:1px solid var(--line);
+  background:var(--card);position:sticky;top:0;z-index:20;}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;}
+.brand-mark{width:28px;height:28px;border-radius:8px;
+  background:linear-gradient(135deg,var(--green-700),var(--green-900));
+  display:grid;place-items:center;color:#fff;font-size:14px;}
+.brand-name{font-size:15px;letter-spacing:-.02em;}
+.brand-tag{font-size:11px;font-weight:500;color:var(--ink-muted);
+  background:var(--green-100);border-radius:4px;padding:1px 6px;margin-left:4px;}
+.topbar-right{display:flex;align-items:center;gap:12px;font-size:13px;color:var(--ink-soft);}
+
+/* SHELL */
+.shell{display:grid;grid-template-columns:200px 1fr;height:calc(100vh - 52px);}
+
+/* LEFT NAV */
+.sidebar-left{border-right:1px solid var(--line);padding:16px 10px;overflow-y:auto;background:var(--card);}
+.nav-group{margin-bottom:14px;}
+.nav-title{font-size:11px;font-weight:600;color:var(--ink-muted);text-transform:uppercase;
+  letter-spacing:.06em;padding:0 10px 6px;}
+.nav-item{display:flex;align-items:center;gap:8px;padding:7px 10px;
+  border-radius:var(--radius-sm);font-size:13px;color:var(--ink-soft);transition:background .15s;}
+.nav-item:hover{background:var(--green-50);color:var(--ink);}
+.nav-item.active{background:var(--green-100);color:var(--green-700);font-weight:600;}
+.nav-item .dot{width:5px;height:5px;border-radius:50%;background:currentColor;visibility:hidden;flex-shrink:0;}
+.nav-item.active .dot{visibility:visible;}
+
+/* MAIN */
+.main{display:flex;flex-direction:column;overflow:hidden;}
+.page-head{padding:20px 28px 16px;border-bottom:1px solid var(--line);background:var(--card);
+  display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+.page-title{font-size:20px;font-weight:800;letter-spacing:-.02em;}
+
+/* FILTERS */
+.filters{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+.filter-select{padding:6px 10px;border:1.5px solid var(--line);border-radius:var(--radius-sm);
+  font:inherit;font-size:13px;background:#fff;color:var(--ink);outline:none;cursor:pointer;}
+.filter-select:focus{border-color:var(--green-600);}
+.search-input{padding:6px 12px;border:1.5px solid var(--line);border-radius:var(--radius-sm);
+  font:inherit;font-size:13px;color:var(--ink);outline:none;width:200px;}
+.search-input:focus{border-color:var(--green-600);}
+
+/* STATS STRIP */
+.stats-strip{display:flex;gap:0;border-bottom:1px solid var(--line);background:var(--card);}
+.stat-pill{padding:12px 24px;border-right:1px solid var(--line);text-align:center;}
+.stat-pill:last-child{border-right:none;}
+.stat-num{font-size:20px;font-weight:800;color:var(--green-700);}
+.stat-lbl{font-size:11px;font-weight:600;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.05em;margin-top:1px;}
+
+/* TABLE */
+.table-wrap{flex:1;overflow-y:auto;padding:0;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+thead th{text-align:left;padding:10px 16px;border-bottom:2px solid var(--line);
+  font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;
+  color:var(--ink-muted);background:var(--card);position:sticky;top:0;z-index:5;}
+tbody tr{border-bottom:1px solid var(--line);transition:background .1s;}
+tbody tr:hover{background:var(--green-50);}
+td{padding:11px 16px;color:var(--ink-soft);vertical-align:middle;}
+td.lead{font-weight:600;color:var(--ink);}
+td.ref{font-family:ui-monospace,monospace;font-size:12px;color:var(--ink-muted);letter-spacing:.05em;}
+td.amount{font-weight:700;color:var(--ink);}
+
+/* Status badges */
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;}
+.badge-paid{background:var(--sky-100);color:var(--sky-700);}
+.badge-checked{background:var(--green-100);color:var(--green-700);}
+.badge-cancelled{background:var(--slate-100);color:var(--ink-muted);}
+.badge-pending{background:var(--amber-100);color:var(--amber-700);}
+.badge-noshow{background:var(--rose-100);color:var(--rose-700);}
+
+.empty-state{padding:60px 24px;text-align:center;color:var(--ink-muted);}
+.empty-state .icon{font-size:36px;opacity:.35;margin-bottom:12px;}
+.loading{padding:40px;text-align:center;color:var(--ink-muted);font-size:13px;}
+tbody tr{cursor:pointer;}
+
+/* ── Detail panel ── */
+#detailOverlay{position:fixed;inset:0;background:rgba(0,0,0,.25);z-index:50;display:none;opacity:0;transition:opacity .2s;}
+#detailOverlay.open{opacity:1;}
+#detailPanel{position:fixed;top:0;right:0;bottom:0;width:380px;background:var(--card);
+  z-index:51;box-shadow:-4px 0 32px rgba(0,0,0,.12);display:flex;flex-direction:column;
+  transform:translateX(100%);transition:transform .25s cubic-bezier(.22,.68,0,1.1);}
+#detailPanel.open{transform:translateX(0);}
+.dp-head{background:var(--green-900);padding:24px 24px 20px;color:#fff;flex-shrink:0;}
+.dp-close{position:absolute;top:16px;right:16px;background:rgba(255,255,255,.15);border:none;
+  color:#fff;border-radius:50%;width:28px;height:28px;font-size:14px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;}
+.dp-close:hover{background:rgba(255,255,255,.25);}
+.dp-ref{font-size:26px;font-weight:800;letter-spacing:.05em;}
+.dp-sub{font-size:13px;color:rgba(255,255,255,.6);margin-top:4px;}
+.dp-body{flex:1;overflow-y:auto;padding:20px 24px;}
+.dp-row{display:flex;justify-content:space-between;align-items:flex-start;
+  padding:10px 0;border-bottom:1px solid var(--line);font-size:13px;}
+.dp-row:last-child{border-bottom:none;}
+.dp-lbl{color:var(--ink-muted);font-weight:500;flex-shrink:0;margin-right:12px;}
+.dp-val{font-weight:600;color:var(--ink);text-align:right;}
+.dp-actions{padding:16px 24px;border-top:1px solid var(--line);display:flex;gap:8px;flex-shrink:0;}
+.dp-btn{flex:1;padding:9px 12px;border-radius:8px;font:inherit;font-size:12px;font-weight:600;
+  cursor:pointer;text-align:center;text-decoration:none;display:inline-block;border:1.5px solid transparent;}
+.dp-btn-outline{border-color:var(--line);background:#fff;color:var(--ink-soft);}
+.dp-btn-outline:hover{background:var(--green-50);}
+.dp-btn-cancel{border-color:var(--rose-100);background:var(--rose-50);color:var(--rose-700);}
+.dp-btn-cancel:hover{background:var(--rose-100);}
+
+/* ── PIN Gate ── */
+#pinGate{position:fixed;inset:0;z-index:9999;background:var(--green-900);
+  display:flex;align-items:center;justify-content:center;transition:opacity .25s;}
+#pinGate.hide{opacity:0;pointer-events:none;}
+.pin-card{background:#fff;border-radius:20px;padding:40px 44px;
+  width:100%;max-width:360px;text-align:center;box-shadow:0 8px 48px rgba(0,0,0,.28);}
+.pin-logo{font-size:28px;font-weight:900;color:var(--green-900);letter-spacing:-.03em;margin-bottom:4px;}
+.pin-sub{font-size:13px;color:var(--ink-muted);margin-bottom:28px;}
+.pin-input{width:100%;padding:14px 16px;font-size:22px;font-weight:700;text-align:center;
+  letter-spacing:.25em;border:2px solid var(--line);border-radius:12px;outline:none;
+  font-family:inherit;color:var(--green-900);transition:border-color .15s;
+  -webkit-text-security:disc;}
+.pin-input:focus{border-color:var(--green-700);}
+.pin-input.error{border-color:var(--rose-700);animation:pinShake .35s;}
+.pin-err{font-size:13px;color:var(--rose-700);margin-top:10px;min-height:20px;font-weight:500;}
+.pin-btn{margin-top:18px;width:100%;padding:14px;background:var(--green-700);color:#fff;
+  border:none;border-radius:12px;font-size:15px;font-weight:700;font-family:inherit;
+  cursor:pointer;transition:background .15s;}
+.pin-btn:hover{background:var(--green-900);}
+@keyframes pinShake{
+  0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)}
+  40%{transform:translateX(8px)} 60%{transform:translateX(-6px)} 80%{transform:translateX(6px)}
+}
+#lockBtn{font-size:13px;color:var(--ink-muted);background:none;border:1px solid var(--line);
+  border-radius:6px;padding:4px 10px;cursor:pointer;}
+#lockBtn:hover{background:var(--slate-100);}
+</style>
+</head>
+<body>
+
+<!-- ── PIN Gate ── -->
+<div id="pinGate">
+  <div class="pin-card">
+    <div class="pin-logo">⛳ SwingFirst</div>
+    <div class="pin-sub">Operator access — enter your PIN</div>
+    <input id="pinInput" class="pin-input" type="password" inputmode="numeric"
+           maxlength="8" placeholder="·  ·  ·  ·" autocomplete="off" autocorrect="off"/>
+    <div class="pin-err" id="pinErr"></div>
+    <button class="pin-btn" id="pinSubmit">Unlock</button>
+  </div>
+</div>
+<script>
+const OPERATOR_PIN = 'golf';
+const AUTH_KEY     = 'sf_op_auth';
+(function() {
+  if (sessionStorage.getItem(AUTH_KEY) === '1') {
+    document.getElementById('pinGate').style.display = 'none';
+  }
+})();
+function unlockOperator() {
+  const val = document.getElementById('pinInput').value.trim().toLowerCase();
+  if (val === OPERATOR_PIN.toLowerCase()) {
+    sessionStorage.setItem(AUTH_KEY, '1');
+    const gate = document.getElementById('pinGate');
+    gate.classList.add('hide');
+    setTimeout(() => gate.style.display = 'none', 280);
+  } else {
+    const inp = document.getElementById('pinInput');
+    const err = document.getElementById('pinErr');
+    inp.classList.add('error');
+    err.textContent = 'Incorrect PIN — try again.';
+    inp.value = '';
+    setTimeout(() => inp.classList.remove('error'), 400);
+    inp.focus();
+  }
+}
+document.getElementById('pinSubmit').addEventListener('click', unlockOperator);
+document.getElementById('pinInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') unlockOperator();
+});
+</script>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-mark">S</div>
+    <span class="brand-name">SwingFirst<span class="brand-tag">Operator</span></span>
+  </div>
+  <div class="topbar-right">
+    <span id="clock"></span>
+    <button id="lockBtn" onclick="lockOperator()">🔒 Lock</button>
+  </div>
+</div>
+
+<div class="shell">
+  <aside class="sidebar-left">
+    <div class="nav-group">
+      <div class="nav-title">Today</div>
+      <a class='nav-item' href='/swingfirst-tee-sheet'><span class="dot"></span> Tee sheet</a>
+      <a class="nav-item" href="swingfirst-qr-scanner.html"><span class="dot"></span> Check-ins</a>
+      <a class="nav-item" href="#"><span class="dot"></span> Pro shop</a>
+    </div>
+    <div class="nav-group">
+      <div class="nav-title">Manage</div>
+      <a class='nav-item active' href='/swingfirst-bookings'><span class="dot"></span> Bookings</a>
+      <a class='nav-item' href='/swingfirst-pricing'><span class="dot"></span> Rates &amp; Pricing</a>
+      <a class="nav-item" href="#"><span class="dot"></span> Blocks</a>
+      <a class='nav-item' href='/swingfirst-customers'><span class="dot"></span> Customers</a>
+    </div>
+    <div class="nav-group">
+      <div class="nav-title">Course</div>
+      <a class="nav-item" href="#"><span class="dot"></span> Settings</a>
+      <a class='nav-item' href='/swingfirst-reports'><span class="dot"></span> Reports</a>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="page-head">
+      <div class="page-title">Bookings</div>
+      <div class="filters" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <input class="search-input" id="searchInput" type="text" placeholder="Search name, ref, email…"/>
+        <select class="filter-select" id="courseFilter">
+          <option value="">All courses</option>
+          <option>Palmbrook</option>
+          <option>San Tan Highlands</option>
+          <option>Coyote Lakes</option>
+          <option>Union Hills</option>
+          <option>Scottsdale CC</option>
+          <option>Briarwood CC</option>
+        </select>
+        <select class="filter-select" id="statusFilter">
+          <option value="">All statuses</option>
+          <option value="paid">Paid</option>
+          <option value="checked_in">Checked in</option>
+          <option value="cancelled">Cancelled</option>
+          <option value="pending">Pending</option>
+        </select>
+        <select class="filter-select" id="dateFilter">
+          <option value="7">Last 7 days</option>
+          <option value="30" selected>Last 30 days</option>
+          <option value="90">Last 90 days</option>
+          <option value="365">Last year</option>
+          <option value="all">All time</option>
+        </select>
+        <button id="exportBtn" style="padding:6px 14px;border:1.5px solid var(--line);border-radius:8px;background:var(--card);font-size:12px;font-weight:600;color:var(--ink-soft);cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:5px;">⬇ Export CSV</button>
+      </div>
+    </div>
+
+    <div class="stats-strip" id="statsStrip">
+      <div class="stat-pill"><div class="stat-num" id="statTotal">—</div><div class="stat-lbl">Bookings</div></div>
+      <div class="stat-pill"><div class="stat-num" id="statPlayers">—</div><div class="stat-lbl">Players</div></div>
+      <div class="stat-pill"><div class="stat-num" id="statRevenue">—</div><div class="stat-lbl">Revenue</div></div>
+      <div class="stat-pill"><div class="stat-num" id="statCheckedIn">—</div><div class="stat-lbl">Checked in</div></div>
+    </div>
+
+    <div class="table-wrap">
+      <div class="loading" id="loadingMsg">Loading bookings…</div>
+      <table id="bookingsTable" style="display:none;">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Time</th>
+            <th>Course</th>
+            <th>Lead</th>
+            <th>Ref</th>
+            <th>Players</th>
+            <th>Amount</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+      <div class="empty-state" id="emptyState" style="display:none;">
+        <div class="icon">📋</div>
+        <div>No bookings match your filters.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Booking detail panel ── -->
+<div id="detailOverlay" onclick="closeDetail()"></div>
+<div id="detailPanel">
+  <div class="dp-head" style="position:relative;">
+    <button class="dp-close" onclick="closeDetail()">✕</button>
+    <div class="dp-ref" id="dpRef">—</div>
+    <div class="dp-sub" id="dpSub">—</div>
+  </div>
+  <div class="dp-body" id="dpBody"></div>
+  <div class="dp-actions" id="dpActions"></div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://ojgxfeaesnaohskxdvam.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_4UVFMXQWGOt4XNgHVNzWoQ_Id6TBqcu';
+const SB_HEADERS = {
+  'apikey': SUPABASE_KEY,
+  'Authorization': `Bearer ${SUPABASE_KEY}`,
+  'Content-Type': 'application/json',
+};
+async function sbGet(table, params) {
+  const url = `${SUPABASE_URL}/rest/v1/${table}${params ? '?' + params : ''}`;
+  const res = await fetch(url, { headers: SB_HEADERS });
+  if (!res.ok) { const t = await res.text(); throw new Error(`HTTP ${res.status}: ${t}`); }
+  return res.json();
+}
+
+function money(cents) { return '$' + (cents/100).toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:0}); }
+function fmt12(h, m) {
+  const ampm = h < 12 ? 'AM' : 'PM';
+  return `${h%12||12}:${String(m||0).padStart(2,'0')} ${ampm}`;
+}
+function fmtDate(s) {
+  if (!s) return '—';
+  const d = new Date(s + 'T12:00:00');
+  return d.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+}
+
+let ALL_BOOKINGS      = [];
+let FILTERED_BOOKINGS = [];
+
+async function loadBookings() {
+  try {
+    const days   = document.getElementById('dateFilter').value;
+    let dateClause = '';
+    if (days !== 'all') {
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - parseInt(days, 10));
+      const y = cutoff.getFullYear(), mo = String(cutoff.getMonth()+1).padStart(2,'0'), d = String(cutoff.getDate()).padStart(2,'0');
+      dateClause = `&tee_times.date=gte.${y}-${mo}-${d}`;
+    }
+
+    ALL_BOOKINGS = await sbGet('bookings',
+      `select=id,lead_name,lead_email,lead_phone,player_count,total_cents,status,booking_ref,created_at,tee_times(date,hour,minute,courses(name))&order=created_at.desc&limit=500`
+    );
+    renderTable();
+  } catch(e) {
+    document.getElementById('loadingMsg').textContent = '⚠ Could not load bookings — ' + e.message;
+  }
+}
+
+function statusBadge(s) {
+  const map = {
+    paid:       ['badge-paid',      'Paid'],
+    checked_in: ['badge-checked',   'Checked in'],
+    cancelled:  ['badge-cancelled', 'Cancelled'],
+    no_show:    ['badge-noshow',    'No show'],
+    pending:    ['badge-pending',   'Pending'],
+  };
+  const [cls, label] = map[s] || ['badge-pending', s];
+  return `<span class="badge ${cls}">${label}</span>`;
+}
+
+function renderTable() {
+  const search  = document.getElementById('searchInput').value.toLowerCase();
+  const course  = document.getElementById('courseFilter').value;
+  const status  = document.getElementById('statusFilter').value;
+  const days    = document.getElementById('dateFilter').value;
+
+  const cutoff = days !== 'all' ? (() => {
+    const d = new Date(); d.setDate(d.getDate() - parseInt(days, 10)); return d;
+  })() : null;
+
+  FILTERED_BOOKINGS = ALL_BOOKINGS.filter(b => {
+    const tt       = b.tee_times || {};
+    const cName    = tt.courses?.name || '';
+    const dateStr  = tt.date || '';
+
+    if (cutoff && dateStr) {
+      const bd = new Date(dateStr + 'T12:00:00');
+      if (bd < cutoff) return false;
+    }
+    if (course && cName !== course) return false;
+    if (status && b.status !== status) return false;
+    if (search) {
+      const hay = [b.lead_name, b.lead_email, b.booking_ref, cName].join(' ').toLowerCase();
+      if (!hay.includes(search)) return false;
+    }
+    return true;
+  });
+  const filtered = FILTERED_BOOKINGS;
+
+  // Stats
+  const totalRev   = filtered.filter(b => b.status !== 'cancelled').reduce((s, b) => s + (b.total_cents||0), 0);
+  const checkedIn  = filtered.filter(b => b.status === 'checked_in').length;
+  const totalPlayers = filtered.filter(b => b.status !== 'cancelled').reduce((s, b) => s + (b.player_count||0), 0);
+  document.getElementById('statTotal').textContent     = filtered.length;
+  document.getElementById('statPlayers').textContent   = totalPlayers;
+  document.getElementById('statRevenue').textContent   = money(totalRev);
+  document.getElementById('statCheckedIn').textContent = checkedIn;
+
+  const tbody = document.getElementById('tableBody');
+  document.getElementById('loadingMsg').style.display = 'none';
+
+  if (!filtered.length) {
+    document.getElementById('bookingsTable').style.display = 'none';
+    document.getElementById('emptyState').style.display = '';
+    return;
+  }
+
+  document.getElementById('bookingsTable').style.display = '';
+  document.getElementById('emptyState').style.display = 'none';
+
+  tbody.innerHTML = filtered.map(b => {
+    const tt = b.tee_times || {};
+    return `<tr data-id="${b.id}" onclick="openDetail(${b.id})">
+      <td>${fmtDate(tt.date)}</td>
+      <td>${tt.hour != null ? fmt12(tt.hour, tt.minute) : '—'}</td>
+      <td>${tt.courses?.name || '—'}</td>
+      <td class="lead">${b.lead_name || '—'}</td>
+      <td class="ref">${b.booking_ref || '—'}</td>
+      <td style="text-align:center;">${b.player_count || '—'}</td>
+      <td class="amount">${b.total_cents ? money(b.total_cents) : '—'}</td>
+      <td>${statusBadge(b.status)}</td>
+    </tr>`;
+  }).join('');
+}
+
+function exportCSV() {
+  const rows = FILTERED_BOOKINGS;
+  if (!rows.length) { alert('No bookings to export.'); return; }
+  const esc = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  const headers = ['Date','Time','Course','Lead Name','Email','Phone','Ref','Players','Amount','Status'];
+  const lines = [headers.join(',')];
+  rows.forEach(b => {
+    const tt = b.tee_times || {};
+    const date = tt.date || '';
+    const time = tt.hour != null ? fmt12(tt.hour, tt.minute) : '';
+    const course = tt.courses?.name || '';
+    lines.push([
+      esc(date), esc(time), esc(course),
+      esc(b.lead_name), esc(b.lead_email), esc(b.lead_phone),
+      esc(b.booking_ref), esc(b.player_count),
+      esc(b.total_cents ? (b.total_cents/100).toFixed(2) : ''),
+      esc(b.status),
+    ].join(','));
+  });
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = `swingfirst-bookings-${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 500);
+}
+
+// Filters → re-render
+document.getElementById('searchInput').addEventListener('input', renderTable);
+document.getElementById('courseFilter').addEventListener('change', renderTable);
+document.getElementById('statusFilter').addEventListener('change', renderTable);
+document.getElementById('dateFilter').addEventListener('change', loadBookings);
+document.getElementById('exportBtn').addEventListener('click', exportCSV);
+
+// Clock
+function tickClock() {
+  document.getElementById('clock').textContent =
+    new Date().toLocaleDateString(undefined, {month:'short',day:'numeric'}) + ' · ' +
+    new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+}
+tickClock(); setInterval(tickClock, 30000);
+
+// ── Detail panel ─────────────────────────────────────────────────────────────
+function openDetail(id) {
+  const b = ALL_BOOKINGS.find(x => x.id === id);
+  if (!b) return;
+  const tt     = b.tee_times || {};
+  const course = tt.courses?.name || '—';
+  const date   = fmtDate(tt.date);
+  const time   = tt.hour != null ? fmt12(tt.hour, tt.minute) : '—';
+  const isCancelable = b.status !== 'cancelled' && b.status !== 'checked_in';
+
+  document.getElementById('dpRef').textContent = b.booking_ref || '—';
+  document.getElementById('dpSub').textContent = `${date} · ${time} · ${course}`;
+
+  const rows = [
+    ['Lead name',   b.lead_name   || '—'],
+    ['Email',       b.lead_email  || '—'],
+    ['Phone',       b.lead_phone  || '—'],
+    ['Players',     b.player_count || '—'],
+    ['Total paid',  b.total_cents ? money(b.total_cents) : '—'],
+    ['Status',      `<span class="badge ${statusBadge(b.status).match(/badge-\w+/)?.[0] || ''}">${(b.status||'').replace('_',' ')}</span>`],
+    ['Booked on',   b.created_at ? new Date(b.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—'],
+  ];
+
+  document.getElementById('dpBody').innerHTML = rows.map(([l,v]) =>
+    `<div class="dp-row"><span class="dp-lbl">${l}</span><span class="dp-val">${v}</span></div>`
+  ).join('');
+
+  const cancelUrl = `https://book.swingfirst.ai/cancel.html?ref=${encodeURIComponent(b.booking_ref)}`;
+  const lookupUrl = `https://book.swingfirst.ai/lookup.html?ref=${encodeURIComponent(b.booking_ref)}${b.lead_email ? '&email='+encodeURIComponent(b.lead_email) : ''}`;
+  document.getElementById('dpActions').innerHTML =
+    `<a href="${lookupUrl}" target="_blank" class="dp-btn dp-btn-outline">🗂 Golfer view</a>` +
+    (isCancelable ? `<a href="${cancelUrl}" target="_blank" class="dp-btn dp-btn-cancel">Cancel booking</a>` : '');
+
+  const overlay = document.getElementById('detailOverlay');
+  const panel   = document.getElementById('detailPanel');
+  overlay.style.display = 'block';
+  requestAnimationFrame(() => {
+    overlay.classList.add('open');
+    panel.classList.add('open');
+  });
+}
+
+function closeDetail() {
+  const overlay = document.getElementById('detailOverlay');
+  const panel   = document.getElementById('detailPanel');
+  overlay.classList.remove('open');
+  panel.classList.remove('open');
+  setTimeout(() => { overlay.style.display = 'none'; }, 250);
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDetail(); });
+
+// Boot
+loadBookings();
+
+function lockOperator() {
+  sessionStorage.removeItem(AUTH_KEY);
+  const gate = document.getElementById('pinGate');
+  gate.style.display = 'flex'; gate.style.opacity = '0';
+  requestAnimationFrame(() => { gate.style.opacity = '1'; });
+  document.getElementById('pinInput').value = '';
+  document.getElementById('pinErr').textContent = '';
+  setTimeout(() => document.getElementById('pinInput').focus(), 100);
+}
+</script>
+</body>
+</html>
