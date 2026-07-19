@@ -1,0 +1,22 @@
+[build]
+  publish = "."
+  command = ""
+  functions = "netlify/functions"
+
+[build.environment]
+  NODE_VERSION = "18"
+
+[functions."send-reminder"]
+  schedule = "0 2 * * *"
+
+[[redirects]]
+  from   = "https://operator.swingfirst.ai/"
+  to     = "https://operator.swingfirst.ai/swingfirst-tee-sheet.html"
+  status = 301
+  force  = true
+
+[[redirects]]
+  from   = "/"
+  to     = "/swingfirst-live.html"
+  status = 301
+  force  = true
