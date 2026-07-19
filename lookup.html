@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>SwingFirst — Find My Booking</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  background:#f2f9f5;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:24px;}
+.card{background:#fff;border-radius:20px;box-shadow:0 4px 32px rgba(0,0,0,.1);
+  width:100%;max-width:460px;overflow:hidden;margin-top:40px;}
+.card-head{background:#0b3d2e;padding:28px 32px;text-align:center;}
+.card-head .icon{font-size:32px;margin-bottom:8px;}
+.card-head h1{color:#fff;font-size:20px;font-weight:800;letter-spacing:-.01em;}
+.card-head p{color:rgba(255,255,255,.55);font-size:13px;margin-top:4px;}
+.card-body{padding:28px 32px;}
+label{display:block;font-size:11px;font-weight:700;color:#3b4a42;
+  text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;}
+input{width:100%;padding:11px 14px;border:1.5px solid #e4e9e6;border-radius:10px;
+  font:inherit;font-size:14px;color:#0d1f17;outline:none;transition:border-color .15s;}
+input:focus{border-color:#1b6b4f;}
+.field{margin-bottom:16px;}
+.btn{width:100%;padding:13px;background:#1b6b4f;color:#fff;border:none;
+  border-radius:10px;font:inherit;font-size:15px;font-weight:700;cursor:pointer;
+  transition:background .15s;}
+.btn:hover{background:#0b3d2e;}
+.btn:disabled{background:#a8d5bc;cursor:not-allowed;}
+.err{background:#fff1f4;border:1px solid #f5c2ce;color:#9A2A42;
+  border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:16px;display:none;}
+.hint{font-size:12px;color:#6b7a72;margin-top:16px;text-align:center;line-height:1.6;}
+
+/* Result card */
+.result{display:none;padding:0;}
+.res-head{background:#0b3d2e;padding:24px 28px;color:#fff;text-align:center;}
+.res-icon{font-size:28px;margin-bottom:6px;}
+.res-course{font-size:18px;font-weight:800;}
+.res-time{font-size:14px;color:rgba(255,255,255,.7);margin-top:4px;}
+.res-ref{display:inline-block;font-size:30px;font-weight:800;letter-spacing:.08em;
+  background:#f2f9f5;color:#1b6b4f;border:2px solid #a8d5bc;border-radius:12px;
+  padding:12px 24px;margin:16px auto 0;display:block;text-align:center;}
+.res-body{padding:20px 28px;}
+.res-row{display:flex;justify-content:space-between;align-items:center;
+  padding:10px 0;border-bottom:1px solid #e4e9e6;font-size:13px;}
+.res-row:last-child{border-bottom:none;}
+.res-lbl{color:#6b7a72;font-weight:500;}
+.res-val{font-weight:600;color:#0d1f17;}
+.res-status{display:inline-flex;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;}
+.status-paid{background:#dbeaf5;color:#175e8c;}
+.status-checked_in{background:#e3f2ec;color:#1b6b4f;}
+.status-cancelled{background:#eef1ee;color:#6b7a72;}
+.res-actions{display:flex;gap:10px;padding:16px 28px;border-top:1px solid #e4e9e6;}
+.res-btn{flex:1;padding:10px;border-radius:10px;font:inherit;font-size:13px;
+  font-weight:600;cursor:pointer;text-align:center;text-decoration:none;
+  display:inline-block;transition:background .15s;}
+.res-btn-outline{border:1.5px solid #e4e9e6;background:#fff;color:#3b4a42;}
+.res-btn-outline:hover{background:#f2f9f5;}
+.res-btn-cancel{border:1.5px solid #f5c2ce;background:#fff1f4;color:#9A2A42;}
+.res-btn-cancel:hover{background:#ffe0e6;}
+.res-btn-calendar{border:1.5px solid #a8d5bc;background:#f2f9f5;color:#1b6b4f;}
+.res-btn-calendar:hover{background:#e3f2ec;}
+.back-link{font-size:13px;color:#1b6b4f;font-weight:600;margin-top:16px;cursor:pointer;text-align:center;display:block;}
+.back-link:hover{text-decoration:underline;}
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="card-head">
+    <div class="icon">⛳</div>
+    <h1>SwingFirst</h1>
+    <p>Find your booking</p>
+  </div>
+
+  <!-- Search form -->
+  <div class="card-body" id="formState">
+    <div class="err" id="errMsg"></div>
+    <div class="field">
+      <label for="emailInput">Your email address</label>
+      <input id="emailInput" type="email" placeholder="you@example.com" autocomplete="email"/>
+    </div>
+    <div class="field">
+      <label for="refInput">Confirmation code (optional)</label>
+      <input id="refInput" type="text" placeholder="e.g. CL26AP23TH001 — leave blank to find all"
+             autocomplete="off" autocorrect="off" autocapitalize="characters"
+             style="letter-spacing:.06em;"/>
+    </div>
+    <button class="btn" id="lookupBtn">Find my booking →</button>
+    <div class="hint">
+      Your confirmation code is in the email you received when you booked.<br/>
+      Don't have it? Just enter your email address.
+    </div>
+  </div>
+
+  <!-- Result -->
+  <div id="resultState"></div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://ojgxfeaesnaohskxdvam.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_4UVFMXQWGOt4XNgHVNzWoQ_Id6TBqcu';
+const SB_HEADERS = {
+  'apikey': SUPABASE_KEY,
+  'Authorization': `Bearer ${SUPABASE_KEY}`,
+  'Content-Type': 'application/json',
+};
+
+function fmt12(h, m) {
+  const ampm = h < 12 ? 'AM' : 'PM';
+  return `${h%12||12}:${String(m||0).padStart(2,'0')} ${ampm}`;
+}
+function fmtDate(s) {
+  if (!s) return '—';
+  const d = new Date(s + 'T12:00:00');
+  return d.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric', year:'numeric'});
+}
+function money(cents) { return '$' + (cents/100).toFixed(0); }
+
+// Pre-fill ref from URL
+(function() {
+  const p = new URLSearchParams(window.location.search);
+  if (p.get('ref')) { document.getElementById('refInput').value = p.get('ref').toUpperCase(); }
+  if (p.get('email')) { document.getElementById('emailInput').value = p.get('email'); }
+})();
+
+document.getElementById('refInput').addEventListener('input', function() {
+  this.value = this.value.toUpperCase();
+});
+
+document.getElementById('lookupBtn').addEventListener('click', async () => {
+  const email = document.getElementById('emailInput').value.trim();
+  const ref   = document.getElementById('refInput').value.trim().toUpperCase();
+  const err   = document.getElementById('errMsg');
+  const btn   = document.getElementById('lookupBtn');
+
+  err.style.display = 'none';
+  if (!email) { showErr('Please enter your email address.'); return; }
+
+  btn.disabled = true; btn.textContent = 'Looking up…';
+
+  try {
+    let params = `select=id,lead_name,lead_email,player_count,total_cents,status,booking_ref,created_at,tee_times(date,hour,minute,courses(name,phone))&lead_email=eq.${encodeURIComponent(email)}&order=tee_times(date).asc,tee_times(hour).asc&limit=200`;
+    if (ref) params += `&booking_ref=eq.${encodeURIComponent(ref)}`;
+
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/bookings?${params}`, { headers: SB_HEADERS });
+    const bookings = await res.json();
+
+    if (!bookings || bookings.length === 0) {
+      showErr('No booking found with those details. Please check your email address and try again.');
+      btn.disabled = false; btn.textContent = 'Find my booking →';
+      return;
+    }
+
+    renderResults(bookings);
+
+  } catch(e) {
+    showErr('Network error — please try again.');
+    btn.disabled = false; btn.textContent = 'Find my booking →';
+  }
+});
+
+function showErr(msg) {
+  const el = document.getElementById('errMsg');
+  el.textContent = msg; el.style.display = 'block';
+}
+
+function bookingCard(b, isPast) {
+  const tt        = b.tee_times || {};
+  const course    = tt.courses?.name || 'SwingFirst Course';
+  const phone     = tt.courses?.phone || '';
+  const dateStr   = tt.date || '';
+  const timeStr   = tt.hour != null ? fmt12(tt.hour, tt.minute) : '—';
+  const cancelUrl = `https://book.swingfirst.ai/cancel.html?ref=${encodeURIComponent(b.booking_ref)}`;
+
+  let calUrl = '';
+  if (dateStr && tt.hour != null) {
+    const ds = dateStr.replace(/-/g,'');
+    const pad = n => String(n||0).padStart(2,'0');
+    const calStart = `${ds}T${pad(tt.hour)}${pad(tt.minute)}00`;
+    const calEnd   = `${ds}T${pad(Math.min(tt.hour+4,23))}${pad(tt.minute)}00`;
+    calUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent('⛳ Tee Time — '+course)}&dates=${calStart}/${calEnd}&location=${encodeURIComponent(course)}&ctz=America%2FPhoenix`;
+  }
+
+  const statusLabel = {paid:'Paid',checked_in:'Checked in',cancelled:'Cancelled',pending:'Pending'}[b.status] || b.status;
+  const statusCls   = `status-${b.status}`;
+  const isCancellable = !isPast && b.status !== 'cancelled' && b.status !== 'checked_in';
+  const headBg = isPast ? '#4a5c52' : '#0b3d2e';
+
+  return `
+  <div style="border-bottom:2px solid #f2f9f5;${isPast?'opacity:.8;':''}">
+    <div class="res-head" style="background:${headBg};">
+      <div class="res-icon">⛳</div>
+      <div class="res-course">${course}</div>
+      <div class="res-time">${fmtDate(dateStr)} · ${timeStr}</div>
+      <div class="res-ref">${b.booking_ref}</div>
+    </div>
+    <div class="res-body">
+      <div class="res-row"><span class="res-lbl">Players</span><span class="res-val">${b.player_count}</span></div>
+      <div class="res-row"><span class="res-lbl">Total</span><span class="res-val">${money(b.total_cents)}</span></div>
+      <div class="res-row"><span class="res-lbl">Status</span><span class="res-val"><span class="res-status ${statusCls}">${statusLabel}</span></span></div>
+      ${phone ? `<div class="res-row"><span class="res-lbl">Contact</span><span class="res-val"><a href="tel:${phone.replace(/\D/g,'')}" style="color:#1b6b4f;font-weight:600;">${phone}</a></span></div>` : ''}
+    </div>
+    <div class="res-actions">
+      ${calUrl && !isPast ? `<a href="${calUrl}" target="_blank" class="res-btn res-btn-calendar">📅 Calendar</a>` : ''}
+      ${isCancellable ? `<a href="${cancelUrl}" class="res-btn res-btn-cancel">Cancel</a>` : ''}
+      ${!isCancellable && !isPast ? '' : `<a href="https://book.swingfirst.ai" class="res-btn res-btn-outline">Book again</a>`}
+    </div>
+  </div>`;
+}
+
+function renderResults(bookings) {
+  document.getElementById('formState').style.display = 'none';
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  const upcoming = bookings.filter(b => {
+    const d = b.tee_times?.date;
+    return d && new Date(d + 'T12:00:00') >= today && b.status !== 'cancelled';
+  });
+  const past = bookings.filter(b => {
+    const d = b.tee_times?.date;
+    if (!d) return true;
+    return new Date(d + 'T12:00:00') < today || b.status === 'cancelled';
+  });
+
+  // Sort upcoming ascending, past descending
+  upcoming.sort((a,b) => (a.tee_times?.date||'') > (b.tee_times?.date||'') ? 1 : -1);
+  past.sort((a,b) => (a.tee_times?.date||'') < (b.tee_times?.date||'') ? 1 : -1);
+
+  const name = bookings[0]?.lead_name || '';
+  let html = `<div style="padding:20px 28px 8px;">
+    <div style="font-size:17px;font-weight:700;color:#0d1f17;">Hi, ${name.split(' ')[0] || 'golfer'}!</div>
+    <div style="font-size:13px;color:#6b7a72;margin-top:3px;">${upcoming.length} upcoming · ${past.length} past</div>
+  </div>`;
+
+  if (upcoming.length) {
+    html += `<div style="padding:4px 28px 6px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#1b6b4f;">Upcoming</div>`;
+    html += upcoming.map(b => bookingCard(b, false)).join('');
+  }
+
+  if (past.length) {
+    html += `<div style="padding:14px 28px 6px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#6b7a72;">Past bookings</div>`;
+    html += past.map(b => bookingCard(b, true)).join('');
+  }
+
+  html += `<div style="padding:16px 28px;text-align:center;">
+    <a class="back-link" onclick="location.reload()">← Search again</a>
+  </div>`;
+
+  document.getElementById('resultState').innerHTML = html;
+}
+</script>
+</body>
+</html>
