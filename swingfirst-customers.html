@@ -1,0 +1,1267 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>SwingFirst — Customers</title>
+<style>
+:root{
+  --ink:#0d1f17;--ink-soft:#3b4a42;--ink-muted:#6b7a72;
+  --line:#e4e9e6;--paper:#fbfaf7;--card:#ffffff;
+  --green-900:#0b3d2e;--green-700:#1b6b4f;--green-600:#2a8a6a;
+  --green-200:#a8d5bc;--green-100:#e3f2ec;--green-50:#f2f9f5;
+  --amber-700:#B45309;--amber-100:#FEF3C7;--amber-50:#FFFBEB;
+  --purple-900:#3b0764;--purple-700:#5b21b6;--purple-100:#ede9fe;--purple-50:#f5f3ff;
+  --rose-700:#9A2A42;--rose-100:#fbe0e6;--rose-50:#fff1f4;
+  --sky-700:#175e8c;--sky-100:#dbeaf5;
+  --slate-100:#eef1ee;--slate-200:#dde3de;
+  --shadow-sm:0 1px 2px rgba(13,31,23,.06);
+  --shadow-md:0 2px 8px rgba(13,31,23,.08),0 8px 24px rgba(13,31,23,.06);
+  --shadow-lg:0 4px 16px rgba(13,31,23,.14),0 1px 3px rgba(13,31,23,.08);
+  --radius:12px;--radius-sm:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Inter",sans-serif;
+  color:var(--ink);background:var(--paper);font-size:14px;line-height:1.45;}
+button{font:inherit;color:inherit;cursor:pointer;}
+a{color:inherit;text-decoration:none;}
+
+/* ── TOP BAR ── */
+.topbar{display:flex;align-items:center;justify-content:space-between;
+  padding:0 24px;height:52px;border-bottom:1px solid var(--line);
+  background:var(--card);position:sticky;top:0;z-index:20;}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;}
+.brand-mark{width:28px;height:28px;border-radius:8px;
+  background:linear-gradient(135deg,var(--green-700),var(--green-900));
+  display:grid;place-items:center;color:#fff;font-size:14px;}
+.brand-name{font-size:15px;letter-spacing:-.02em;}
+.brand-tag{font-size:11px;font-weight:500;color:var(--ink-muted);
+  background:var(--green-100);border-radius:4px;padding:1px 6px;margin-left:4px;}
+.topbar-right{display:flex;align-items:center;gap:12px;font-size:13px;color:var(--ink-soft);}
+.tb-avatar{width:30px;height:30px;border-radius:50%;background:var(--green-700);
+  color:#fff;display:grid;place-items:center;font-weight:700;font-size:12px;}
+
+/* ── SHELL ── */
+.shell{display:grid;grid-template-columns:200px 316px 1fr;height:calc(100vh - 52px);}
+
+/* ── LEFT NAV ── */
+.sidebar-left{border-right:1px solid var(--line);padding:16px 10px;
+  overflow-y:auto;background:var(--card);}
+.nav-group{margin-bottom:14px;}
+.nav-title{font-size:11px;font-weight:600;color:var(--ink-muted);text-transform:uppercase;
+  letter-spacing:.06em;padding:0 10px 6px;}
+.nav-item{display:flex;align-items:center;gap:8px;padding:7px 10px;
+  border-radius:var(--radius-sm);font-size:13px;color:var(--ink-soft);transition:background .15s;}
+.nav-item:hover{background:var(--green-50);color:var(--ink);}
+.nav-item.active{background:var(--green-100);color:var(--green-700);font-weight:600;}
+.nav-item .dot{width:5px;height:5px;border-radius:50%;background:currentColor;visibility:hidden;flex-shrink:0;}
+.nav-item.active .dot{visibility:visible;}
+
+/* ── LIST PANEL ── */
+.list-panel{border-right:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden;background:var(--card);}
+.list-head{padding:16px 16px 12px;border-bottom:1px solid var(--line);flex-shrink:0;}
+.list-title{font-size:15px;font-weight:700;margin-bottom:10px;}
+.search-wrap{position:relative;margin-bottom:10px;}
+.search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);
+  color:var(--ink-muted);font-size:15px;pointer-events:none;}
+.search-input{width:100%;padding:7px 10px 7px 32px;border:1.5px solid var(--line);
+  border-radius:var(--radius-sm);font:inherit;font-size:13px;color:var(--ink);
+  background:#fff;outline:none;transition:border-color .15s;}
+.search-input:focus{border-color:var(--green-600);}
+.filter-tabs{display:flex;gap:4px;flex-wrap:wrap;}
+.ftab{padding:4px 10px;border-radius:6px;font-size:12px;font-weight:500;
+  color:var(--ink-muted);border:1.5px solid transparent;cursor:pointer;
+  transition:all .12s;background:none;}
+.ftab:hover{background:var(--green-50);color:var(--ink);}
+.ftab.active{background:var(--green-100);border-color:var(--green-200);
+  color:var(--green-700);font-weight:600;}
+.list-count{font-size:11px;color:var(--ink-muted);padding:8px 16px 4px;font-weight:500;flex-shrink:0;}
+.list-scroll{flex:1;overflow-y:auto;}
+
+/* Customer row */
+.cust-row{display:flex;align-items:center;gap:10px;padding:11px 16px;
+  cursor:pointer;border-bottom:1px solid var(--line);transition:background .12s;}
+.cust-row:hover{background:var(--green-50);}
+.cust-row.active{background:var(--green-100);}
+.cust-ava{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;
+  font-size:13px;font-weight:700;color:#fff;flex-shrink:0;}
+.cust-info{flex:1;min-width:0;}
+.cust-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cust-sub{font-size:11.5px;color:var(--ink-muted);margin-top:1px;}
+.cust-right{text-align:right;flex-shrink:0;}
+.cust-rounds{font-size:13px;font-weight:700;color:var(--green-700);}
+.cust-rounds-lbl{font-size:10px;color:var(--ink-muted);}
+
+/* ── DETAIL PANEL ── */
+.detail-panel{overflow-y:auto;background:var(--paper);display:flex;flex-direction:column;}
+.detail-empty{flex:1;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;color:var(--ink-muted);gap:10px;}
+.empty-icon{font-size:40px;opacity:.35;}
+
+/* Profile header */
+.profile-header{background:var(--card);border-bottom:1px solid var(--line);padding:24px 28px;flex-shrink:0;}
+.profile-top{display:flex;align-items:flex-start;gap:18px;margin-bottom:0;}
+.profile-ava{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;
+  font-size:26px;font-weight:700;color:#fff;flex-shrink:0;}
+.profile-names{flex:1;}
+.profile-name{font-size:22px;font-weight:800;letter-spacing:-.03em;margin-bottom:5px;}
+.profile-badges{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:7px;}
+.badge{display:inline-flex;align-items:center;gap:3px;padding:3px 9px;
+  border-radius:20px;font-size:11px;font-weight:600;}
+.bg-green{background:var(--green-100);color:var(--green-700);}
+.bg-purple{background:var(--purple-100);color:var(--purple-700);}
+.bg-amber{background:var(--amber-100);color:var(--amber-700);}
+.bg-sky{background:var(--sky-100);color:var(--sky-700);}
+.bg-rose{background:var(--rose-100);color:var(--rose-700);}
+.bg-slate{background:var(--slate-100);color:var(--ink-muted);}
+.profile-contact{font-size:13px;color:var(--ink-muted);display:flex;gap:18px;flex-wrap:wrap;}
+.profile-actions{display:flex;gap:7px;flex-shrink:0;}
+.btn{padding:7px 13px;border-radius:var(--radius-sm);border:1.5px solid var(--line);
+  background:var(--card);font-size:12.5px;font-weight:600;cursor:pointer;
+  transition:all .12s;display:flex;align-items:center;gap:5px;}
+.btn:hover{background:var(--green-50);border-color:var(--green-200);}
+.btn-primary{background:var(--green-700);color:#fff;border-color:var(--green-700);}
+.btn-primary:hover{background:var(--green-900);border-color:var(--green-900);}
+
+/* Stats row */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);
+  border-top:1px solid var(--line);background:var(--card);}
+.stat-box{padding:14px 20px;border-right:1px solid var(--line);}
+.stat-box:last-child{border-right:none;}
+.stat-val{font-size:21px;font-weight:800;color:var(--green-700);letter-spacing:-.02em;}
+.stat-lbl{font-size:10.5px;font-weight:600;color:var(--ink-muted);
+  text-transform:uppercase;letter-spacing:.05em;margin-top:2px;}
+
+/* Detail tabs */
+.detail-tabs{background:var(--card);border-bottom:1px solid var(--line);
+  display:flex;padding:0 24px;flex-shrink:0;}
+.dtab{padding:12px 16px;font-size:13px;font-weight:500;color:var(--ink-muted);
+  border-bottom:2px solid transparent;cursor:pointer;transition:all .12s;white-space:nowrap;}
+.dtab:hover{color:var(--ink);}
+.dtab.active{color:var(--green-700);border-bottom-color:var(--green-700);font-weight:600;}
+
+/* Tab body */
+.tab-body{padding:24px 28px;flex:1;}
+
+/* SF Card widget */
+.sfcard-widget{background:linear-gradient(135deg,#4c1d95,#5b21b6,#7c3aed);
+  border-radius:var(--radius);padding:20px 22px;color:#fff;
+  margin-bottom:20px;position:relative;overflow:hidden;}
+.sfcard-widget::before{content:"SF";position:absolute;right:-8px;bottom:-22px;
+  font-size:110px;font-weight:900;color:rgba(255,255,255,.07);letter-spacing:-.05em;line-height:1;}
+.sfcard-label{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  opacity:.65;margin-bottom:3px;}
+.sfcard-name{font-size:18px;font-weight:800;margin-bottom:8px;}
+.sfcard-row{display:flex;gap:20px;font-size:12px;opacity:.8;}
+.sfcard-disc{margin-top:10px;font-size:12.5px;font-weight:600;opacity:.9;
+  background:rgba(255,255,255,.12);border-radius:6px;padding:7px 12px;width:fit-content;}
+
+/* Field grid */
+.field-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;}
+.field-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px 18px;}
+.field-lbl{font-size:10.5px;font-weight:700;color:var(--ink-muted);
+  text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;}
+.field-val{font-size:14px;font-weight:600;color:var(--ink);}
+.field-sub{font-size:12px;color:var(--ink-muted);margin-top:2px;}
+
+/* History table */
+.hist-wrap{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;}
+.hist-table{width:100%;border-collapse:collapse;font-size:13px;}
+.hist-table th{text-align:left;padding:10px 14px;border-bottom:1.5px solid var(--line);
+  font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;
+  color:var(--ink-muted);background:var(--slate-100);}
+.hist-table td{padding:11px 14px;border-bottom:1px solid var(--line);color:var(--ink-soft);}
+.hist-table tr:last-child td{border-bottom:none;}
+.hist-table tbody tr:hover td{background:var(--green-50);}
+.sp{display:inline-flex;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;}
+.sp-checked{background:var(--green-100);color:var(--green-700);}
+.sp-paid{background:var(--sky-100);color:var(--sky-700);}
+.sp-noshow{background:var(--rose-100);color:var(--rose-700);}
+
+/* Notes */
+.notes-list{display:flex;flex-direction:column;gap:10px;margin-bottom:18px;}
+.note-item{background:var(--card);border:1px solid var(--line);border-radius:var(--radius-sm);padding:14px 16px;}
+.note-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.note-author{font-size:11.5px;font-weight:700;color:var(--green-700);}
+.note-time{font-size:11px;color:var(--ink-muted);}
+.note-text{font-size:13px;color:var(--ink-soft);line-height:1.65;}
+.note-add{background:var(--card);border:1.5px solid var(--line);border-radius:var(--radius);overflow:hidden;}
+.note-add-head{padding:11px 16px;font-size:11px;font-weight:700;
+  color:var(--ink-muted);text-transform:uppercase;letter-spacing:.05em;
+  border-bottom:1px solid var(--line);}
+.note-ta{width:100%;padding:12px 16px;border:none;outline:none;resize:vertical;
+  min-height:80px;font:inherit;font-size:13px;color:var(--ink);background:transparent;line-height:1.6;}
+.note-foot{padding:8px 12px;border-top:1px solid var(--line);
+  display:flex;justify-content:space-between;align-items:center;}
+.note-signed{font-size:11.5px;color:var(--ink-muted);}
+
+.sec-head{font-size:11px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.06em;color:var(--ink-muted);margin-bottom:12px;}
+
+/* ── PIN Gate ── */
+#pinGate{position:fixed;inset:0;z-index:9999;background:var(--green-900);
+  display:flex;align-items:center;justify-content:center;transition:opacity .25s;}
+#pinGate.hide{opacity:0;pointer-events:none;}
+.pin-card{background:#fff;border-radius:20px;padding:40px 44px;
+  width:100%;max-width:360px;text-align:center;box-shadow:0 8px 48px rgba(0,0,0,.28);}
+.pin-logo{font-size:28px;font-weight:900;color:var(--green-900);letter-spacing:-.03em;margin-bottom:4px;}
+.pin-sub{font-size:13px;color:var(--ink-muted);margin-bottom:28px;}
+.pin-input{width:100%;padding:14px 16px;font-size:22px;font-weight:700;text-align:center;
+  letter-spacing:.25em;border:2px solid var(--line);border-radius:12px;outline:none;
+  font-family:inherit;color:var(--green-900);transition:border-color .15s;
+  -webkit-text-security:disc;}
+.pin-input:focus{border-color:var(--green-700);}
+.pin-input.error{border-color:var(--rose-700);animation:pinShake .35s;}
+.pin-err{font-size:13px;color:var(--rose-700);margin-top:10px;min-height:20px;font-weight:500;}
+.pin-btn{margin-top:18px;width:100%;padding:14px;background:var(--green-700);color:#fff;
+  border:none;border-radius:12px;font-size:15px;font-weight:700;font-family:inherit;
+  cursor:pointer;transition:background .15s;}
+.pin-btn:hover{background:var(--green-900);}
+@keyframes pinShake{
+  0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)}
+  40%{transform:translateX(8px)} 60%{transform:translateX(-6px)} 80%{transform:translateX(6px)}
+}
+#lockBtn{font-size:13px;color:var(--ink-muted);background:none;border:1px solid var(--line);
+  border-radius:6px;padding:4px 10px;cursor:pointer;}
+#lockBtn:hover{background:var(--slate-100);}
+</style>
+</head>
+<body>
+
+<!-- ── PIN Gate ── -->
+<div id="pinGate">
+  <div class="pin-card">
+    <div class="pin-logo">⛳ SwingFirst</div>
+    <div class="pin-sub">Operator access — enter your PIN</div>
+    <input id="pinInput" class="pin-input" type="password" inputmode="numeric"
+           maxlength="8" placeholder="·  ·  ·  ·" autocomplete="off" autocorrect="off"/>
+    <div class="pin-err" id="pinErr"></div>
+    <button class="pin-btn" id="pinSubmit">Unlock</button>
+  </div>
+</div>
+<script>
+const OPERATOR_PIN = 'golf';
+const AUTH_KEY     = 'sf_op_auth';
+(function() {
+  if (sessionStorage.getItem(AUTH_KEY) === '1') {
+    document.getElementById('pinGate').style.display = 'none';
+  }
+})();
+function unlockOperator() {
+  const val = document.getElementById('pinInput').value.trim().toLowerCase();
+  if (val === OPERATOR_PIN.toLowerCase()) {
+    sessionStorage.setItem(AUTH_KEY, '1');
+    const gate = document.getElementById('pinGate');
+    gate.classList.add('hide');
+    setTimeout(() => gate.style.display = 'none', 280);
+  } else {
+    const inp = document.getElementById('pinInput');
+    const err = document.getElementById('pinErr');
+    inp.classList.add('error');
+    err.textContent = 'Incorrect PIN — try again.';
+    inp.value = '';
+    setTimeout(() => inp.classList.remove('error'), 400);
+    inp.focus();
+  }
+}
+document.getElementById('pinSubmit').addEventListener('click', unlockOperator);
+document.getElementById('pinInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') unlockOperator();
+});
+</script>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-mark">S</div>
+    <span class="brand-name">SwingFirst<span class="brand-tag">Operator</span></span>
+  </div>
+  <div class="topbar-right">
+    <span id="clock"></span>
+    <button id="lockBtn" onclick="lockOperator()">🔒 Lock</button>
+    <div class="tb-avatar" id="staffAva">D</div>
+  </div>
+</div>
+
+<div class="shell">
+
+  <!-- LEFT NAV -->
+  <aside class="sidebar-left">
+    <div class="nav-group">
+      <div class="nav-title">Today</div>
+      <a class='nav-item' href='/swingfirst-tee-sheet'><span class="dot"></span> Tee sheet</a>
+      <a class="nav-item" href="swingfirst-qr-scanner.html"><span class="dot"></span> Check-ins</a>
+      <a class="nav-item" href="#"><span class="dot"></span> Pro shop</a>
+    </div>
+    <div class="nav-group">
+      <div class="nav-title">Manage</div>
+      <a class="nav-item" href="#"><span class="dot"></span> Bookings</a>
+      <a class='nav-item' href='/swingfirst-pricing'><span class="dot"></span> Rates &amp; Pricing</a>
+      <a class="nav-item" href="#"><span class="dot"></span> Blocks</a>
+      <a class="nav-item active" href="#"><span class="dot"></span> Customers</a>
+    </div>
+    <div class="nav-group">
+      <div class="nav-title">Course</div>
+      <a class="nav-item" href="#"><span class="dot"></span> Settings</a>
+      <a class='nav-item' href='/swingfirst-reports'><span class="dot"></span> Reports</a>
+    </div>
+  </aside>
+
+  <!-- CUSTOMER LIST PANEL -->
+  <div class="list-panel">
+    <div class="list-head">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div class="list-title" style="margin-bottom:0;">Customers</div>
+        <button class="btn btn-primary" onclick="openNewCustomerModal()" style="font-size:12px;padding:5px 10px;gap:4px;">＋ New</button>
+      </div>
+      <div class="search-wrap">
+        <span class="search-icon">⌕</span>
+        <input class="search-input" id="searchInput" type="text" placeholder="Search name, email or phone…"/>
+      </div>
+      <div class="filter-tabs">
+        <button class="ftab active" data-filter="all">All</button>
+        <button class="ftab" data-filter="member">Members</button>
+        <button class="ftab" data-filter="sfcard">SF Card</button>
+        <button class="ftab" data-filter="flagged">⚑ Flagged</button>
+      </div>
+    </div>
+    <div class="list-count" id="listCount"></div>
+    <div class="list-scroll" id="custList"></div>
+  </div>
+
+  <!-- DETAIL PANEL -->
+  <div class="detail-panel" id="detailPanel">
+    <div class="detail-empty">
+      <div class="empty-icon">👤</div>
+      <div style="font-size:14px;font-weight:500;">Select a customer</div>
+      <div style="font-size:13px;">Their profile, history, and notes will appear here</div>
+    </div>
+  </div>
+
+</div><!-- shell -->
+
+<!-- New Customer Modal -->
+<div id="newCustModal" style="position:fixed;inset:0;z-index:300;background:rgba(13,31,23,.45);display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .18s ease;">
+  <div style="background:#fff;border-radius:16px;box-shadow:0 8px 40px rgba(13,31,23,.18);width:100%;max-width:420px;overflow:hidden;transform:translateY(12px);transition:transform .2s ease;">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 22px 14px;border-bottom:1px solid #e4e9e6;">
+      <h2 style="font-size:16px;font-weight:700;margin:0;">＋ New Customer</h2>
+      <button onclick="closeNewCustomerModal()" style="background:none;border:none;font-size:20px;color:#6b7a72;cursor:pointer;padding:2px 6px;border-radius:6px;">✕</button>
+    </div>
+    <div style="padding:18px 22px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+        <div>
+          <label style="display:block;font-size:11px;font-weight:700;color:#3b4a42;margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em;">First Name</label>
+          <input id="ncFirst" type="text" style="width:100%;border:1px solid #e4e9e6;border-radius:8px;padding:9px 12px;font-size:14px;font-family:inherit;outline:none;" autocomplete="off"/>
+        </div>
+        <div>
+          <label style="display:block;font-size:11px;font-weight:700;color:#3b4a42;margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em;">Last Name</label>
+          <input id="ncLast" type="text" style="width:100%;border:1px solid #e4e9e6;border-radius:8px;padding:9px 12px;font-size:14px;font-family:inherit;outline:none;" autocomplete="off"/>
+        </div>
+      </div>
+      <div style="margin-bottom:12px;">
+        <label style="display:block;font-size:11px;font-weight:700;color:#3b4a42;margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em;">Email</label>
+        <input id="ncEmail" type="email" style="width:100%;border:1px solid #e4e9e6;border-radius:8px;padding:9px 12px;font-size:14px;font-family:inherit;outline:none;" autocomplete="off"/>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+        <div>
+          <label style="display:block;font-size:11px;font-weight:700;color:#3b4a42;margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em;">Phone</label>
+          <input id="ncPhone" type="tel" inputmode="numeric" style="width:100%;border:1px solid #e4e9e6;border-radius:8px;padding:9px 12px;font-size:14px;font-family:inherit;outline:none;"/>
+        </div>
+        <div>
+          <label style="display:block;font-size:11px;font-weight:700;color:#3b4a42;margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em;">Rate Type</label>
+          <select id="ncRate" style="width:100%;border:1px solid #e4e9e6;border-radius:8px;padding:9px 12px;font-size:14px;font-family:inherit;outline:none;background:#fff;">
+            <option>Public</option><option>Mbr</option><option>SF</option><option>Twi</option><option>YoC</option><option>9H</option><option>Emp</option><option>VIP</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;gap:20px;padding:12px 0;border-top:1px solid #e4e9e6;margin-top:4px;">
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#3b4a42;cursor:pointer;"><input id="ncMember" type="checkbox" style="accent-color:#1b6b4f;width:15px;height:15px;"/> Member</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#3b4a42;cursor:pointer;"><input id="ncSfCard" type="checkbox" style="accent-color:#1b6b4f;width:15px;height:15px;"/> SF Card</label>
+      </div>
+      <div id="ncErr" style="font-size:12px;color:#9A2A42;margin-top:8px;min-height:16px;"></div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;padding:14px 22px 18px;border-top:1px solid #e4e9e6;">
+      <button onclick="closeNewCustomerModal()" style="background:none;border:1px solid #e4e9e6;border-radius:8px;padding:9px 16px;font-size:13px;font-weight:600;color:#6b7a72;cursor:pointer;">Cancel</button>
+      <button id="ncSave" onclick="saveNewCustomer()" style="background:#1b6b4f;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;">Create Customer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Quick Booking Modal -->
+<div id="qbModal" style="position:fixed;inset:0;z-index:300;background:rgba(13,31,23,.45);display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .18s ease;">
+  <div style="background:#fff;border-radius:16px;box-shadow:0 8px 40px rgba(13,31,23,.18);width:100%;max-width:440px;overflow:hidden;transform:translateY(12px);transition:transform .2s ease;">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 22px 14px;border-bottom:1px solid #e4e9e6;">
+      <h2 style="font-size:16px;font-weight:700;margin:0;" id="qbTitle">Add Booking</h2>
+      <button onclick="closeBookingModal()" style="background:none;border:none;font-size:20px;color:#6b7a72;cursor:pointer;padding:2px 6px;border-radius:6px;">✕</button>
+    </div>
+    <div style="padding:18px 22px;">
+      <!-- Pre-filled customer info -->
+      <div id="qbCustomerRow" style="background:#f2f9f5;border:1px solid #e4e9e6;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:13px;color:#3b4a42;"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+        <div>
+          <label style="display:block;font-size:11px;font-weight:700;color:#3b4a42;margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em;">Course</label>
+          <select id="qbCourse" style="width:100%;border:1px solid #e4e9e6;border-radius:8px;padding:9px 12px;font-size:13px;font-family:inherit;outline:none;background:#fff;"></select>
+        </div>
+        <div>
+          <label style="display:block;font-size:11px;font-weight:700;color:#3b4a42;margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em;">Date</label>
+          <input id="qbDate" type="date" style="width:100%;border:1px solid #e4e9e6;border-radius:8px;padding:9px 12px;font-size:13px;font-family:inherit;outline:none;"/>
+        </div>
+      </div>
+      <div style="margin-bottom:12px;">
+        <label style="display:block;font-size:11px;font-weight:700;color:#3b4a42;margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em;">Tee Time</label>
+        <select id="qbTime" style="width:100%;border:1px solid #e4e9e6;border-radius:8px;padding:9px 12px;font-size:13px;font-family:inherit;outline:none;background:#fff;">
+          <option>— Select course &amp; date first —</option>
+        </select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+        <div>
+          <label style="display:block;font-size:11px;font-weight:700;color:#3b4a42;margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em;">Status</label>
+          <select id="qbStatus" style="width:100%;border:1px solid #e4e9e6;border-radius:8px;padding:9px 12px;font-size:13px;font-family:inherit;outline:none;background:#fff;">
+            <option value="paid">Paid</option>
+            <option value="pending">Pending</option>
+            <option value="member">Member</option>
+          </select>
+        </div>
+        <div>
+          <label style="display:block;font-size:11px;font-weight:700;color:#3b4a42;margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em;">Rate Type</label>
+          <select id="qbRate" style="width:100%;border:1px solid #e4e9e6;border-radius:8px;padding:9px 12px;font-size:13px;font-family:inherit;outline:none;background:#fff;">
+            <option value="Public">Public</option>
+            <option value="SF">SF  — SwingFirst card</option>
+            <option value="Mbr">Mbr — Member</option>
+            <option value="9H">9H  — 9-hole rate</option>
+            <option value="Twi">Twi — Twilight</option>
+            <option value="YoC">YoC — Youth on Course</option>
+            <option value="Emp">Emp — Staff</option>
+            <option value="VIP">VIP — Comp</option>
+          </select>
+        </div>
+      </div>
+      <!-- Players stepper -->
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px;">
+        <label style="font-size:11px;font-weight:700;color:#3b4a42;text-transform:uppercase;letter-spacing:.04em;">Players</label>
+        <div style="display:flex;align-items:center;border:1.5px solid #e4e9e6;border-radius:8px;overflow:hidden;background:#fff;width:110px;">
+          <button onclick="changeQbCount(-1)" style="border:none;background:none;padding:6px 13px;font-size:17px;color:#6b7a72;cursor:pointer;line-height:1;">−</button>
+          <span id="qbCountDisplay" style="font-size:14px;font-weight:700;width:22px;text-align:center;">1</span>
+          <button onclick="changeQbCount(1)"  style="border:none;background:none;padding:6px 13px;font-size:17px;color:#6b7a72;cursor:pointer;line-height:1;">+</button>
+        </div>
+        <span id="qbTotal" style="font-size:14px;font-weight:700;color:#1b6b4f;margin-left:4px;"></span>
+      </div>
+      <div id="qbErr" style="font-size:12px;color:#9A2A42;margin-top:8px;min-height:16px;"></div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;padding:14px 22px 18px;border-top:1px solid #e4e9e6;">
+      <button onclick="closeBookingModal()" style="background:none;border:1px solid #e4e9e6;border-radius:8px;padding:9px 16px;font-size:13px;font-weight:600;color:#6b7a72;cursor:pointer;">Cancel</button>
+      <button id="qbSave" onclick="saveQuickBooking()" style="background:#1b6b4f;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;">Add Booking</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Customer Modal -->
+<div class="modal-overlay" id="editModal" style="position:fixed;inset:0;z-index:300;background:rgba(13,31,23,.45);display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .18s ease;">
+  <div style="background:#fff;border-radius:16px;box-shadow:0 8px 40px rgba(13,31,23,.18);width:100%;max-width:440px;overflow:hidden;transform:translateY(12px);transition:transform .2s ease;">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 22px 14px;border-bottom:1px solid #e4e9e6;">
+      <h2 style="font-size:16px;font-weight:700;margin:0;">Edit Customer</h2>
+      <button onclick="closeEditModal()" style="background:none;border:none;font-size:20px;color:#6b7a72;cursor:pointer;padding:2px 6px;border-radius:6px;">✕</button>
+    </div>
+    <div style="padding:18px 22px;max-height:calc(85vh - 130px);overflow-y:auto;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+        <div>
+          <label style="display:block;font-size:11px;font-weight:700;color:#3b4a42;margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em;">Full Name</label>
+          <input id="editName" type="text" style="width:100%;border:1px solid #e4e9e6;border-radius:8px;padding:9px 12px;font-size:14px;font-family:inherit;outline:none;" autocomplete="off"/>
+        </div>
+        <div>
+          <label style="display:block;font-size:11px;font-weight:700;color:#3b4a42;margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em;">Handicap</label>
+          <input id="editHandicap" type="number" min="0" max="54" style="width:100%;border:1px solid #e4e9e6;border-radius:8px;padding:9px 12px;font-size:14px;font-family:inherit;outline:none;"/>
+        </div>
+      </div>
+      <div style="margin-bottom:12px;">
+        <label style="display:block;font-size:11px;font-weight:700;color:#3b4a42;margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em;">Email</label>
+        <input id="editEmail" type="email" style="width:100%;border:1px solid #e4e9e6;border-radius:8px;padding:9px 12px;font-size:14px;font-family:inherit;outline:none;" autocomplete="off"/>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+        <div>
+          <label style="display:block;font-size:11px;font-weight:700;color:#3b4a42;margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em;">Phone</label>
+          <input id="editPhone" type="tel" style="width:100%;border:1px solid #e4e9e6;border-radius:8px;padding:9px 12px;font-size:14px;font-family:inherit;outline:none;"/>
+        </div>
+        <div>
+          <label style="display:block;font-size:11px;font-weight:700;color:#3b4a42;margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em;">Rate Type</label>
+          <select id="editRateType" style="width:100%;border:1px solid #e4e9e6;border-radius:8px;padding:9px 12px;font-size:14px;font-family:inherit;outline:none;background:#fff;">
+            <option>Public</option><option>Senior</option><option>Junior</option><option>Member</option><option>Twilight</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;gap:20px;padding:12px 0;border-top:1px solid #e4e9e6;margin-top:4px;">
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#3b4a42;cursor:pointer;"><input id="editMember" type="checkbox" style="accent-color:#1b6b4f;width:15px;height:15px;"/> Member</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#3b4a42;cursor:pointer;"><input id="editSfCard" type="checkbox" style="accent-color:#1b6b4f;width:15px;height:15px;"/> SF Card</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#9A2A42;cursor:pointer;"><input id="editFlagged" type="checkbox" style="accent-color:#9A2A42;width:15px;height:15px;"/> Flagged</label>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;padding:14px 22px 18px;border-top:1px solid #e4e9e6;">
+      <button onclick="closeEditModal()" style="background:none;border:1px solid #e4e9e6;border-radius:8px;padding:9px 16px;font-size:13px;font-weight:600;color:#6b7a72;cursor:pointer;">Cancel</button>
+      <button id="editSave" style="background:#1b6b4f;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;">Save changes</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Supabase ─────────────────────────────────────────────────────────────────
+const SUPABASE_URL = 'https://ojgxfeaesnaohskxdvam.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_4UVFMXQWGOt4XNgHVNzWoQ_Id6TBqcu';
+const SB_HEADERS = {
+  'apikey': SUPABASE_KEY,
+  'Authorization': `Bearer ${SUPABASE_KEY}`,
+  'Content-Type': 'application/json',
+};
+async function sbGet(table, params) {
+  const url = `${SUPABASE_URL}/rest/v1/${table}${params ? '?' + params : ''}`;
+  const res = await fetch(url, { headers: SB_HEADERS });
+  if (!res.ok) { const t = await res.text(); throw new Error(`HTTP ${res.status}: ${t}`); }
+  return res.json();
+}
+async function sbPatch(table, params, data) {
+  const url = `${SUPABASE_URL}/rest/v1/${table}${params ? '?' + params : ''}`;
+  const res = await fetch(url, { method: 'PATCH', headers: { ...SB_HEADERS, 'Prefer': 'return=minimal' }, body: JSON.stringify(data) });
+  if (!res.ok) { const t = await res.text(); throw new Error(`HTTP ${res.status}: ${t}`); }
+}
+async function sbPost(table, body) {
+  const url = `${SUPABASE_URL}/rest/v1/${table}`;
+  const res = await fetch(url, { method: 'POST', headers: { ...SB_HEADERS, 'Prefer': 'return=representation' }, body: JSON.stringify(body) });
+  if (!res.ok) { const t = await res.text(); throw new Error(`HTTP ${res.status}: ${t}`); }
+  return res.json();
+}
+
+// ── Courses cache ────────────────────────────────────────────────────────────
+let COURSES = []; // [{id, name, slug}]
+async function loadCourses() {
+  try { COURSES = await sbGet('courses', 'select=id,slug,name&active=eq.true&order=name.asc'); } catch(e) {}
+}
+
+// ── Avatar colours ───────────────────────────────────────────────────────────
+const PALETTE=["#1b6b4f","#175e8c","#9a2a42","#a66b00","#5b21b6","#2a5f3f","#7c3aed","#065f46","#92400e","#1e3a5f"];
+function avaColor(name){let h=0;for(const c of name)h=(h*31+c.charCodeAt(0))%PALETTE.length;return PALETTE[h];}
+function initials(name){return name.split(" ").map(p=>p[0]).join("").toUpperCase();}
+function money(n){return "$"+n.toLocaleString();}
+
+// ── Customer data (populated from Supabase) ───────────────────────────────────
+let CUSTOMERS = []; // populated by loadCustomers() on boot
+
+// ── Build CUSTOMERS from Supabase data ───────────────────────────────────────
+function fmtDate(dateStr) {
+  // dateStr = "2026-04-23"
+  if (!dateStr) return '';
+  const d = new Date(dateStr + 'T12:00:00');
+  return d.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+}
+function fmtSince(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('en-US', { month:'short', year:'numeric' });
+}
+function fmt12(h, m) {
+  const ampm = h < 12 ? 'AM' : 'PM';
+  const hh = h % 12 || 12;
+  return `${hh}:${String(m||0).padStart(2,'0')} ${ampm}`;
+}
+
+async function loadCustomers() {
+  document.getElementById('custList').innerHTML =
+    '<div style="padding:20px 16px;color:var(--ink-muted);font-size:13px;">Loading customers…</div>';
+  try {
+    // 1. Fetch all bookings with tee_time → course join
+    const bookings = await sbGet('bookings',
+      'select=id,lead_name,lead_email,lead_phone,player_count,total_cents,status,booking_ref,created_at,tee_times(date,hour,minute,courses(name))&order=created_at.desc'
+    );
+
+    // 2. Fetch customers table (for clean first/last name + phone stored on signup)
+    let custRows = [];
+    try { custRows = await sbGet('customers', 'select=email,first_name,last_name,phone,handicap,rate_type,is_member,has_sf_card,is_flagged,notes'); } catch(e) {}
+    const custMap = {}; // email → {first_name, last_name, phone}
+    custRows.forEach(r => { custMap[r.email] = r; });
+
+    // 3. Group bookings by lead_email
+    const byEmail = {};
+    bookings.forEach(b => {
+      const email = (b.lead_email || '').toLowerCase().trim();
+      if (!email) return;
+      if (!byEmail[email]) byEmail[email] = { email, bookings: [] };
+      byEmail[email].bookings.push(b);
+    });
+
+    // 4. Build CUSTOMERS array
+    const built = Object.values(byEmail).map((g, idx) => {
+      const email = g.email;
+      const bks   = g.bookings; // already desc by created_at
+      const cr    = custMap[email] || {};
+
+      // Name: prefer customers table, fall back to lead_name from latest booking
+      const firstName = cr.first_name || '';
+      const lastName  = cr.last_name  || '';
+      let name;
+      if (firstName || lastName) {
+        name = [firstName, lastName].filter(Boolean).join(' ');
+      } else {
+        name = bks[0]?.lead_name || email;
+      }
+
+      const phone = cr.phone || bks[0]?.lead_phone || '';
+
+      // Stats
+      const rounds = bks.length;
+      const spend  = Math.round(bks.reduce((s, b) => s + (b.total_cents || 0), 0) / 100);
+
+      // Dates (bookings are desc, so first = most recent, last = oldest)
+      const datesSorted = bks
+        .map(b => b.tee_times?.date || b.created_at?.slice(0,10))
+        .filter(Boolean)
+        .sort();
+      const lastVisitDate = datesSorted[datesSorted.length - 1];
+      const sinceDate     = datesSorted[0];
+
+      // Courses played
+      const courseSet = new Set(bks.map(b => b.tee_times?.courses?.name).filter(Boolean));
+      const courses   = courseSet.size ? [...courseSet] : ['Unknown'];
+
+      // History rows
+      const history = bks.map(b => {
+        const tt = b.tee_times || {};
+        return {
+          date:    fmtDate(tt.date),
+          course:  tt.courses?.name || '—',
+          time:    (tt.hour != null) ? fmt12(tt.hour, tt.minute) : '—',
+          players: b.player_count || 1,
+          rate:    'Public',
+          amount:  Math.round((b.total_cents || 0) / 100),
+          status:  b.status || 'paid',
+        };
+      });
+
+      return {
+        id:        idx + 1,
+        _email:    email, // internal key for Supabase PATCH
+        name,
+        email,
+        phone,
+        rateType:  cr.rate_type   || 'Public',
+        sfCard:    cr.has_sf_card || false,
+        member:    cr.is_member   || false,
+        handicap:  cr.handicap    || 0,
+        flagged:   cr.is_flagged  || false,
+        rounds,
+        spend,
+        lastVisit: fmtDate(lastVisitDate),
+        since:     fmtSince(sinceDate),
+        courses,
+        history,
+        notes:     (() => { try { return JSON.parse(cr.notes || '[]'); } catch(e) { return []; } })(),
+      };
+    });
+
+    // Sort by most recent booking date descending
+    built.sort((a, b) => {
+      const da = a.history[0]?.date || '';
+      const db = b.history[0]?.date || '';
+      return db.localeCompare(da);
+    });
+
+    CUSTOMERS.length = 0;
+    built.forEach(c => CUSTOMERS.push(c));
+
+    renderList();
+    document.getElementById('listCount').textContent =
+      CUSTOMERS.length + ' customer' + (CUSTOMERS.length !== 1 ? 's' : '');
+
+  } catch(err) {
+    document.getElementById('custList').innerHTML =
+      `<div style="padding:20px 16px;color:var(--amber-700);font-size:13px;">⚠ Could not load customers — ${err.message}</div>`;
+  }
+}
+
+// ── State ────────────────────────────────────────────────────────────────────
+let activeFilter="all", searchTerm="", activeId=null, activeTab="profile";
+let staffUser=null;
+try{staffUser=JSON.parse(localStorage.getItem("sf_staff_user"));}catch(e){}
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function filtered(){
+  return CUSTOMERS.filter(c=>{
+    if(activeFilter==="member"  && !c.member)  return false;
+    if(activeFilter==="sfcard"  && !c.sfCard)  return false;
+    if(activeFilter==="flagged" && !c.flagged) return false;
+    if(searchTerm){
+      const t=searchTerm.toLowerCase();
+      if(!c.name.toLowerCase().includes(t)&&!c.email.toLowerCase().includes(t)&&!c.phone.includes(t)) return false;
+    }
+    return true;
+  });
+}
+
+// ── Render list ──────────────────────────────────────────────────────────────
+function renderList(){
+  const list=filtered();
+  document.getElementById("listCount").textContent=list.length+" customer"+(list.length!==1?"s":"");
+  document.getElementById("custList").innerHTML=list.map(c=>`
+    <div class="cust-row${c.id===activeId?" active":""}" onclick="selectCustomer(${c.id})">
+      <div class="cust-ava" style="background:${avaColor(c.name)}">${initials(c.name)}</div>
+      <div class="cust-info">
+        <div class="cust-name">${c.name}${c.flagged?' <span style="color:var(--rose-700);font-size:11px;margin-left:2px;">⚑</span>':""}</div>
+        <div class="cust-sub">${c.rateType}${c.member?" · Member":""}${c.sfCard?" · SF Card":""}</div>
+      </div>
+      <div class="cust-right">
+        <div class="cust-rounds">${c.rounds}</div>
+        <div class="cust-rounds-lbl">rounds</div>
+      </div>
+    </div>`).join("");
+}
+
+// ── Select customer ──────────────────────────────────────────────────────────
+function selectCustomer(id){
+  activeId=id; activeTab="profile";
+  renderList();
+  const c = CUSTOMERS.find(c=>c.id===id);
+  if (c) renderDetail(c);
+}
+
+// ── Render detail ────────────────────────────────────────────────────────────
+function renderDetail(c){
+  const col=avaColor(c.name), ini=initials(c.name);
+  const avg=c.rounds>0?Math.round(c.spend/c.rounds):0;
+  document.getElementById("detailPanel").innerHTML=`
+    <div class="profile-header">
+      <div class="profile-top">
+        <div class="profile-ava" style="background:${col}">${ini}</div>
+        <div class="profile-names">
+          <div class="profile-name">${c.name}</div>
+          <div class="profile-badges">
+            ${c.member?'<span class="badge bg-green">⛳ Member</span>':""}
+            ${c.sfCard?'<span class="badge bg-purple">✦ SF Card</span>':""}
+            ${c.flagged?'<span class="badge bg-rose">⚑ Flagged</span>':""}
+            <span class="badge bg-sky">${c.rateType}</span>
+            <span class="badge bg-slate">Hdcp ${c.handicap}</span>
+          </div>
+          <div class="profile-contact">
+            <span>✉ ${c.email}</span>
+            <span>📞 ${c.phone}</span>
+          </div>
+        </div>
+        <div class="profile-actions">
+          ${c.phone ? `<a class="btn" href="tel:${c.phone.replace(/\D/g,'')}" title="Call ${c.phone}">📞 Call</a>` : ''}
+          <button class="btn" onclick="openBookingModal(${c.id})">＋ Booking</button>
+          <button class="btn btn-primary" onclick="openEditModal(${c.id})">Edit</button>
+        </div>
+      </div>
+    </div>
+    <div class="stats-row">
+      <div class="stat-box"><div class="stat-val">${c.rounds}</div><div class="stat-lbl">Rounds this year</div></div>
+      <div class="stat-box"><div class="stat-val">${money(c.spend)}</div><div class="stat-lbl">Total spend</div></div>
+      <div class="stat-box"><div class="stat-val">${money(avg)}</div><div class="stat-lbl">Avg per round</div></div>
+      <div class="stat-box"><div class="stat-val" style="font-size:15px;padding-top:3px;">${c.since}</div><div class="stat-lbl">Customer since</div></div>
+    </div>
+    <div class="detail-tabs">
+      <div class="dtab${activeTab==="profile"?" active":""}" data-tab="profile" onclick="switchTab('profile',${c.id})">Profile</div>
+      <div class="dtab${activeTab==="history"?" active":""}" data-tab="history" onclick="switchTab('history',${c.id})">History <span style="font-size:11px;color:var(--ink-muted);">(${c.history.length})</span></div>
+      <div class="dtab${activeTab==="notes"?" active":""}" data-tab="notes" onclick="switchTab('notes',${c.id})">Notes${c.notes.length?' <span style="font-size:10px;font-weight:700;background:var(--amber-100);color:var(--amber-700);border-radius:4px;padding:1px 5px;margin-left:2px;">'+c.notes.length+'</span>':""}</div>
+    </div>
+    <div class="tab-body" id="tabBody">${renderTabBody(c)}</div>`;
+}
+
+function switchTab(tab,id){
+  activeTab=tab;
+  const c=CUSTOMERS.find(x=>x.id===id);
+  document.querySelectorAll(".dtab").forEach(t=>t.classList.toggle("active",t.dataset.tab===tab));
+  document.getElementById("tabBody").innerHTML=renderTabBody(c);
+}
+
+function renderTabBody(c){
+  if(activeTab==="profile") return renderProfile(c);
+  if(activeTab==="history") return renderHistory(c);
+  if(activeTab==="notes")   return renderNotes(c);
+  return "";
+}
+
+// Profile tab
+function renderProfile(c){
+  const sfCardHTML=c.sfCard?`
+    <div class="sfcard-widget">
+      <div class="sfcard-label">SwingFirst Card</div>
+      <div class="sfcard-name">${c.name}</div>
+      <div class="sfcard-row"><span>Active</span><span>Expires Dec 31, 2026</span></div>
+      <div class="sfcard-disc">Palmbrook: 18% off weekday · 12% off weekend · 22% off twilight</div>
+    </div>`:"";
+  return `${sfCardHTML}
+    <div class="field-grid">
+      <div class="field-card">
+        <div class="field-lbl">Rate Type</div>
+        <div class="field-val">${c.rateType}</div>
+        <div class="field-sub">${c.member?"Full membership":"Walk-in / public"}</div>
+      </div>
+      <div class="field-card">
+        <div class="field-lbl">Handicap Index</div>
+        <div class="field-val">${c.handicap}</div>
+        <div class="field-sub">Self-reported</div>
+      </div>
+      <div class="field-card">
+        <div class="field-lbl">Home Course</div>
+        <div class="field-val">${Array.isArray(c.courses)?c.courses[0]:c.courses}</div>
+        <div class="field-sub">Primary booking location</div>
+      </div>
+      <div class="field-card">
+        <div class="field-lbl">Plays At</div>
+        <div class="field-val" style="font-size:13px;">${Array.isArray(c.courses)?c.courses.join(", "):c.courses}</div>
+        <div class="field-sub">SwingFirst courses</div>
+      </div>
+      <div class="field-card">
+        <div class="field-lbl">Email</div>
+        <div class="field-val" style="font-size:13px;font-weight:500;">${c.email}</div>
+        <div class="field-sub">Booking confirmations sent here</div>
+      </div>
+      <div class="field-card">
+        <div class="field-lbl">Phone</div>
+        <div class="field-val">${c.phone}</div>
+        <div class="field-sub">QR code &amp; SMS confirmation</div>
+      </div>
+    </div>
+    <div class="sec-head">Last Visit</div>
+    <div style="font-size:14px;color:var(--ink-soft);">${c.lastVisit}</div>`;
+}
+
+// History tab
+function renderHistory(c){
+  if(!c.history.length) return `<div style="color:var(--ink-muted);font-size:13px;font-style:italic;">No booking history yet.</div>`;
+  const lbl={checked_in:"Checked in",paid:"Paid — not arrived",no_show:"No show"};
+  const cls={checked_in:"sp-checked",paid:"sp-paid",no_show:"sp-noshow"};
+  return `<div class="hist-wrap"><table class="hist-table">
+    <thead><tr><th>Date</th><th>Course</th><th>Time</th><th>Players</th><th>Rate</th><th>Amount</th><th>Status</th></tr></thead>
+    <tbody>${c.history.map(h=>`<tr>
+      <td>${h.date}</td><td>${h.course}</td><td>${h.time}</td>
+      <td style="text-align:center;">${h.players}</td>
+      <td>${h.rate}</td><td style="font-weight:600;">${money(h.amount)}</td>
+      <td><span class="sp ${cls[h.status]||"sp-paid"}">${lbl[h.status]||h.status}</span></td>
+    </tr>`).join("")}</tbody>
+  </table></div>`;
+}
+
+// Notes tab
+function renderNotes(c){
+  const staffSig=staffUser
+    ?`Signed as <strong>${staffUser.initials}</strong>`
+    :`<span style="color:var(--rose-700);">⚠ Not logged in — set name via avatar</span>`;
+  const notesHTML=c.notes.length
+    ? c.notes.map(n=>`<div class="note-item">
+        <div class="note-meta">
+          <span class="note-author">— ${n.author}</span>
+          <span class="note-time">${n.time}</span>
+        </div>
+        <div class="note-text">${n.text}</div>
+      </div>`).join("")
+    : `<div style="color:var(--ink-muted);font-size:13px;font-style:italic;margin-bottom:14px;">No notes yet.</div>`;
+  return `
+    <div class="sec-head">Staff Notes</div>
+    <div class="notes-list">${notesHTML}</div>
+    <div class="note-add">
+      <div class="note-add-head">Add Note</div>
+      <textarea class="note-ta" id="noteTA" placeholder="Add an internal note about this customer…"></textarea>
+      <div class="note-foot">
+        <span class="note-signed">${staffSig}</span>
+        <button class="btn btn-primary" onclick="saveNote(${c.id})" style="font-size:12px;padding:6px 13px;">Save Note</button>
+      </div>
+    </div>`;
+}
+
+async function saveNote(custId){
+  const ta=document.getElementById("noteTA");
+  const text=ta.value.trim();
+  if(!text)return;
+  const c=CUSTOMERS.find(x=>x.id===custId);
+  const author=staffUser?staffUser.initials:"Staff";
+  const now=new Date();
+  const dateStr=now.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"});
+  c.notes.unshift({text,author,time:dateStr});
+  ta.value='';
+  activeTab="notes";
+  renderDetail(c);
+  // Persist to Supabase
+  try {
+    await sbPatch('customers',`email=eq.${encodeURIComponent(c._email)}`,{notes:JSON.stringify(c.notes)});
+  } catch(e) { console.warn('Note save failed',e); }
+}
+
+// ── Filters & Search ─────────────────────────────────────────────────────────
+document.querySelectorAll(".ftab").forEach(t=>{
+  t.addEventListener("click",()=>{
+    activeFilter=t.dataset.filter;
+    document.querySelectorAll(".ftab").forEach(x=>x.classList.remove("active"));
+    t.classList.add("active");
+    renderList();
+  });
+});
+document.getElementById("searchInput").addEventListener("input",function(){
+  searchTerm=this.value; renderList();
+});
+
+// ── Clock ────────────────────────────────────────────────────────────────────
+function tickClock(){
+  document.getElementById("clock").textContent=
+    new Date().toLocaleDateString(undefined,{month:"short",day:"numeric"})+" · "+
+    new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});
+}
+tickClock(); setInterval(tickClock,30000);
+
+// ── Staff avatar (reads from tee sheet localStorage) ─────────────────────────
+(function(){
+  const ava=document.getElementById("staffAva");
+  if(staffUser&&staffUser.initials){ava.textContent=staffUser.initials;}
+})();
+
+// ── Toast ────────────────────────────────────────────────────────────────────
+function toast(msg, err=false) {
+  let t = document.getElementById('custToast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'custToast';
+    t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);' +
+      'padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;' +
+      'color:#fff;z-index:999;transition:opacity .3s;pointer-events:none;';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.background = err ? '#9A2A42' : '#1b6b4f';
+  t.style.opacity = '1';
+  clearTimeout(t._tid);
+  t._tid = setTimeout(() => { t.style.opacity='0'; }, 3000);
+}
+
+// ── Edit Modal ───────────────────────────────────────────────────────────────
+let editTarget = null;
+
+function openEditModal(id) {
+  editTarget = CUSTOMERS.find(c => c.id === id);
+  if (!editTarget) return;
+  const c = editTarget;
+  document.getElementById('editName').value     = c.name;
+  document.getElementById('editEmail').value    = c.email;
+  document.getElementById('editPhone').value    = c.phone;
+  document.getElementById('editHandicap').value = c.handicap;
+  document.getElementById('editRateType').value = c.rateType;
+  document.getElementById('editMember').checked = c.member;
+  document.getElementById('editSfCard').checked = c.sfCard;
+  document.getElementById('editFlagged').checked= c.flagged;
+  document.getElementById('editModal').classList.add('open');
+  setTimeout(() => document.getElementById('editName').focus(), 80);
+}
+
+function closeEditModal() {
+  document.getElementById('editModal').classList.remove('open');
+  editTarget = null;
+}
+
+// Modal open/close animation
+document.getElementById('editModal').addEventListener('transitionend', () => {});
+function _setModalOpen(open) {
+  const m = document.getElementById('editModal');
+  if (open) { m.style.opacity='0'; m.style.pointerEvents='all'; requestAnimationFrame(() => { m.style.opacity='1'; m.querySelector('div').style.transform='translateY(0)'; }); }
+  else       { m.style.opacity='0'; m.querySelector('div').style.transform='translateY(12px)'; setTimeout(() => { m.style.pointerEvents='none'; }, 200); }
+}
+const _origOpenEdit = openEditModal;
+openEditModal = id => { _origOpenEdit(id); _setModalOpen(true); };
+const _origCloseEdit = closeEditModal;
+closeEditModal = () => { _origCloseEdit(); _setModalOpen(false); };
+document.getElementById('editCancel').addEventListener('click', closeEditModal);
+document.getElementById('editModal').addEventListener('click', e => {
+  if (e.target.id === 'editModal') closeEditModal();
+});
+
+document.getElementById('editSave').addEventListener('click', async () => {
+  if (!editTarget) return;
+  const btn = document.getElementById('editSave');
+  btn.disabled = true; btn.textContent = 'Saving…';
+
+  const newName    = document.getElementById('editName').value.trim()  || editTarget.name;
+  const newEmail   = document.getElementById('editEmail').value.trim() || editTarget.email;
+  const newPhone   = document.getElementById('editPhone').value.trim() || editTarget.phone;
+  const parts      = newName.split(' ');
+  const newFirst   = parts[0] || '';
+  const newLast    = parts.slice(1).join(' ') || '';
+
+  // Optimistic local update
+  editTarget.name     = newName;
+  editTarget.email    = newEmail;
+  editTarget.phone    = newPhone;
+  editTarget.handicap = parseInt(document.getElementById('editHandicap').value, 10) || editTarget.handicap;
+  editTarget.rateType = document.getElementById('editRateType').value;
+  editTarget.member   = document.getElementById('editMember').checked;
+  editTarget.sfCard   = document.getElementById('editSfCard').checked;
+  editTarget.flagged  = document.getElementById('editFlagged').checked;
+
+  // PATCH customers table in Supabase
+  try {
+    await sbPatch('customers', `email=eq.${encodeURIComponent(editTarget._email)}`, {
+      first_name:  newFirst,
+      last_name:   newLast,
+      phone:       newPhone || null,
+      email:       newEmail,
+      handicap:    editTarget.handicap || 0,
+      rate_type:   editTarget.rateType,
+      is_member:   editTarget.member,
+      has_sf_card: editTarget.sfCard,
+      is_flagged:  editTarget.flagged,
+    });
+    editTarget._email = newEmail; // update internal key if email changed
+    toast('Customer saved.');
+  } catch(e) {
+    toast('Saved locally — DB update failed: ' + e.message, true);
+  }
+
+  btn.disabled = false; btn.textContent = 'Save changes';
+  closeEditModal();
+  renderList();
+  renderDetail(editTarget);
+});
+
+// ── New Customer Modal ───────────────────────────────────────────────────────
+function openNewCustomerModal() {
+  ['ncFirst','ncLast','ncEmail','ncPhone'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('ncRate').value    = 'Public';
+  document.getElementById('ncMember').checked = false;
+  document.getElementById('ncSfCard').checked = false;
+  document.getElementById('ncErr').textContent = '';
+  _modalOpen('newCustModal', true);
+  setTimeout(() => document.getElementById('ncFirst').focus(), 80);
+}
+function closeNewCustomerModal() { _modalOpen('newCustModal', false); }
+
+async function saveNewCustomer() {
+  const first = document.getElementById('ncFirst').value.trim();
+  const last  = document.getElementById('ncLast').value.trim();
+  const email = document.getElementById('ncEmail').value.trim().toLowerCase();
+  const phone = document.getElementById('ncPhone').value.trim();
+  const err   = document.getElementById('ncErr');
+
+  if (!first && !last) { err.textContent = 'Enter at least a first or last name.'; return; }
+  if (!email)          { err.textContent = 'Email is required.'; return; }
+  err.textContent = '';
+
+  const btn = document.getElementById('ncSave');
+  btn.disabled = true; btn.textContent = 'Saving…';
+
+  try {
+    await sbPost('customers', {
+      first_name:  first,
+      last_name:   last,
+      email,
+      phone:       phone || null,
+      rate_type:   document.getElementById('ncRate').value,
+      is_member:   document.getElementById('ncMember').checked,
+      has_sf_card: document.getElementById('ncSfCard').checked,
+      is_flagged:  false,
+      handicap:    0,
+      notes:       '[]',
+    });
+    closeNewCustomerModal();
+    toast('Customer created.');
+    await loadCustomers(); // refresh the list
+  } catch(e) {
+    err.textContent = 'Error: ' + e.message;
+  } finally {
+    btn.disabled = false; btn.textContent = 'Create Customer';
+  }
+}
+
+// ── Quick Booking Modal ──────────────────────────────────────────────────────
+let qbCustId = null, qbCount = 1, qbSlots = [];
+
+function fmt12qb(h, m) {
+  const ampm = h < 12 ? 'AM' : 'PM';
+  return `${h%12||12}:${String(m||0).padStart(2,'0')} ${ampm}`;
+}
+function getLocalDateStr() {
+  const d = new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+
+function openBookingModal(custId) {
+  qbCustId = custId;
+  qbCount  = 1;
+  qbSlots  = [];
+  const c  = CUSTOMERS.find(x => x.id === custId);
+  if (!c) return;
+
+  // Pre-fill customer row
+  document.getElementById('qbCustomerRow').innerHTML =
+    `<strong>${c.name}</strong>&nbsp;&nbsp;<span style="color:#6b7a72;">${c.email}${c.phone ? ' · ' + c.phone : ''}</span>`;
+
+  // Populate course dropdown
+  const sel = document.getElementById('qbCourse');
+  sel.innerHTML = COURSES.length
+    ? COURSES.map(cr => `<option value="${cr.id}">${cr.name}</option>`).join('')
+    : '<option value="">No courses loaded</option>';
+
+  // Default date to today
+  document.getElementById('qbDate').value = getLocalDateStr();
+
+  // Pre-fill rate type from customer profile
+  const rateMap = { Public:'Public', Mbr:'Mbr', Member:'Mbr', SF:'SF', Twi:'Twi', '9H':'9H', YoC:'YoC', Emp:'Emp', VIP:'VIP' };
+  document.getElementById('qbRate').value = rateMap[c.rateType] || 'Public';
+
+  document.getElementById('qbCountDisplay').textContent = '1';
+  document.getElementById('qbTotal').textContent = '';
+  document.getElementById('qbErr').textContent = '';
+  document.getElementById('qbTitle').textContent = `Add Booking — ${c.name.split(' ')[0]}`;
+
+  _modalOpen('qbModal', true);
+  loadQbTimes();
+
+  // Reload times when course or date changes
+  document.getElementById('qbCourse').onchange = loadQbTimes;
+  document.getElementById('qbDate').onchange   = loadQbTimes;
+  document.getElementById('qbRate').onchange   = updateQbTotal;
+}
+
+function closeBookingModal() { _modalOpen('qbModal', false); qbCustId = null; }
+
+async function loadQbTimes() {
+  const courseId = document.getElementById('qbCourse').value;
+  const date     = document.getElementById('qbDate').value;
+  const sel      = document.getElementById('qbTime');
+  if (!courseId || !date) { sel.innerHTML = '<option>— Select course & date first —</option>'; return; }
+
+  sel.innerHTML = '<option>Loading…</option>';
+  try {
+    const rows = await sbGet('tee_times',
+      `select=id,hour,minute,rack_cents,status,bookings(id,booking_players(id))` +
+      `&course_id=eq.${courseId}&date=eq.${date}&status=eq.open&order=hour.asc,minute.asc`
+    );
+    qbSlots = rows;
+    if (!rows.length) { sel.innerHTML = '<option>No open tee times for this date</option>'; return; }
+    sel.innerHTML = rows.map(r => {
+      const used  = (r.bookings || []).reduce((n, b) => n + (b.booking_players || []).length, 0);
+      const open  = Math.max(0, 4 - used);
+      const price = '$' + Math.round(r.rack_cents / 100);
+      const label = open > 0 ? `${fmt12qb(r.hour, r.minute)} — ${open} open · ${price}` : `${fmt12qb(r.hour, r.minute)} — FULL`;
+      return `<option value="${r.id}" data-cents="${r.rack_cents}" data-open="${open}" ${open===0?'disabled':''}>${label}</option>`;
+    }).join('');
+    updateQbTotal();
+  } catch(e) {
+    sel.innerHTML = '<option>Error loading times — check console</option>';
+  }
+}
+
+function changeQbCount(delta) {
+  qbCount = Math.max(1, Math.min(4, qbCount + delta));
+  document.getElementById('qbCountDisplay').textContent = qbCount;
+  updateQbTotal();
+}
+
+function updateQbTotal() {
+  const opt = document.getElementById('qbTime').selectedOptions[0];
+  if (!opt) return;
+  const cents = parseInt(opt.dataset.cents) || 0;
+  if (!cents) { document.getElementById('qbTotal').textContent = ''; return; }
+  document.getElementById('qbTotal').textContent = `Total $${Math.round(cents / 100 * qbCount)}`;
+}
+
+async function saveQuickBooking() {
+  const c      = CUSTOMERS.find(x => x.id === qbCustId);
+  const timeEl = document.getElementById('qbTime');
+  const opt    = timeEl.selectedOptions[0];
+  const slotId = timeEl.value;
+  const err    = document.getElementById('qbErr');
+
+  if (!c || !slotId || slotId.startsWith('—') || slotId === 'Loading…') {
+    err.textContent = 'Please select a tee time.'; return;
+  }
+  const openSpots = parseInt(opt?.dataset.open || '0');
+  if (openSpots < qbCount) {
+    err.textContent = `Only ${openSpots} open spot${openSpots===1?'':'s'} available.`; return;
+  }
+  err.textContent = '';
+
+  const btn = document.getElementById('qbSave');
+  btn.disabled = true; btn.textContent = 'Saving…';
+
+  const cents    = parseInt(opt.dataset.cents) || 0;
+  const status   = document.getElementById('qbStatus').value;
+  const rateType = document.getElementById('qbRate').value;
+  const nameParts = c.name.split(' ');
+  const courseId = document.getElementById('qbCourse').value;
+
+  try {
+    const ref = 'SF-' + String(Math.floor(1000 + Math.random()*8999));
+    const bRes = await sbPost('bookings', {
+      tee_time_id:  slotId,
+      course_id:    courseId,
+      lead_name:    c.name,
+      lead_email:   c.email,
+      lead_phone:   c.phone || null,
+      player_count: qbCount,
+      total_cents:  cents * qbCount,
+      status:       status === 'paid' ? 'paid' : status,
+      booking_ref:  ref,
+    });
+    const booking = Array.isArray(bRes) ? bRes[0] : bRes;
+
+    // Insert all players
+    for (let i = 0; i < qbCount; i++) {
+      const name = i === 0 ? c.name : `Guest ${i+1}`;
+      await sbPost('booking_players', {
+        booking_id:   booking.id,
+        tee_time_id:  slotId,
+        name,
+        rate_type:    rateType,
+        price_cents:  cents,
+        status,
+        is_lead:      i === 0,
+      });
+    }
+
+    closeBookingModal();
+    toast(`✓ Booked ${fmt12qb(...((qbSlots.find(s=>s.id===slotId)||{hour:0,minute:0})&&[qbSlots.find(s=>s.id===slotId).hour,qbSlots.find(s=>s.id===slotId).minute]))} · Ref ${ref}`);
+    await loadCustomers();
+    const updated = CUSTOMERS.find(x => x._email === c._email);
+    if (updated) selectCustomer(updated.id);
+  } catch(e) {
+    err.textContent = 'Error: ' + e.message;
+  } finally {
+    btn.disabled = false; btn.textContent = 'Add Booking';
+  }
+}
+
+// ── Shared modal open/close helper ───────────────────────────────────────────
+function _modalOpen(id, open) {
+  const m   = document.getElementById(id);
+  const box = m.querySelector('div');
+  if (open) {
+    m.style.pointerEvents = 'all';
+    m.style.opacity = '0';
+    requestAnimationFrame(() => {
+      m.style.opacity = '1';
+      if (box) box.style.transform = 'translateY(0)';
+    });
+  } else {
+    m.style.opacity = '0';
+    if (box) box.style.transform = 'translateY(12px)';
+    setTimeout(() => { m.style.pointerEvents = 'none'; }, 200);
+  }
+}
+// Close modals on backdrop click
+['newCustModal','qbModal'].forEach(id => {
+  document.getElementById(id).addEventListener('click', e => {
+    if (e.target.id === id) _modalOpen(id, false);
+  });
+});
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+loadCourses();
+loadCustomers();
+
+function lockOperator() {
+  sessionStorage.removeItem(AUTH_KEY);
+  const gate = document.getElementById('pinGate');
+  gate.style.display = 'flex'; gate.style.opacity = '0';
+  requestAnimationFrame(() => { gate.style.opacity = '1'; });
+  document.getElementById('pinInput').value = '';
+  document.getElementById('pinErr').textContent = '';
+  setTimeout(() => document.getElementById('pinInput').focus(), 100);
+}
+</script>
+</body>
+</html>
