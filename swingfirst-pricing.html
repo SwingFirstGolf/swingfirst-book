@@ -1,0 +1,645 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>SwingFirst — Rates & Pricing</title>
+<style>
+:root{
+  --ink:#0d1f17;--ink-soft:#3b4a42;--ink-muted:#6b7a72;
+  --line:#e4e9e6;--paper:#fbfaf7;--card:#ffffff;
+  --green-900:#0b3d2e;--green-700:#1b6b4f;--green-600:#2a8a6a;
+  --green-100:#e3f2ec;--green-50:#f2f9f5;
+  --amber-700:#a66b00;--amber-100:#fdf1d9;--amber-50:#fffbf0;
+  --sky-700:#175e8c;--sky-100:#dbeaf5;
+  --rose-700:#9a2a42;--rose-100:#fbe0e6;
+  --radius:12px;--radius-sm:8px;
+  --shadow-sm:0 1px 2px rgba(13,31,23,.06);
+  --shadow-md:0 2px 8px rgba(13,31,23,.08),0 8px 24px rgba(13,31,23,.06);
+}
+*{box-sizing:border-box;}
+html,body{height:100%;margin:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Inter",Roboto,sans-serif;
+  color:var(--ink);background:var(--paper);font-size:14px;line-height:1.45;}
+button{font:inherit;color:inherit;cursor:pointer;}
+h1,h2,h3{margin:0;font-weight:600;letter-spacing:-.01em;}
+a{color:inherit;text-decoration:none;}
+.topbar{display:flex;align-items:center;justify-content:space-between;
+  padding:14px 24px;border-bottom:1px solid var(--line);background:var(--card);
+  position:sticky;top:0;z-index:10;}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;}
+.brand-mark{width:28px;height:28px;border-radius:8px;
+  background:linear-gradient(135deg,var(--green-700),var(--green-900));
+  display:grid;place-items:center;color:#fff;font-size:14px;}
+.brand-name{font-size:15px;letter-spacing:-.02em;}
+.brand-tag{font-size:11px;font-weight:500;color:var(--ink-muted);
+  background:var(--green-100);border-radius:4px;padding:1px 5px;margin-left:4px;}
+.topbar-right{display:flex;align-items:center;gap:12px;font-size:13px;color:var(--ink-soft);}
+.avatar{width:30px;height:30px;border-radius:50%;background:var(--green-700);
+  color:#fff;display:grid;place-items:center;font-weight:600;font-size:12px;}
+.shell{display:grid;grid-template-columns:200px 1fr 300px;height:calc(100vh - 57px);}
+.sidebar-left{border-right:1px solid var(--line);padding:20px 12px;overflow-y:auto;background:var(--card);}
+.nav-group{margin-bottom:14px;}
+.nav-title{font-size:11px;font-weight:600;color:var(--ink-muted);text-transform:uppercase;
+  letter-spacing:.06em;padding:0 10px 6px;}
+.nav-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:var(--radius-sm);
+  font-size:13px;color:var(--ink-soft);cursor:pointer;transition:background .15s;}
+.nav-item:hover{background:var(--green-50);color:var(--ink);}
+.nav-item.active{background:var(--green-100);color:var(--green-700);font-weight:600;}
+.nav-item .dot{width:5px;height:5px;border-radius:50%;background:currentColor;visibility:hidden;flex-shrink:0;}
+.nav-item.active .dot{visibility:visible;}
+main{overflow-y:auto;padding:0;}
+.course-bar{padding:16px 24px 0;border-bottom:1px solid var(--line);background:var(--card);
+  position:sticky;top:0;z-index:5;}
+.course-bar-inner{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;padding-bottom:16px;}
+.cpill{padding:7px 4px;border-radius:var(--radius-sm);border:1.5px solid var(--line);
+  background:#fff;font-size:12px;font-weight:500;text-align:center;cursor:pointer;
+  transition:border-color .15s,background .15s,color .15s;}
+.cpill:hover{border-color:var(--green-600);color:var(--green-700);}
+.cpill.active{border-color:var(--green-700);background:var(--green-700);color:#fff;}
+.tab-bar{display:flex;gap:2px;padding:0 24px;border-bottom:1px solid var(--line);
+  background:var(--card);}
+.tab{padding:12px 16px;font-size:13px;font-weight:500;color:var(--ink-muted);
+  border-bottom:2px solid transparent;cursor:pointer;transition:color .15s,border-color .15s;}
+.tab:hover{color:var(--ink);}
+.tab.active{color:var(--green-700);border-bottom-color:var(--green-700);}
+.tab-content{display:none;padding:24px;}
+.tab-content.active{display:block;}
+.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.section-title{font-size:15px;font-weight:600;}
+.btn{padding:7px 14px;border-radius:var(--radius-sm);border:1.5px solid var(--line);
+  background:#fff;font-size:13px;font-weight:500;cursor:pointer;transition:background .15s,border-color .15s;}
+.btn:hover{background:var(--green-50);border-color:var(--green-600);}
+.btn-primary{background:var(--green-700);color:#fff;border-color:var(--green-700);}
+.btn-primary:hover{background:var(--green-900);border-color:var(--green-900);}
+.schedule-list{display:flex;flex-direction:column;gap:10px;}
+.schedule-card{border:1.5px solid var(--line);border-radius:var(--radius);overflow:hidden;
+  background:var(--card);box-shadow:var(--shadow-sm);}
+.schedule-head{display:flex;align-items:center;justify-content:space-between;
+  padding:14px 18px;cursor:pointer;user-select:none;}
+.schedule-head:hover{background:var(--green-50);}
+.schedule-name{font-weight:600;font-size:14px;}
+.schedule-meta{font-size:12px;color:var(--ink-muted);margin-top:2px;}
+.schedule-badges{display:flex;gap:6px;align-items:center;}
+.badge{padding:3px 8px;border-radius:4px;font-size:11px;font-weight:600;}
+.badge-green{background:var(--green-100);color:var(--green-700);}
+.badge-amber{background:var(--amber-100);color:var(--amber-700);}
+.badge-sky{background:var(--sky-100);color:var(--sky-700);}
+.chevron{font-size:12px;color:var(--ink-muted);transition:transform .2s;}
+.schedule-card.open .chevron{transform:rotate(90deg);}
+.schedule-body{display:none;border-top:1px solid var(--line);padding:16px 18px;}
+.schedule-card.open .schedule-body{display:block;}
+.rate-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr 1fr 1fr;gap:1px;
+  background:var(--line);border-radius:var(--radius-sm);overflow:hidden;margin-bottom:12px;}
+.rg-head{background:var(--green-50);font-size:11px;font-weight:600;color:var(--ink-muted);
+  text-transform:uppercase;letter-spacing:.04em;padding:8px 10px;}
+.rg-cell{background:#fff;padding:8px 10px;font-size:13px;}
+.rg-cell.editable{cursor:text;}
+.rg-cell.editable:focus{outline:2px solid var(--green-600);outline-offset:-2px;background:var(--green-50);}
+.rg-row-label{font-weight:500;background:#fafbfa;}
+.rt-table{width:100%;border-collapse:collapse;font-size:13px;}
+.rt-table th{text-align:left;padding:8px 12px;border-bottom:2px solid var(--line);
+  font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-muted);}
+.rt-table td{padding:9px 12px;border-bottom:1px solid var(--line);}
+.rt-table tr:last-child td{border-bottom:none;}
+.rt-table tr:hover td{background:var(--green-50);}
+.discount-pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;}
+.dp-green{background:var(--green-100);color:var(--green-700);}
+.dp-amber{background:var(--amber-100);color:var(--amber-700);}
+.dp-sky{background:var(--sky-100);color:var(--sky-700);}
+.tag-pill{display:inline-flex;align-items:center;gap:4px;background:#f0f4f0;
+  border-radius:4px;padding:2px 7px;font-size:12px;margin-right:2px;}
+.sfc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px;}
+.sfc-card{border:1.5px solid var(--line);border-radius:var(--radius-sm);padding:14px 16px;background:#fff;}
+.sfc-course{font-weight:600;font-size:13px;margin-bottom:8px;}
+.sfc-row{display:flex;justify-content:space-between;align-items:center;
+  font-size:12px;color:var(--ink-soft);padding:3px 0;}
+.sfc-val{font-weight:600;color:var(--green-700);}
+.holiday-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.holiday-card{border:1.5px solid var(--line);border-radius:var(--radius-sm);
+  padding:14px 16px;background:#fff;display:flex;align-items:center;justify-content:space-between;}
+.holiday-info .hname{font-weight:600;font-size:13px;}
+.holiday-info .hdate{font-size:12px;color:var(--ink-muted);}
+.toggle{position:relative;display:inline-block;width:36px;height:20px;cursor:pointer;}
+.toggle input{opacity:0;width:0;height:0;position:absolute;}
+.toggle-track{position:absolute;inset:0;border-radius:20px;background:#cdd5d0;transition:background .2s;}
+.toggle input:checked~.toggle-track{background:var(--green-700);}
+.toggle-thumb{position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;
+  background:#fff;transition:transform .2s;box-shadow:0 1px 2px rgba(0,0,0,.2);}
+.toggle input:checked~.toggle-thumb{transform:translateX(16px);}
+.holiday-card.active-holiday{border-color:var(--amber-700);background:var(--amber-50);}
+.dp-section{margin-bottom:28px;}
+.dp-section-title{font-size:13px;font-weight:600;margin-bottom:12px;color:var(--ink-soft);
+  text-transform:uppercase;letter-spacing:.04em;}
+.fill-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;
+  background:var(--line);border-radius:var(--radius-sm);overflow:hidden;}
+.fill-head{background:var(--green-50);padding:8px 10px;font-size:11px;font-weight:600;
+  color:var(--ink-muted);text-transform:uppercase;letter-spacing:.04em;}
+.fill-cell{background:#fff;padding:8px 10px;font-size:13px;}
+.fill-band{display:flex;height:28px;border-radius:var(--radius-sm);overflow:hidden;
+  margin-top:10px;font-size:11px;}
+.fill-seg{display:flex;align-items:center;justify-content:center;font-weight:600;}
+.urgency-list{display:flex;flex-direction:column;gap:8px;}
+.urgency-row{display:flex;align-items:center;gap:12px;background:#fff;
+  border:1.5px solid var(--line);border-radius:var(--radius-sm);padding:10px 14px;}
+.urgency-label{flex:1;font-size:13px;}
+.urgency-val{font-weight:600;color:var(--green-700);font-size:13px;min-width:50px;text-align:right;}
+.sidebar-right{border-left:1px solid var(--line);padding:20px 16px;overflow-y:auto;background:var(--card);}
+.preview-title{font-size:13px;font-weight:700;margin-bottom:16px;}
+.preview-label{font-size:11px;font-weight:600;color:var(--ink-muted);text-transform:uppercase;
+  letter-spacing:.04em;margin:14px 0 6px;}
+.preview-select{width:100%;padding:7px 10px;border-radius:var(--radius-sm);
+  border:1.5px solid var(--line);font:inherit;font-size:13px;background:#fff;color:var(--ink);}
+.preview-row{display:flex;justify-content:space-between;align-items:center;
+  padding:6px 0;border-bottom:1px solid var(--line);font-size:13px;}
+.preview-row:last-child{border-bottom:none;}
+.preview-row-label{color:var(--ink-soft);}
+.preview-row-val{font-weight:600;}
+.preview-highlight{background:var(--green-100);border-radius:var(--radius-sm);
+  padding:10px 12px;margin-top:10px;}
+.preview-highlight .big{font-size:24px;font-weight:700;color:var(--green-900);}
+.preview-highlight .sub{font-size:11px;color:var(--green-700);margin-top:3px;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-mark">S</div>
+    <div>
+      <div class="brand-name">SwingFirst <span class="brand-tag">Operator</span></div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <a href="swingfirst-book.html" style="font-size:13px;color:var(--green-700);font-weight:500;">&#9971; Golfer View</a>
+    <div class="avatar" title="Dave">D</div>
+  </div>
+</div>
+
+<div class="shell">
+  <aside class="sidebar-left">
+    <div class="nav-group">
+      <div class="nav-title">Today</div>
+      <a class='nav-item' href='/swingfirst-tee-sheet'><span class="dot"></span> Tee sheet</a>
+      <a class="nav-item" href="#"><span class="dot"></span> Check-ins</a>
+      <a class="nav-item" href="#"><span class="dot"></span> Pro shop</a>
+    </div>
+    <div class="nav-group">
+      <div class="nav-title">Manage</div>
+      <a class="nav-item" href="#"><span class="dot"></span> Bookings</a>
+      <a class='nav-item active' href='/swingfirst-pricing'><span class="dot"></span> Rates &amp; Pricing</a>
+      <a class="nav-item" href="#"><span class="dot"></span> Blocks</a>
+      <a class='nav-item' href='/swingfirst-customers'><span class="dot"></span> Customers</a>
+    </div>
+    <div class="nav-group">
+      <div class="nav-title">Course</div>
+      <a class="nav-item" href="#"><span class="dot"></span> Settings</a>
+      <a class="nav-item" href="#"><span class="dot"></span> Reports</a>
+    </div>
+  </aside>
+
+  <main>
+    <div class="course-bar">
+      <div class="course-bar-inner" id="coursePills"></div>
+    </div>
+    <div class="tab-bar">
+      <div class="tab active" data-tab="schedules">Price Schedules</div>
+      <div class="tab" data-tab="ratetypes">Rate Types</div>
+      <div class="tab" data-tab="holidays">Holiday Calendar</div>
+      <div class="tab" data-tab="dynamic">Dynamic Pricing</div>
+    </div>
+
+    <div class="tab-content active" id="tab-schedules">
+      <div class="section-head">
+        <div class="section-title">Price Schedules</div>
+        <button class="btn btn-primary">+ New Schedule</button>
+      </div>
+      <div class="schedule-list" id="scheduleList"></div>
+    </div>
+
+    <div class="tab-content" id="tab-ratetypes">
+      <div class="section-head">
+        <div class="section-title">Rate Types</div>
+        <button class="btn btn-primary">+ New Rate Type</button>
+      </div>
+      <table class="rt-table">
+        <thead><tr>
+          <th>Rate Type</th><th>Discount</th><th>Applies To</th><th>Tags</th><th></th>
+        </tr></thead>
+        <tbody id="rateTypesBody"></tbody>
+      </table>
+      <div style="margin-top:28px;">
+        <div class="section-head">
+          <div class="section-title">SF Card Discounts by Course</div>
+          <div style="font-size:12px;color:var(--ink-muted);">Applied on top of base rate</div>
+        </div>
+        <div class="sfc-grid" id="sfcGrid"></div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-holidays">
+      <div class="section-head">
+        <div class="section-title">Holiday &amp; Special Event Calendar</div>
+        <button class="btn btn-primary">+ Add Event</button>
+      </div>
+      <p style="color:var(--ink-muted);font-size:13px;margin-bottom:16px;">
+        Active holidays apply a <strong>+20% premium</strong> to all rack rates. Toggle to enable/disable per event.
+      </p>
+      <div class="holiday-grid" id="holidayGrid"></div>
+    </div>
+
+    <div class="tab-content" id="tab-dynamic">
+      <div class="section-head">
+        <div class="section-title">Dynamic Pricing Rules</div>
+        <div style="font-size:12px;color:var(--ink-muted);">Rules apply to all courses unless overridden</div>
+      </div>
+      <div class="dp-section">
+        <div class="dp-section-title">Fill Rate Multipliers</div>
+        <div class="fill-grid">
+          <div class="fill-head">Fill Level</div>
+          <div class="fill-head">0&ndash;25%</div>
+          <div class="fill-head">25&ndash;50%</div>
+          <div class="fill-head">50&ndash;75%</div>
+          <div class="fill-head">75&ndash;100%</div>
+          <div class="fill-cell rg-row-label">Multiplier</div>
+          <div class="fill-cell" contenteditable>0.85&times;</div>
+          <div class="fill-cell" contenteditable>1.00&times;</div>
+          <div class="fill-cell" contenteditable>1.15&times;</div>
+          <div class="fill-cell" contenteditable>1.30&times;</div>
+        </div>
+        <div class="fill-band">
+          <div class="fill-seg" style="width:25%;background:#dbeaf5;color:#175e8c;">&minus;15%</div>
+          <div class="fill-seg" style="width:25%;background:#e3f2ec;color:#1b6b4f;">Base</div>
+          <div class="fill-seg" style="width:25%;background:#fdf1d9;color:#a66b00;">+15%</div>
+          <div class="fill-seg" style="width:25%;background:#fbe0e6;color:#9a2a42;">+30%</div>
+        </div>
+      </div>
+      <div class="dp-section">
+        <div class="dp-section-title">Last-Minute Urgency Pricing</div>
+        <div class="urgency-list" id="urgencyList"></div>
+      </div>
+      <div class="dp-section">
+        <div class="dp-section-title">Advance Booking Discount</div>
+        <div class="urgency-list" id="advanceList"></div>
+      </div>
+    </div>
+  </main>
+
+  <aside class="sidebar-right">
+    <div class="preview-title">Rate Preview</div>
+    <div class="preview-label">Date</div>
+    <input type="date" id="previewDate" class="preview-select"/>
+    <div class="preview-label">Time of Day</div>
+    <select id="previewTime" class="preview-select">
+      <option value="7">7:00 AM</option>
+      <option value="8">8:00 AM</option>
+      <option value="9">9:00 AM</option>
+      <option value="10" selected>10:00 AM</option>
+      <option value="11">11:00 AM</option>
+      <option value="12">12:00 PM</option>
+      <option value="13">1:00 PM</option>
+      <option value="14">2:00 PM</option>
+      <option value="15">3:00 PM</option>
+      <option value="16">4:00 PM</option>
+    </select>
+    <div class="preview-label">Rate Type</div>
+    <select id="previewRate" class="preview-select">
+      <option value="rack">Rack Rate</option>
+      <option value="twilight">Twilight (&minus;25%)</option>
+      <option value="senior">Senior 60+ (&minus;20%)</option>
+      <option value="junior">Junior under 18 (&minus;50%)</option>
+      <option value="military">Military / First Responder (&minus;15%)</option>
+      <option value="sfcard">SF Card Member (&minus;15%)</option>
+    </select>
+    <div class="preview-label">Fill Level</div>
+    <select id="previewFill" class="preview-select">
+      <option value="0">0&ndash;25% full (Early bird)</option>
+      <option value="1" selected>25&ndash;50% full (Normal)</option>
+      <option value="2">50&ndash;75% full (Busy)</option>
+      <option value="3">75&ndash;100% full (Peak)</option>
+    </select>
+    <div id="previewResults" style="margin-top:16px;"></div>
+  </aside>
+</div>
+
+<script>
+// ── Supabase ──────────────────────────────────────────────────────
+const SUPABASE_URL = 'https://ojgxfeaesnaohskxdvam.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_4UVFMXQWGOt4XNgHVNzWoQ_Id6TBqcu';
+const SB = { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' };
+
+// slug → supabase UUID (loaded on boot)
+let courseUUIDs = {};
+
+async function loadCourseUUIDs() {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/courses?select=id,slug&active=eq.true`, { headers: SB });
+    const rows = await res.json();
+    rows.forEach(r => { courseUUIDs[r.slug] = r.id; });
+  } catch(e) { console.warn('Could not load course UUIDs:', e.message); }
+}
+
+// Hour ranges for each schedule (index matches SCHEDULES array)
+const SCHEDULE_HOURS = [
+  { gte: 6,  lt: 11 },   // Weekday Morning:   6 AM–11 AM
+  { gte: 11, lt: null }, // Weekday Afternoon: 11 AM–close
+  { gte: 6,  lt: null }, // Weekend/Holiday:   all day
+  { gte: 15, lt: null }, // Twilight:          3 PM–close
+];
+
+// Course slug order matching COURSES array positions
+const COURSE_SLUGS = ['san-tan-highlands','coyote-lakes','palmbrook','union-hills','scottsdale-cc','briarwood-cc'];
+
+async function saveSchedule(si) {
+  const btn = document.querySelector(`#sc${si} .btn-primary`);
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+
+  const card   = document.getElementById(`sc${si}`);
+  const cells  = card.querySelectorAll('.rg-cell.editable');
+  const nCols  = COURSES.length; // 6
+  // Rack row is the first row of editable cells (cells 0–5)
+  const rackCells = Array.from(cells).slice(0, nCols);
+
+  const hours = SCHEDULE_HOURS[si];
+  const today = new Date().toISOString().slice(0, 10);
+
+  let successCount = 0;
+  let errors = [];
+
+  for (let ci = 0; ci < COURSES.length; ci++) {
+    const slug = COURSE_SLUGS[ci];
+    const uuid = courseUUIDs[slug];
+    if (!uuid) { errors.push(COURSES[ci].name + ': no UUID'); continue; }
+
+    const rawVal = rackCells[ci].textContent.replace(/[^0-9]/g, '');
+    const dollars = parseInt(rawVal, 10);
+    if (!dollars || dollars < 1) { errors.push(COURSES[ci].name + ': invalid price'); continue; }
+
+    let params = `course_id=eq.${uuid}&date=gte.${today}`;
+    if (hours.gte != null) params += `&hour=gte.${hours.gte}`;
+    if (hours.lt  != null) params += `&hour=lt.${hours.lt}`;
+
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/tee_times?${params}`, {
+        method: 'PATCH', headers: SB, body: JSON.stringify({ rack_cents: dollars * 100 }),
+      });
+      if (res.ok) successCount++;
+      else { const t = await res.text(); errors.push(COURSES[ci].name + ': ' + t.slice(0, 60)); }
+    } catch(e) { errors.push(COURSES[ci].name + ': ' + e.message); }
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Save';
+  if (errors.length === 0) {
+    showToast(`✓ Prices saved — all 6 courses updated`);
+  } else if (successCount > 0) {
+    showToast(`Saved ${successCount} courses. Errors: ${errors.join('; ')}`);
+  } else {
+    showToast('⚠ Save failed: ' + errors[0]);
+  }
+}
+
+function showToast(msg) {
+  let t = document.getElementById('pricingToast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'pricingToast';
+    t.style.cssText = 'position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:#1c2b24;color:#e8f4ed;padding:9px 20px;border-radius:10px;font-size:13px;font-weight:600;z-index:999;opacity:0;transition:opacity .22s;pointer-events:none;white-space:nowrap;';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity = '1';
+  clearTimeout(t._t);
+  t._t = setTimeout(() => { t.style.opacity = '0'; }, 3000);
+}
+
+const COURSES=[
+  {id:"sth",  name:"San Tan Highlands",  base:79},
+  {id:"coy",  name:"Coyote Lakes",        base:62},
+  {id:"palm", name:"Palmbrook CC",        base:55},
+  {id:"uni",  name:"Union Hills",         base:58},
+  {id:"scc",  name:"Scottsdale CC",       base:89},
+  {id:"bri",  name:"Briarwood CC",        base:72},
+];
+let activeCourse=0;
+
+function renderPills(){
+  document.getElementById("coursePills").innerHTML=COURSES.map((c,i)=>
+    `<div class="cpill${i===activeCourse?" active":""}" onclick="setCourse(${i})">${c.name}</div>`
+  ).join("");
+}
+function setCourse(i){activeCourse=i;renderPills();renderSchedules();renderPreview();}
+
+document.querySelectorAll(".tab").forEach(t=>{
+  t.addEventListener("click",()=>{
+    document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+    document.querySelectorAll(".tab-content").forEach(x=>x.classList.remove("active"));
+    t.classList.add("active");
+    document.getElementById("tab-"+t.dataset.tab).classList.add("active");
+  });
+});
+
+const SCHEDULES=[
+  {name:"Weekday Morning",   days:"Mon–Fri",         times:"6:00 AM – 11:00 AM", badge:"Active",  btype:"badge-green",
+   rates:[
+    {l:"Rack",     v:["$79","$62","$55","$58","$89","$72"]},
+    {l:"Twilight", v:["$55","$44","$38","$40","$62","$50"]},
+    {l:"Senior",   v:["$63","$50","$44","$46","$71","$58"]},
+    {l:"Junior",   v:["$40","$31","$28","$29","$45","$36"]},
+   ]},
+  {name:"Weekday Afternoon", days:"Mon–Fri",         times:"11:00 AM – Close",   badge:"Active",  btype:"badge-green",
+   rates:[
+    {l:"Rack",     v:["$69","$54","$48","$51","$79","$63"]},
+    {l:"Twilight", v:["$48","$38","$34","$36","$55","$44"]},
+    {l:"Senior",   v:["$55","$43","$38","$41","$63","$50"]},
+    {l:"Junior",   v:["$35","$27","$24","$26","$40","$32"]},
+   ]},
+  {name:"Weekend / Holiday", days:"Sat–Sun + Holidays", times:"All day",             badge:"Peak",    btype:"badge-amber",
+   rates:[
+    {l:"Rack",     v:["$99","$79","$69","$72","$109","$89"]},
+    {l:"Twilight", v:["$69","$55","$48","$50","$76","$62"]},
+    {l:"Senior",   v:["$79","$63","$55","$58","$87","$71"]},
+    {l:"Junior",   v:["$50","$40","$35","$36","$55","$45"]},
+   ]},
+  {name:"Twilight Special",  days:"Daily",              times:"3:00 PM – Close",    badge:"Draft",   btype:"badge-sky",
+   rates:[
+    {l:"Rack",     v:["$49","$39","$35","$37","$55","$45"]},
+    {l:"Senior",   v:["$39","$31","$28","$30","$44","$36"]},
+   ]},
+];
+
+function renderSchedules(){
+  document.getElementById("scheduleList").innerHTML=SCHEDULES.map((s,si)=>`
+    <div class="schedule-card${si===0?" open":""}" id="sc${si}">
+      <div class="schedule-head" onclick="toggleSc(${si})">
+        <div><div class="schedule-name">${s.name}</div>
+          <div class="schedule-meta">${s.days} &middot; ${s.times}</div></div>
+        <div class="schedule-badges">
+          <span class="badge ${s.btype}">${s.badge}</span>
+          <span class="chevron">&#8250;</span>
+        </div>
+      </div>
+      <div class="schedule-body">
+        <div class="rate-grid">
+          <div class="rg-head">Rate Type</div>
+          ${COURSES.map(c=>`<div class="rg-head">${c.name.split(" ")[0]}</div>`).join("")}
+          ${s.rates.map(r=>`
+            <div class="rg-cell rg-row-label">${r.l}</div>
+            ${r.v.map(v=>`<div class="rg-cell editable" contenteditable>${v}</div>`).join("")}
+          `).join("")}
+        </div>
+        <div style="display:flex;gap:8px;margin-top:4px;">
+          <button class="btn btn-primary" style="font-size:12px;padding:5px 12px;" onclick="saveSchedule(${si})">Save</button>
+          <button class="btn" style="font-size:12px;padding:5px 12px;">Deactivate</button>
+          <button class="btn" style="font-size:12px;padding:5px 12px;color:var(--rose-700);">Delete</button>
+        </div>
+      </div>
+    </div>`).join("");
+}
+function toggleSc(i){document.getElementById("sc"+i).classList.toggle("open");}
+
+const RATE_TYPES=[
+  {name:"Rack Rate",              disc:"&#8212;",     applies:"All bookings",            tags:["Default"]},
+  {name:"Twilight",               disc:"&minus;20&ndash;30%", applies:"After 2 PM",      tags:["Time-based"]},
+  {name:"Senior (60+)",           disc:"&minus;20%",  applies:"Age verified at check-in",tags:["Age","ID required"]},
+  {name:"Junior (under 18)",      disc:"&minus;50%",  applies:"Age verified at check-in",tags:["Age"]},
+  {name:"Military / First Resp.", disc:"&minus;15%",  applies:"ID verified",             tags:["ID required"]},
+  {name:"SF Card Member",         disc:"Varies",      applies:"Per-course rate",         tags:["Member","SF Card"]},
+  {name:"Golf League",            disc:"&minus;10%",  applies:"League bookings only",    tags:["Group"]},
+  {name:"Group (8+)",             disc:"&minus;12%",  applies:"8 or more players",       tags:["Group"]},
+];
+function renderRateTypes(){
+  document.getElementById("rateTypesBody").innerHTML=RATE_TYPES.map(r=>`
+    <tr>
+      <td><strong>${r.name}</strong></td>
+      <td><span class="discount-pill dp-green">${r.disc}</span></td>
+      <td style="color:var(--ink-soft)">${r.applies}</td>
+      <td>${r.tags.map(t=>`<span class="tag-pill">${t}</span>`).join("")}</td>
+      <td><button class="btn" style="font-size:11px;padding:3px 10px;">Edit</button></td>
+    </tr>`).join("");
+}
+
+const SFC_DATA=[
+  {name:"San Tan Highlands",wkday:"15%",wkend:"10%",twi:"20%"},
+  {name:"Coyote Lakes",     wkday:"12%",wkend:"8%", twi:"18%"},
+  {name:"Palmbrook CC",     wkday:"18%",wkend:"12%",twi:"22%"},
+  {name:"Union Hills",      wkday:"14%",wkend:"9%", twi:"19%"},
+  {name:"Scottsdale CC",    wkday:"10%",wkend:"7%", twi:"15%"},
+  {name:"Briarwood CC",     wkday:"13%",wkend:"9%", twi:"18%"},
+];
+function renderSFCGrid(){
+  document.getElementById("sfcGrid").innerHTML=SFC_DATA.map(c=>`
+    <div class="sfc-card">
+      <div class="sfc-course">${c.name}</div>
+      <div class="sfc-row"><span>Weekday</span><span class="sfc-val">&minus;${c.wkday}</span></div>
+      <div class="sfc-row"><span>Weekend</span><span class="sfc-val">&minus;${c.wkend}</span></div>
+      <div class="sfc-row"><span>Twilight</span><span class="sfc-val">&minus;${c.twi}</span></div>
+    </div>`).join("");
+}
+
+const HOLIDAYS=[
+  {name:"New Year\'s Day",        date:"Jan 1, 2026",     on:true},
+  {name:"Martin Luther King Jr.", date:"Jan 19, 2026",    on:false},
+  {name:"Presidents\' Day",       date:"Feb 16, 2026",    on:false},
+  {name:"Memorial Day",           date:"May 25, 2026",    on:true},
+  {name:"Independence Day",       date:"Jul 4, 2026",     on:true},
+  {name:"Labor Day",              date:"Sep 7, 2026",     on:true},
+  {name:"Thanksgiving",           date:"Nov 26, 2026",    on:true},
+  {name:"Christmas Eve",          date:"Dec 24, 2026",    on:true},
+  {name:"Christmas Day",          date:"Dec 25, 2026",    on:true},
+  {name:"Waste Management Open",  date:"Feb 2–8, 2026",on:true},
+  {name:"Spring Break (AZ)",      date:"Mar 14–22, 2026",on:true},
+  {name:"Phoenix Open",           date:"Jan 31, 2026",    on:false},
+];
+function renderHolidays(){
+  document.getElementById("holidayGrid").innerHTML=HOLIDAYS.map((h,i)=>`
+    <div class="holiday-card${h.on?" active-holiday":""}" id="hc${i}">
+      <div class="holiday-info">
+        <div class="hname">${h.name}</div>
+        <div class="hdate">${h.date}</div>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" ${h.on?"checked":""} onchange="toggleH(${i},this)"/>
+        <div class="toggle-track"></div>
+        <div class="toggle-thumb"></div>
+      </label>
+    </div>`).join("");
+}
+function toggleH(i,cb){
+  HOLIDAYS[i].on=cb.checked;
+  document.getElementById("hc"+i).classList.toggle("active-holiday",cb.checked);
+}
+
+const URGENCY=[
+  {l:"Same day (0–12 hrs)",  v:"+25%",on:true},
+  {l:"Next day (12–36 hrs)", v:"+15%",on:true},
+  {l:"2–3 days out",         v:"+8%", on:false},
+];
+const ADVANCE=[
+  {l:"14+ days in advance",v:"−5%", on:true},
+  {l:"30+ days in advance",v:"−10%",on:false},
+];
+function renderUrgency(){
+  const mk=(list,id)=>list.map((u,i)=>`
+    <div class="urgency-row">
+      <div class="urgency-label">${u.l}</div>
+      <div class="urgency-val">${u.v}</div>
+      <label class="toggle"><input type="checkbox" ${u.on?"checked":""}/>
+        <div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+    </div>`).join("");
+  document.getElementById("urgencyList").innerHTML=mk(URGENCY);
+  document.getElementById("advanceList").innerHTML=mk(ADVANCE);
+}
+
+(()=>{
+  const d=new Date();
+  document.getElementById("previewDate").value=d.toISOString().slice(0,10);
+})();
+
+const DISC={rack:0,twilight:-.25,senior:-.20,junior:-.50,military:-.15,sfcard:-.15};
+const FMULT=[.85,1.0,1.15,1.30];
+const FLBL=["Early bird −15%","Base rate","Busy +15%","Peak +30%"];
+
+function renderPreview(){
+  const base=COURSES[activeCourse].base;
+  const rk=document.getElementById("previewRate").value;
+  const fi=parseInt(document.getElementById("previewFill").value);
+  const dv=document.getElementById("previewDate").value;
+  const disc=DISC[rk]||0;
+  const after=base*(1+disc);
+  let price=Math.round(after*FMULT[fi]);
+  const isWkend=dv?[0,6].includes(new Date(dv+"T12:00:00").getDay()):false;
+  if(isWkend) price=Math.round(price*1.25);
+  const payNow=Math.round(price*.95);
+  document.getElementById("previewResults").innerHTML=`
+    <div class="preview-row"><div class="preview-row-label">Course</div>
+      <div class="preview-row-val">${COURSES[activeCourse].name}</div></div>
+    <div class="preview-row"><div class="preview-row-label">Base rack</div>
+      <div class="preview-row-val">$${base}</div></div>
+    <div class="preview-row"><div class="preview-row-label">Rate discount</div>
+      <div class="preview-row-val">${disc!==0?(disc*100).toFixed(0)+"%":"None"}</div></div>
+    <div class="preview-row"><div class="preview-row-label">Fill adjust</div>
+      <div class="preview-row-val">${FLBL[fi]}</div></div>
+    ${isWkend?`<div class="preview-row"><div class="preview-row-label">Weekend premium</div>
+      <div class="preview-row-val">+25%</div></div>`:""}
+    <div class="preview-highlight">
+      <div class="big">$${price}</div>
+      <div class="sub">Pay now: $${payNow} &nbsp;&middot;&nbsp; Pay at course: $${price}</div>
+    </div>`;
+}
+["previewDate","previewTime","previewRate","previewFill"].forEach(id=>{
+  document.getElementById(id).addEventListener("change",renderPreview);
+});
+
+loadCourseUUIDs();
+renderPills();
+renderSchedules();
+renderRateTypes();
+renderSFCGrid();
+renderHolidays();
+renderUrgency();
+renderPreview();
+</script>
+</body>
+</html>
