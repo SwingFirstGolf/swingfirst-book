@@ -1,0 +1,556 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>SwingFirst — Reports</title>
+<style>
+:root{
+  --ink:#0d1f17;--ink-soft:#3b4a42;--ink-muted:#6b7a72;
+  --line:#e4e9e6;--paper:#fbfaf7;--card:#ffffff;
+  --green-900:#0b3d2e;--green-700:#1b6b4f;--green-600:#2a8a6a;
+  --green-200:#a8d5bc;--green-100:#e3f2ec;--green-50:#f2f9f5;
+  --amber-700:#B45309;--amber-100:#FEF3C7;
+  --rose-700:#9A2A42;--rose-100:#fbe0e6;
+  --sky-700:#175e8c;--sky-100:#dbeaf5;
+  --slate-100:#eef1ee;--slate-200:#dde3de;
+  --shadow-md:0 2px 8px rgba(13,31,23,.08),0 8px 24px rgba(13,31,23,.06);
+  --radius:12px;--radius-sm:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Inter",sans-serif;
+  color:var(--ink);background:var(--paper);font-size:14px;line-height:1.45;}
+button{font:inherit;color:inherit;cursor:pointer;}
+a{color:inherit;text-decoration:none;}
+
+/* TOP BAR */
+.topbar{display:flex;align-items:center;justify-content:space-between;
+  padding:0 24px;height:52px;border-bottom:1px solid var(--line);
+  background:var(--card);position:sticky;top:0;z-index:20;}
+.brand{display:flex;align-items:center;gap:10px;}
+.brand-mark{width:30px;height:30px;border-radius:8px;background:var(--green-900);
+  color:#fff;display:grid;place-items:center;font-size:13px;font-weight:800;}
+.brand-name{font-size:15px;font-weight:800;letter-spacing:-.02em;color:var(--ink);}
+.brand-tag{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
+  background:var(--green-100);color:var(--green-700);border-radius:4px;padding:2px 6px;margin-left:6px;}
+.topbar-right{display:flex;align-items:center;gap:12px;}
+#clock{font-size:12px;color:var(--ink-muted);}
+#lockBtn{font-size:13px;color:var(--ink-muted);background:none;border:1px solid var(--line);
+  border-radius:6px;padding:4px 10px;cursor:pointer;}
+#lockBtn:hover{background:var(--slate-100);}
+
+/* SHELL */
+.shell{display:flex;height:calc(100vh - 52px);}
+.sidebar-left{width:200px;flex-shrink:0;border-right:1px solid var(--line);
+  padding:20px 0;overflow-y:auto;background:var(--card);}
+.nav-group{margin-bottom:20px;padding:0 12px;}
+.nav-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;
+  color:var(--ink-muted);margin-bottom:6px;padding:0 8px;}
+.nav-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;
+  font-size:13px;font-weight:500;color:var(--ink-soft);cursor:pointer;margin-bottom:2px;}
+.nav-item:hover{background:var(--green-50);color:var(--green-700);}
+.nav-item.active{background:var(--green-100);color:var(--green-700);font-weight:600;}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--line);flex-shrink:0;}
+.nav-item.active .dot{background:var(--green-700);}
+
+/* MAIN */
+.main{flex:1;overflow-y:auto;padding:28px 32px;}
+
+/* Date range picker */
+.toolbar{display:flex;align-items:center;gap:12px;margin-bottom:24px;flex-wrap:wrap;}
+.toolbar h1{font-size:20px;font-weight:800;letter-spacing:-.02em;flex:1;}
+.range-group{display:flex;gap:4px;background:var(--slate-100);padding:3px;border-radius:8px;}
+.range-btn{padding:5px 12px;border-radius:6px;font-size:12px;font-weight:600;border:none;
+  background:none;color:var(--ink-muted);cursor:pointer;transition:all .15s;}
+.range-btn.active{background:#fff;color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.1);}
+.custom-dates{display:flex;align-items:center;gap:6px;}
+.custom-dates input[type=date]{padding:5px 10px;border:1px solid var(--line);border-radius:6px;
+  font:inherit;font-size:12px;color:var(--ink);outline:none;}
+.custom-dates input[type=date]:focus{border-color:var(--green-700);}
+
+/* KPI strip */
+.kpi-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:28px;}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;}
+.kpi-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
+  color:var(--ink-muted);margin-bottom:6px;}
+.kpi-value{font-size:28px;font-weight:800;letter-spacing:-.02em;color:var(--ink);}
+.kpi-sub{font-size:12px;color:var(--ink-muted);margin-top:3px;}
+
+/* Charts placeholder */
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;}
+.chart-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px;}
+.chart-title{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:16px;}
+.chart-area{position:relative;}
+
+/* Bar chart */
+.bar-chart{display:flex;align-items:flex-end;gap:6px;height:120px;}
+.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;}
+.bar{width:100%;border-radius:4px 4px 0 0;background:var(--green-700);min-height:2px;transition:height .3s;}
+.bar-label{font-size:10px;color:var(--ink-muted);text-align:center;white-space:nowrap;}
+.bar-val{font-size:10px;font-weight:700;color:var(--ink-muted);}
+
+/* Utilization bars */
+.util-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.util-label{font-size:12px;color:var(--ink-soft);width:80px;flex-shrink:0;}
+.util-track{flex:1;height:10px;background:var(--slate-100);border-radius:999px;overflow:hidden;}
+.util-fill{height:100%;border-radius:999px;background:var(--green-700);transition:width .4s;}
+.util-pct{font-size:11px;font-weight:700;color:var(--ink-muted);width:36px;text-align:right;}
+
+/* Table */
+.section-head{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:12px;}
+.data-table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;}
+.data-table th{padding:10px 16px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.05em;color:var(--ink-muted);border-bottom:1px solid var(--line);background:var(--paper);}
+.data-table td{padding:11px 16px;font-size:13px;border-bottom:1px solid var(--line);color:var(--ink-soft);}
+.data-table tr:last-child td{border-bottom:none;}
+.data-table tr:hover td{background:var(--green-50);}
+.td-strong{font-weight:700;color:var(--ink);}
+.badge{display:inline-flex;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;}
+.badge-green{background:var(--green-100);color:var(--green-700);}
+.badge-amber{background:var(--amber-100);color:var(--amber-700);}
+.badge-slate{background:var(--slate-100);color:var(--ink-muted);}
+.loading{padding:40px;text-align:center;color:var(--ink-muted);font-size:13px;}
+
+/* PIN Gate */
+#pinGate{position:fixed;inset:0;z-index:9999;background:var(--green-900);
+  display:flex;align-items:center;justify-content:center;transition:opacity .25s;}
+#pinGate.hide{opacity:0;pointer-events:none;}
+.pin-card{background:#fff;border-radius:20px;padding:40px 44px;
+  width:100%;max-width:360px;text-align:center;box-shadow:0 8px 48px rgba(0,0,0,.28);}
+.pin-logo{font-size:28px;font-weight:900;color:var(--green-900);letter-spacing:-.03em;margin-bottom:4px;}
+.pin-sub{font-size:13px;color:var(--ink-muted);margin-bottom:28px;}
+.pin-input{width:100%;padding:14px 16px;font-size:22px;font-weight:700;text-align:center;
+  letter-spacing:.25em;border:2px solid var(--line);border-radius:12px;outline:none;
+  font-family:inherit;color:var(--green-900);transition:border-color .15s;
+  -webkit-text-security:disc;}
+.pin-input:focus{border-color:var(--green-700);}
+.pin-input.error{border-color:var(--rose-700);animation:pinShake .35s;}
+.pin-err{font-size:13px;color:var(--rose-700);margin-top:10px;min-height:20px;font-weight:500;}
+.pin-btn{margin-top:18px;width:100%;padding:14px;background:var(--green-700);color:#fff;
+  border:none;border-radius:12px;font-size:15px;font-weight:700;font-family:inherit;
+  cursor:pointer;transition:background .15s;}
+.pin-btn:hover{background:var(--green-900);}
+@keyframes pinShake{
+  0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)}
+  40%{transform:translateX(8px)} 60%{transform:translateX(-6px)} 80%{transform:translateX(6px)}
+}
+</style>
+</head>
+<body>
+
+<!-- PIN Gate -->
+<div id="pinGate">
+  <div class="pin-card">
+    <div class="pin-logo">⛳ SwingFirst</div>
+    <div class="pin-sub">Operator access — enter your PIN</div>
+    <input id="pinInput" class="pin-input" type="password" inputmode="numeric"
+           maxlength="8" placeholder="·  ·  ·  ·" autocomplete="off" autocorrect="off"/>
+    <div class="pin-err" id="pinErr"></div>
+    <button class="pin-btn" id="pinSubmit">Unlock</button>
+  </div>
+</div>
+<script>
+const OPERATOR_PIN = 'golf';
+const AUTH_KEY     = 'sf_op_auth';
+(function() {
+  if (sessionStorage.getItem(AUTH_KEY) === '1') {
+    document.getElementById('pinGate').style.display = 'none';
+  }
+})();
+function unlockOperator() {
+  const val = document.getElementById('pinInput').value.trim().toLowerCase();
+  if (val === OPERATOR_PIN.toLowerCase()) {
+    sessionStorage.setItem(AUTH_KEY, '1');
+    const gate = document.getElementById('pinGate');
+    gate.classList.add('hide');
+    setTimeout(() => gate.style.display = 'none', 280);
+  } else {
+    const inp = document.getElementById('pinInput');
+    const err = document.getElementById('pinErr');
+    inp.classList.add('error');
+    err.textContent = 'Incorrect PIN — try again.';
+    inp.value = '';
+    setTimeout(() => inp.classList.remove('error'), 400);
+    inp.focus();
+  }
+}
+document.getElementById('pinSubmit').addEventListener('click', unlockOperator);
+document.getElementById('pinInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') unlockOperator();
+});
+</script>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-mark">S</div>
+    <span class="brand-name">SwingFirst<span class="brand-tag">Operator</span></span>
+  </div>
+  <div class="topbar-right">
+    <span id="clock"></span>
+    <button id="lockBtn" onclick="lockOperator()">🔒 Lock</button>
+  </div>
+</div>
+
+<div class="shell">
+  <aside class="sidebar-left">
+    <div class="nav-group">
+      <div class="nav-title">Today</div>
+      <a class='nav-item' href='/swingfirst-tee-sheet'><span class="dot"></span> Tee sheet</a>
+      <a class="nav-item" href="swingfirst-qr-scanner.html"><span class="dot"></span> Check-ins</a>
+      <a class="nav-item" href="#"><span class="dot"></span> Pro shop</a>
+    </div>
+    <div class="nav-group">
+      <div class="nav-title">Manage</div>
+      <a class='nav-item' href='/swingfirst-bookings'><span class="dot"></span> Bookings</a>
+      <a class='nav-item' href='/swingfirst-pricing'><span class="dot"></span> Rates &amp; Pricing</a>
+      <a class="nav-item" href="#"><span class="dot"></span> Blocks</a>
+      <a class='nav-item' href='/swingfirst-customers'><span class="dot"></span> Customers</a>
+    </div>
+    <div class="nav-group">
+      <div class="nav-title">Course</div>
+      <a class="nav-item" href="#"><span class="dot"></span> Settings</a>
+      <a class='nav-item active' href='/swingfirst-reports'><span class="dot"></span> Reports</a>
+    </div>
+  </aside>
+
+  <div class="main" id="main">
+    <div class="toolbar">
+      <h1>Reports</h1>
+      <div class="range-group">
+        <button class="range-btn active" data-range="7">7 days</button>
+        <button class="range-btn" data-range="30">30 days</button>
+        <button class="range-btn" data-range="90">90 days</button>
+        <button class="range-btn" data-range="custom">Custom</button>
+      </div>
+      <div class="custom-dates" id="customDates" style="display:none;">
+        <input type="date" id="dateFrom"/>
+        <span style="font-size:12px;color:var(--ink-muted);">to</span>
+        <input type="date" id="dateTo"/>
+        <button onclick="loadReport()" style="padding:5px 12px;background:var(--green-700);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;">Apply</button>
+      </div>
+    </div>
+
+    <div id="kpis" class="kpi-strip">
+      <div class="kpi"><div class="kpi-label">Revenue</div><div class="kpi-value" id="kpiRevenue">—</div><div class="kpi-sub" id="kpiRevSub"></div></div>
+      <div class="kpi"><div class="kpi-label">Bookings</div><div class="kpi-value" id="kpiBookings">—</div><div class="kpi-sub" id="kpiBookSub"></div></div>
+      <div class="kpi"><div class="kpi-label">Players</div><div class="kpi-value" id="kpiPlayers">—</div><div class="kpi-sub" id="kpiPlaySub"></div></div>
+      <div class="kpi"><div class="kpi-label">Avg. Booking</div><div class="kpi-value" id="kpiAvg">—</div><div class="kpi-sub">per booking</div></div>
+      <div class="kpi"><div class="kpi-label">Cancellations</div><div class="kpi-value" id="kpiCancelled">—</div><div class="kpi-sub" id="kpiCancelSub"></div></div>
+      <div class="kpi"><div class="kpi-label">Checked In</div><div class="kpi-value" id="kpiCheckedIn">—</div><div class="kpi-sub" id="kpiCheckedSub"></div></div>
+    </div>
+
+    <div class="charts-row">
+      <div class="chart-card">
+        <div class="chart-title">Daily Revenue</div>
+        <div class="chart-area">
+          <div class="bar-chart" id="revenueChart"></div>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Tee Time Utilization</div>
+        <div id="utilChart"><div class="loading">Loading…</div></div>
+      </div>
+    </div>
+
+    <div style="margin-bottom:12px;"><div class="section-head">Bookings in Period</div></div>
+    <table class="data-table" id="bookingsTable">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Time</th>
+          <th>Lead</th>
+          <th>Ref</th>
+          <th>Players</th>
+          <th>Revenue</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="bookingsBody"><tr><td colspan="7" class="loading">Loading…</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+// ── Supabase ──────────────────────────────────────────────────────────────────
+const SUPABASE_URL = 'https://ojgxfeaesnaohskxdvam.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_4UVFMXQWGOt4XNgHVNzWoQ_Id6TBqcu';
+const SB_HEADERS = {
+  'apikey': SUPABASE_KEY,
+  'Authorization': `Bearer ${SUPABASE_KEY}`,
+  'Content-Type': 'application/json',
+};
+
+async function sbGet(table, params) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${params}`, { headers: SB_HEADERS });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function money(cents) { return '$' + (cents / 100).toFixed(0); }
+function moneyFull(cents) {
+  if (cents >= 100000) return '$' + (cents / 100000).toFixed(1) + 'k';
+  return '$' + (cents / 100).toFixed(0);
+}
+function pad(n) { return String(n).padStart(2, '0'); }
+function fmt12(h, m) {
+  const ampm = h < 12 ? 'AM' : 'PM';
+  return `${h % 12 || 12}:${pad(m || 0)} ${ampm}`;
+}
+function dateLabel(dateStr) {
+  if (!dateStr) return '—';
+  const d = new Date(dateStr + 'T12:00:00');
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+function isoDate(d) {
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+// ── Range state ───────────────────────────────────────────────────────────────
+let activeRange = 7;
+let customFrom = null, customTo = null;
+
+function getDateRange() {
+  if (activeRange === 'custom' && customFrom && customTo) {
+    return { from: customFrom, to: customTo };
+  }
+  const to   = new Date();
+  const from = new Date();
+  from.setDate(from.getDate() - (activeRange - 1));
+  return { from: isoDate(from), to: isoDate(to) };
+}
+
+// ── Range buttons ─────────────────────────────────────────────────────────────
+document.querySelectorAll('.range-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeRange = btn.dataset.range === 'custom' ? 'custom' : parseInt(btn.dataset.range);
+    const custom = document.getElementById('customDates');
+    if (activeRange === 'custom') {
+      custom.style.display = 'flex';
+      // Default custom range: last 30 days
+      const t = new Date(), f = new Date();
+      f.setDate(f.getDate() - 29);
+      document.getElementById('dateFrom').value = isoDate(f);
+      document.getElementById('dateTo').value   = isoDate(t);
+    } else {
+      custom.style.display = 'none';
+      loadReport();
+    }
+  });
+});
+
+document.getElementById('dateFrom').addEventListener('change', () => {
+  customFrom = document.getElementById('dateFrom').value;
+});
+document.getElementById('dateTo').addEventListener('change', () => {
+  customTo = document.getElementById('dateTo').value;
+});
+
+// ── Load & render ─────────────────────────────────────────────────────────────
+async function loadReport() {
+  if (activeRange === 'custom') {
+    customFrom = document.getElementById('dateFrom').value;
+    customTo   = document.getElementById('dateTo').value;
+    if (!customFrom || !customTo) return;
+  }
+
+  const { from, to } = getDateRange();
+
+  // Fetch bookings in range, joined with tee_times + courses
+  let bookings = [];
+  try {
+    bookings = await sbGet('bookings',
+      `select=id,lead_name,lead_email,player_count,total_cents,status,booking_ref,created_at,tee_times(date,hour,minute,courses(name))` +
+      `&tee_times.date=gte.${from}&tee_times.date=lte.${to}` +
+      `&order=created_at.desc&limit=500`
+    );
+  } catch(e) {
+    console.error('Report fetch error:', e);
+  }
+
+  // Filter to only bookings whose tee_time.date falls in range (PostgREST nested filters can be inconsistent)
+  bookings = bookings.filter(b => {
+    const d = b.tee_times?.date;
+    return d && d >= from && d <= to;
+  });
+
+  renderKPIs(bookings, from, to);
+  renderRevenueChart(bookings, from, to);
+  renderUtilChart(bookings, from, to);
+  renderTable(bookings);
+}
+
+// ── KPIs ─────────────────────────────────────────────────────────────────────
+function renderKPIs(bookings, from, to) {
+  const paid = bookings.filter(b => b.status !== 'cancelled');
+  const revenue  = paid.reduce((s, b) => s + (b.total_cents || 0), 0);
+  const players  = paid.reduce((s, b) => s + (b.player_count || 0), 0);
+  const cancelled = bookings.filter(b => b.status === 'cancelled').length;
+  const checkedIn = bookings.filter(b => b.status === 'checked_in').length;
+  const avg = paid.length ? Math.round(revenue / paid.length) : 0;
+  const days = Math.max(1, Math.round((new Date(to) - new Date(from)) / 86400000) + 1);
+
+  document.getElementById('kpiRevenue').textContent   = moneyFull(revenue);
+  document.getElementById('kpiRevSub').textContent    = `$${(revenue / 100 / days).toFixed(0)}/day avg`;
+  document.getElementById('kpiBookings').textContent  = paid.length;
+  document.getElementById('kpiBookSub').textContent   = `${(paid.length / days).toFixed(1)}/day avg`;
+  document.getElementById('kpiPlayers').textContent   = players;
+  document.getElementById('kpiPlaySub').textContent   = `${(players / days).toFixed(1)}/day avg`;
+  document.getElementById('kpiAvg').textContent       = moneyFull(avg);
+  document.getElementById('kpiCancelled').textContent = cancelled;
+  document.getElementById('kpiCancelSub').textContent = paid.length + cancelled > 0
+    ? `${Math.round(cancelled / (paid.length + cancelled) * 100)}% cancel rate` : '';
+  document.getElementById('kpiCheckedIn').textContent = checkedIn;
+  document.getElementById('kpiCheckedSub').textContent = paid.length > 0
+    ? `${Math.round(checkedIn / paid.length * 100)}% show rate` : '';
+}
+
+// ── Revenue Bar Chart ─────────────────────────────────────────────────────────
+function renderRevenueChart(bookings, from, to) {
+  const fromD = new Date(from + 'T12:00:00');
+  const toD   = new Date(to   + 'T12:00:00');
+  const days  = Math.round((toD - fromD) / 86400000) + 1;
+
+  // Build day map
+  const dayMap = {};
+  for (let i = 0; i < days; i++) {
+    const d = new Date(fromD);
+    d.setDate(d.getDate() + i);
+    dayMap[isoDate(d)] = 0;
+  }
+  bookings.filter(b => b.status !== 'cancelled').forEach(b => {
+    const d = b.tee_times?.date;
+    if (d && dayMap[d] !== undefined) dayMap[d] += (b.total_cents || 0);
+  });
+
+  const entries = Object.entries(dayMap);
+  const maxVal  = Math.max(...entries.map(([,v]) => v), 1);
+
+  // If too many days, group by week
+  const showCount = Math.min(days, 28);
+  let groups = [];
+  if (days <= 28) {
+    groups = entries;
+  } else {
+    // Bucket into up to 12 groups
+    const bucketSize = Math.ceil(days / 12);
+    for (let i = 0; i < entries.length; i += bucketSize) {
+      const slice = entries.slice(i, i + bucketSize);
+      const total = slice.reduce((s, [,v]) => s + v, 0);
+      groups.push([slice[0][0], total]);
+    }
+  }
+
+  const gMax = Math.max(...groups.map(([,v]) => v), 1);
+  const el = document.getElementById('revenueChart');
+  el.innerHTML = groups.map(([date, val]) => {
+    const pct = Math.max((val / gMax) * 100, 1);
+    const label = days <= 14
+      ? new Date(date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short' })
+      : dateLabel(date);
+    return `<div class="bar-col">
+      <div class="bar-val">${val > 0 ? moneyFull(val) : ''}</div>
+      <div class="bar" style="height:${pct}%;background:${val > 0 ? 'var(--green-700)' : 'var(--slate-200)'}"></div>
+      <div class="bar-label">${label}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── Utilization Chart ─────────────────────────────────────────────────────────
+function renderUtilChart(bookings, from, to) {
+  const el = document.getElementById('utilChart');
+  const fromD = new Date(from + 'T12:00:00');
+  const toD   = new Date(to   + 'T12:00:00');
+  const days  = Math.round((toD - fromD) / 86400000) + 1;
+
+  // Count bookings per day-of-week
+  const dowCounts = { 0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0 };
+  const dowTotals = { 0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0 };
+
+  // Count how many of each DOW are in range
+  for (let i = 0; i < days; i++) {
+    const d = new Date(fromD);
+    d.setDate(d.getDate() + i);
+    dowTotals[d.getDay()]++;
+  }
+  bookings.filter(b => b.status !== 'cancelled').forEach(b => {
+    const d = b.tee_times?.date;
+    if (!d) return;
+    const dow = new Date(d + 'T12:00:00').getDay();
+    dowCounts[dow]++;
+  });
+
+  const DOW = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  // Assume average 8 bookable tee times per day
+  const SLOTS_PER_DAY = 8;
+
+  const rows = [1,2,3,4,5,6,0].map(dow => {
+    const possible = dowTotals[dow] * SLOTS_PER_DAY;
+    const filled   = dowCounts[dow];
+    const pct      = possible > 0 ? Math.min(Math.round(filled / possible * 100), 100) : 0;
+    const color    = pct >= 80 ? 'var(--green-700)' : pct >= 50 ? 'var(--amber-700)' : 'var(--slate-200)';
+    return `<div class="util-row">
+      <div class="util-label">${DOW[dow]}</div>
+      <div class="util-track"><div class="util-fill" style="width:${pct}%;background:${color};"></div></div>
+      <div class="util-pct">${pct}%</div>
+    </div>`;
+  });
+
+  el.innerHTML = `<div style="font-size:11px;color:var(--ink-muted);margin-bottom:10px;">% of slots filled (est. ${SLOTS_PER_DAY}/day)</div>` + rows.join('');
+}
+
+// ── Bookings table ────────────────────────────────────────────────────────────
+const STATUS_LABELS = { paid:'Paid', checked_in:'Checked in', cancelled:'Cancelled', no_show:'No-show', pending:'Pending' };
+const STATUS_BADGE  = { paid:'badge-green', checked_in:'badge-green', cancelled:'badge-slate', no_show:'badge-amber', pending:'badge-amber' };
+
+function renderTable(bookings) {
+  const tbody = document.getElementById('bookingsBody');
+  if (!bookings.length) {
+    tbody.innerHTML = '<tr><td colspan="7" class="loading">No bookings in this period.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = bookings.map(b => {
+    const tt     = b.tee_times || {};
+    const date   = tt.date ? dateLabel(tt.date) : '—';
+    const time   = tt.hour != null ? fmt12(tt.hour, tt.minute) : '—';
+    const status = b.status || 'pending';
+    return `<tr>
+      <td class="td-strong">${date}</td>
+      <td>${time}</td>
+      <td>${b.lead_name || '—'}</td>
+      <td style="font-family:monospace;font-size:12px;color:var(--ink-muted);">${b.booking_ref || '—'}</td>
+      <td>${b.player_count || 0}</td>
+      <td class="td-strong">${b.total_cents ? money(b.total_cents) : '—'}</td>
+      <td><span class="badge ${STATUS_BADGE[status] || 'badge-slate'}">${STATUS_LABELS[status] || status}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Clock ─────────────────────────────────────────────────────────────────────
+function tickClock() {
+  document.getElementById('clock').textContent =
+    new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' · ' +
+    new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+tickClock(); setInterval(tickClock, 30000);
+
+// ── Lock ──────────────────────────────────────────────────────────────────────
+function lockOperator() {
+  sessionStorage.removeItem(AUTH_KEY);
+  const gate = document.getElementById('pinGate');
+  gate.style.display = 'flex'; gate.style.opacity = '0';
+  requestAnimationFrame(() => { gate.style.opacity = '1'; });
+  document.getElementById('pinInput').value = '';
+  document.getElementById('pinErr').textContent = '';
+  setTimeout(() => document.getElementById('pinInput').focus(), 100);
+}
+
+// Boot
+loadReport();
+</script>
+</body>
+</html>
