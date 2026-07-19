@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>SwingFirst — Your Booking</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{min-height:100%;background:#0b3d2e;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;}
+body{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:24px 16px 48px;}
+
+.card{background:#fff;border-radius:20px;width:100%;max-width:380px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.25);}
+
+/* Header */
+.card-head{background:#0b3d2e;padding:22px 24px 18px;text-align:center;}
+.brand{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:14px;}
+.brand-icon{font-size:22px;}
+.brand-name{color:#fff;font-size:18px;font-weight:800;letter-spacing:-.02em;}
+.status-pill{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);
+  border:1px solid rgba(255,255,255,.2);border-radius:20px;padding:5px 14px;
+  color:#fff;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;}
+.status-dot{width:7px;height:7px;border-radius:50%;background:#4ade80;
+  box-shadow:0 0 0 2px rgba(74,222,128,.3);}
+
+/* QR section */
+.qr-section{padding:24px;text-align:center;border-bottom:1px solid #e4e9e6;}
+.qr-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;
+  color:#6b7a72;margin-bottom:14px;}
+.qr-wrap{display:inline-block;padding:12px;background:#f2f9f5;border-radius:12px;
+  border:2px solid #a8d5bc;margin-bottom:14px;}
+.qr-wrap img{display:block;border-radius:4px;}
+.ref-code{font-size:28px;font-weight:800;letter-spacing:.08em;color:#1b6b4f;
+  background:#f2f9f5;border:2px solid #a8d5bc;border-radius:10px;
+  padding:10px 20px;display:inline-block;margin-bottom:8px;}
+.scan-hint{font-size:12px;color:#6b7a72;line-height:1.5;}
+
+/* Details */
+.details{padding:0;}
+.detail-row{display:flex;align-items:center;gap:12px;padding:13px 22px;border-bottom:1px solid #f0f4f1;}
+.detail-row:last-child{border-bottom:none;}
+.detail-icon{font-size:18px;width:24px;text-align:center;flex-shrink:0;}
+.detail-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#6b7a72;margin-bottom:2px;}
+.detail-val{font-size:15px;font-weight:700;color:#0d1f17;}
+
+/* Footer */
+.card-foot{padding:18px 24px;background:#f2f9f5;text-align:center;border-top:1px solid #e4e9e6;}
+.foot-text{font-size:12px;color:#6b7a72;line-height:1.7;}
+
+/* Loading / error */
+.loading{padding:60px 24px;text-align:center;color:#6b7a72;}
+.loading-spin{width:36px;height:36px;border:3px solid #e4e9e6;border-top-color:#1b6b4f;
+  border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 14px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.error-box{padding:40px 24px;text-align:center;}
+.error-icon{font-size:48px;margin-bottom:12px;}
+.error-title{font-size:17px;font-weight:800;color:#9A2A42;margin-bottom:6px;}
+.error-sub{font-size:13px;color:#6b7a72;line-height:1.6;}
+</style>
+</head>
+<body>
+
+<div class="card" id="card">
+  <div class="card-head">
+    <div class="brand">
+      <span class="brand-icon">⛳</span>
+      <span class="brand-name">SwingFirst</span>
+    </div>
+    <div class="status-pill"><div class="status-dot"></div>Booking Confirmed</div>
+  </div>
+  <div id="content">
+    <div class="loading">
+      <div class="loading-spin"></div>
+      Loading your booking…
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://ojgxfeaesnaohskxdvam.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_4UVFMXQWGOt4XNgHVNzWoQ_Id6TBqcu';
+const SB_HEADERS   = { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` };
+
+function fmt12(h, m) {
+  const mer = h >= 12 ? 'PM' : 'AM';
+  return ((h + 11) % 12 + 1) + ':' + String(m).padStart(2, '0') + ' ' + mer;
+}
+function fmtDate(str) {
+  const d = new Date(str + 'T12:00:00');
+  return d.toLocaleDateString(undefined, { weekday:'long', month:'long', day:'numeric', year:'numeric' });
+}
+function money(cents) {
+  return '$' + (cents / 100).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+}
+
+async function load() {
+  const params = new URLSearchParams(window.location.search);
+  const ref = (params.get('ref') || '').toUpperCase().trim();
+
+  if (!ref || !ref.startsWith('SF-')) {
+    showError('No booking reference found.', 'Please use the link from your confirmation email or text.');
+    return;
+  }
+
+  document.title = `SwingFirst — ${ref}`;
+
+  try {
+    const url = `${SUPABASE_URL}/rest/v1/bookings` +
+      `?booking_ref=eq.${encodeURIComponent(ref)}` +
+      `&select=*,tee_times(date,hour,minute,courses(name)),booking_players(id,name,status)` +
+      `&limit=1`;
+    const res = await fetch(url, { headers: SB_HEADERS });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if (!data.length) {
+      showError('Booking not found', `We couldn't find a booking with reference <strong>${ref}</strong>. Double-check your confirmation message.`);
+      return;
+    }
+    render(data[0], ref);
+  } catch (e) {
+    showError('Could not load booking', 'Please check your connection and try again.<br>Ref: ' + ref);
+  }
+}
+
+function render(b, ref) {
+  const tt       = b.tee_times || {};
+  const course   = (tt.courses || {}).name || 'SwingFirst Course';
+  const timeStr  = tt.hour != null ? fmt12(tt.hour, tt.minute) : '—';
+  const dateStr  = tt.date ? fmtDate(tt.date) : '—';
+  const players  = (b.booking_players || []).length || b.player_count || 1;
+  const total    = b.total_cents ? money(b.total_cents) : '—';
+
+  // QR encodes just the ref — scanner reads it directly
+  const qrData   = encodeURIComponent(ref);
+  const qrSrc    = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${qrData}&bgcolor=f2f9f5&color=0b3d2e&margin=0`;
+
+  document.getElementById('content').innerHTML = `
+    <div class="qr-section">
+      <div class="qr-label">Show this QR code at the cart desk or pro shop</div>
+      <div class="qr-wrap">
+        <img src="${qrSrc}" width="200" height="200" alt="QR code for ${ref}"/>
+      </div><br/>
+      <div class="ref-code">${ref}</div>
+      <div class="scan-hint">Staff will scan this to check you in</div>
+    </div>
+    <div class="details">
+      <div class="detail-row">
+        <div class="detail-icon">📍</div>
+        <div>
+          <div class="detail-label">Course</div>
+          <div class="detail-val">${course}</div>
+        </div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-icon">📅</div>
+        <div>
+          <div class="detail-label">Date</div>
+          <div class="detail-val">${dateStr}</div>
+        </div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-icon">⏰</div>
+        <div>
+          <div class="detail-label">Tee Time</div>
+          <div class="detail-val">${timeStr}</div>
+        </div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-icon">👥</div>
+        <div>
+          <div class="detail-label">Players</div>
+          <div class="detail-val">${players} player${players !== 1 ? 's' : ''}</div>
+        </div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-icon">💳</div>
+        <div>
+          <div class="detail-label">Total Paid</div>
+          <div class="detail-val">${total}</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-foot">
+      <div class="foot-text">
+        SwingFirst · ${course}<br/>
+        Questions? Visit the pro shop on arrival.
+      </div>
+    </div>`;
+}
+
+function showError(title, sub) {
+  document.getElementById('content').innerHTML = `
+    <div class="error-box">
+      <div class="error-icon">⚠️</div>
+      <div class="error-title">${title}</div>
+      <div class="error-sub">${sub}</div>
+    </div>`;
+}
+
+load();
+</script>
+</body>
+</html>
