@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SwingFirst — Find Tee Times, Book Direct</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green-900: #14532d;
+      --green-800: #166534;
+      --green-700: #15803d;
+      --green-600: #16a34a;
+      --green-100: #dcfce7;
+      --green-50:  #f0fdf4;
+      --slate-900: #0f172a;
+      --slate-700: #334155;
+      --slate-600: #475569;
+      --slate-500: #64748b;
+      --slate-400: #94a3b8;
+      --slate-300: #cbd5e1;
+      --slate-200: #e2e8f0;
+      --slate-100: #f1f5f9;
+      --slate-50:  #f8fafc;
+      --white:     #ffffff;
+      --amber:     #f59e0b;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--slate-900);
+      background: var(--white);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ─── LANDING ─────────────────────────────────────────── */
+    #landing {
+      min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 48px 20px 64px;
+      background: linear-gradient(160deg, #f0fdf4 0%, #ffffff 55%);
+    }
+
+    .logo-lockup { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+    .logo-mark {
+      width: 48px; height: 48px; background: var(--green-800); border-radius: 14px;
+      display: flex; align-items: center; justify-content: center; font-size: 24px;
+      box-shadow: 0 4px 14px rgba(21,128,61,.25);
+    }
+    .logo-text { font-size: 34px; font-weight: 800; letter-spacing: -0.8px; color: var(--slate-900); }
+    .logo-text em { color: var(--green-700); font-style: normal; }
+
+    .hero-tagline {
+      font-size: 17px; color: var(--slate-500); font-weight: 400;
+      text-align: center; max-width: 460px; line-height: 1.6; margin-bottom: 44px;
+    }
+
+    .search-card {
+      background: var(--white); border-radius: 22px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.06), 0 24px 60px rgba(0,0,0,.10);
+      padding: 32px 32px 28px; width: 100%; max-width: 700px;
+    }
+
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+    .field-row.three { grid-template-columns: 1fr 1fr 1fr; }
+    .field-row.one   { grid-template-columns: 1fr; }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--slate-400); }
+    .field input, .field select {
+      border: 1.5px solid var(--slate-200); border-radius: 11px; padding: 11px 14px;
+      font-size: 14px; font-family: inherit; color: var(--slate-900); background: var(--slate-50);
+      outline: none; transition: border-color .15s, background .15s, box-shadow .15s;
+    }
+    .field input::placeholder { color: var(--slate-400); }
+    .field input:focus, .field select:focus {
+      border-color: var(--green-600); background: var(--white);
+      box-shadow: 0 0 0 3px rgba(22,163,74,.12);
+    }
+
+    .golfer-picker { display: flex; gap: 6px; }
+    .g-btn {
+      flex: 1; padding: 10px 4px; border: 1.5px solid var(--slate-200); border-radius: 10px;
+      background: var(--slate-50); font-size: 14px; font-weight: 600; font-family: inherit;
+      color: var(--slate-600); cursor: pointer; text-align: center; transition: all .12s;
+    }
+    .g-btn:hover  { border-color: var(--green-600); color: var(--green-700); background: var(--green-50); }
+    .g-btn.active { border-color: var(--green-700); background: var(--green-700); color: var(--white); }
+
+    .search-btn {
+      width: 100%; margin-top: 8px; padding: 15px; background: var(--green-800);
+      color: var(--white); border: none; border-radius: 13px; font-size: 15px;
+      font-weight: 700; font-family: inherit; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: background .15s, transform .1s, box-shadow .15s;
+      box-shadow: 0 4px 14px rgba(21,128,61,.28); letter-spacing: .01em;
+    }
+    .search-btn:hover  { background: var(--green-900); }
+    .search-btn:active { transform: scale(.99); }
+
+    .hero-footnote {
+      margin-top: 28px; font-size: 12.5px; color: var(--slate-400); text-align: center;
+      display: flex; align-items: center; gap: 16px; flex-wrap: wrap; justify-content: center;
+    }
+
+    /* ─── RESULTS PAGE ────────────────────────────────────── */
+    #results-page { display: none; min-height: 100vh; background: var(--slate-50); }
+
+    .r-header {
+      background: var(--white); border-bottom: 1px solid var(--slate-200);
+      position: sticky; top: 0; z-index: 200; padding: 0 24px;
+    }
+    .r-header-inner {
+      max-width: 1400px; margin: 0 auto; height: 64px;
+      display: flex; align-items: center; gap: 20px;
+    }
+    .r-logo { font-size: 20px; font-weight: 800; letter-spacing: -.4px; color: var(--slate-900); cursor: pointer; white-space: nowrap; }
+    .r-logo em { color: var(--green-700); font-style: normal; }
+
+    .r-pill {
+      flex: 1; display: flex; align-items: center;
+      background: var(--slate-100); border: 1.5px solid var(--slate-200);
+      border-radius: 100px; overflow: hidden; cursor: pointer; max-width: 700px;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .r-pill:hover { border-color: var(--slate-300); box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+    .r-pill-seg {
+      padding: 9px 14px; font-size: 13px; color: var(--slate-700); font-weight: 500;
+      white-space: nowrap; border-right: 1px solid var(--slate-200);
+    }
+    .r-pill-seg:last-child { border-right: none; }
+    .r-pill-seg .lbl { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--slate-400); display: block; line-height: 1; margin-bottom: 2px; }
+
+    .modify-btn {
+      margin-left: auto; padding: 8px 18px; border: 1.5px solid var(--slate-200);
+      border-radius: 100px; background: var(--white); font-size: 13px; font-weight: 600;
+      font-family: inherit; color: var(--slate-700); cursor: pointer; white-space: nowrap;
+      transition: all .15s;
+    }
+    .modify-btn:hover { border-color: var(--green-600); color: var(--green-700); }
+
+    .sort-bar {
+      max-width: 1400px; margin: 24px auto 4px; padding: 0 24px;
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    }
+    .sort-lbl { font-size: 13px; color: var(--slate-500); font-weight: 500; margin-right: 2px; }
+    .sort-btn {
+      padding: 7px 18px; border-radius: 100px; border: 1.5px solid var(--slate-200);
+      background: var(--white); font-size: 13px; font-weight: 500; font-family: inherit;
+      color: var(--slate-600); cursor: pointer; transition: all .15s;
+    }
+    .sort-btn:hover  { border-color: var(--green-600); color: var(--green-700); }
+    .sort-btn.active { background: var(--green-800); border-color: var(--green-800); color: var(--white); font-weight: 600; }
+
+    .results-meta {
+      max-width: 1400px; margin: 16px auto 20px; padding: 0 24px;
+      font-size: 13.5px; color: var(--slate-500);
+    }
+    .results-meta strong { color: var(--slate-700); }
+
+    /* ─── UNIFIED GRID ────────────────────────────────────── */
+    .cards-grid {
+      max-width: 1400px; margin: 0 auto; padding: 0 24px 60px;
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+    }
+
+    /* ─── BASE CARD ───────────────────────────────────────── */
+    .course-card {
+      background: var(--white); border-radius: 16px; overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,.05), 0 4px 16px rgba(0,0,0,.06);
+      transition: transform .2s, box-shadow .2s;
+      display: flex; flex-direction: column;
+      border: 1.5px solid var(--slate-100);
+    }
+    .course-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px rgba(0,0,0,.10), 0 2px 6px rgba(0,0,0,.05);
+    }
+
+    /* ─── PREMIUM CARD ACCENT ─────────────────────────────── */
+    .course-card.premium {
+      border: 1.5px solid var(--green-100);
+      border-top: 3px solid var(--green-700);
+      box-shadow: 0 2px 8px rgba(21,128,61,.08), 0 6px 20px rgba(21,128,61,.09);
+    }
+    .course-card.premium:hover {
+      box-shadow: 0 8px 28px rgba(21,128,61,.16), 0 2px 8px rgba(21,128,61,.08);
+    }
+
+    /* ─── CARD IMAGE ──────────────────────────────────────── */
+    .card-img-wrap { position: relative; overflow: hidden; height: 188px; flex-shrink: 0; }
+    .card-img {
+      width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .4s;
+    }
+    .course-card:hover .card-img { transform: scale(1.04); }
+    .card-img-wrap::after {
+      content: ''; position: absolute; inset: 0; pointer-events: none;
+      background: linear-gradient(to bottom, transparent 45%, rgba(0,0,0,.48) 100%);
+    }
+
+    /* Featured badge — premium only */
+    .featured-badge {
+      position: absolute; top: 12px; left: 12px; z-index: 3;
+      background: var(--green-800); color: white;
+      padding: 5px 12px; border-radius: 100px;
+      font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+      display: flex; align-items: center; gap: 5px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.22);
+    }
+
+    /* Claim badge — free courses */
+    .claim-badge {
+      position: absolute; top: 12px; left: 12px; z-index: 3;
+      background: rgba(0,0,0,.42); backdrop-filter: blur(4px); color: rgba(255,255,255,.85);
+      padding: 4px 10px; border-radius: 100px;
+      font-size: 10.5px; font-weight: 600;
+      display: flex; align-items: center; gap: 4px;
+    }
+
+    /* Rating + distance overlays */
+    .img-rating {
+      position: absolute; bottom: 11px; left: 12px; z-index: 2;
+      display: flex; align-items: center; gap: 5px;
+      background: rgba(0,0,0,.52); backdrop-filter: blur(6px);
+      border-radius: 100px; padding: 4px 10px;
+      color: white; font-size: 12px; font-weight: 600;
+    }
+    .img-rating .review-ct { font-size: 10.5px; font-weight: 400; opacity: .8; }
+    .img-dist {
+      position: absolute; bottom: 11px; right: 12px; z-index: 2;
+      background: rgba(0,0,0,.52); backdrop-filter: blur(6px);
+      border-radius: 100px; padding: 4px 10px;
+      color: white; font-size: 11.5px; font-weight: 500;
+      display: flex; align-items: center; gap: 4px;
+    }
+
+    /* ─── CARD BODY ───────────────────────────────────────── */
+    .card-body { padding: 16px 16px 14px; flex: 1; display: flex; flex-direction: column; }
+    .card-body.pb-premium { padding: 17px 17px 15px; }
+
+    .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; gap: 8px; }
+    .card-name { font-size: 15px; font-weight: 700; color: var(--slate-900); line-height: 1.3; flex: 1; }
+    .card-name.lg { font-size: 16px; }
+    .price-badge {
+      background: var(--green-50); border: 1px solid var(--green-100);
+      color: var(--green-800); padding: 4px 10px; border-radius: 100px;
+      font-size: 12px; font-weight: 700; white-space: nowrap; flex-shrink: 0;
+    }
+
+    .verified-tag {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 11px; font-weight: 600; color: var(--green-700);
+      background: var(--green-50); border: 1px solid var(--green-100);
+      padding: 3px 9px; border-radius: 100px;
+      margin-bottom: 9px; align-self: flex-start;
+    }
+
+    .card-description {
+      font-size: 12.5px; color: var(--slate-500); line-height: 1.55; margin-bottom: 11px;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+
+    .offer-banner {
+      background: #fefce8; border: 1px solid #fde68a; color: #92400e;
+      border-radius: 8px; padding: 6px 11px; font-size: 11.5px; font-weight: 600;
+      margin-bottom: 11px; display: flex; align-items: center; gap: 6px;
+    }
+
+    .card-address {
+      font-size: 11.5px; color: var(--slate-400); margin-bottom: 11px;
+      display: flex; align-items: center; gap: 3px;
+    }
+
+    .tee-section-lbl {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .07em; color: var(--slate-400); margin-bottom: 7px;
+    }
+
+    .tee-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 13px; flex: 1; }
+
+    .tee-chip {
+      padding: 5px 9px; border: 1.5px solid var(--slate-200); border-radius: 8px;
+      text-decoration: none; display: inline-flex; flex-direction: column;
+      align-items: center; gap: 1px; transition: all .12s; background: var(--white);
+    }
+    .tee-chip:hover { border-color: var(--green-600); background: var(--green-50); }
+    .chip-time { font-size: 12px; font-weight: 600; color: var(--slate-700); white-space: nowrap; line-height: 1; }
+    .tee-chip:hover .chip-time { color: var(--green-700); }
+    .chip-price { font-size: 10px; font-weight: 500; color: var(--slate-400); line-height: 1; }
+    .tee-chip:hover .chip-price { color: var(--green-600); }
+    .tee-chip.more { background: var(--slate-100); border-color: var(--slate-200); cursor: default; justify-content: center; }
+    .tee-chip.more .chip-time { font-size: 11px; font-weight: 500; color: var(--slate-400); }
+
+    .book-btn {
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      width: 100%; padding: 11px; border-radius: 10px;
+      border: 1.5px solid var(--green-700); background: transparent;
+      color: var(--green-800); font-size: 13px; font-weight: 700; font-family: inherit;
+      cursor: pointer; text-decoration: none; transition: all .15s; letter-spacing: .01em;
+      margin-top: auto;
+    }
+    .book-btn:hover { background: var(--green-800); color: var(--white); border-color: var(--green-800); }
+
+    /* No results */
+    .no-results { grid-column: 1/-1; text-align: center; padding: 80px 24px; }
+    .no-results h3 { font-size: 22px; font-weight: 700; color: var(--slate-700); margin-bottom: 10px; }
+    .no-results p  { font-size: 15px; color: var(--slate-400); line-height: 1.6; }
+    .no-results .hint { margin-top: 24px; display: inline-flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+    .hint-tag {
+      padding: 7px 16px; border-radius: 100px; border: 1.5px solid var(--slate-200);
+      background: var(--white); font-size: 13px; color: var(--slate-600); cursor: pointer; transition: all .15s;
+    }
+    .hint-tag:hover { border-color: var(--green-600); color: var(--green-700); }
+
+    .r-footer { text-align: center; padding: 0 24px 48px; font-size: 12px; color: var(--slate-400); line-height: 1.8; }
+
+    @media (max-width: 1100px) { .cards-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 700px) {
+      .field-row, .field-row.three { grid-template-columns: 1fr; }
+      .cards-grid { grid-template-columns: 1fr; padding: 0 16px 48px; }
+      .r-pill-seg { padding: 8px 10px; font-size: 12px; }
+      .search-card { padding: 24px 20px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════
+     LANDING PAGE
+══════════════════════════════════════════════ -->
+<div id="landing">
+  <div class="logo-lockup">
+    <div class="logo-mark">⛳</div>
+    <div class="logo-text">Swing<em>First</em></div>
+  </div>
+  <p class="hero-tagline">
+    Find tee times at every course near you.<br>
+    No fees. No middleman. Book directly with the course.
+  </p>
+
+  <div class="search-card">
+    <div class="field-row one">
+      <div class="field">
+        <label>Where do you want to play?</label>
+        <input id="inp-play" type="text" placeholder="Scottsdale · North Phoenix · TPC Scottsdale · Chandler…" autocomplete="off">
+      </div>
+    </div>
+    <div class="field-row one">
+      <div class="field">
+        <label>Where are you coming from?</label>
+        <input id="inp-from" type="text" placeholder="Address, neighborhood, or city (e.g. Tempe, AZ)" autocomplete="off">
+      </div>
+    </div>
+    <div class="field-row three">
+      <div class="field">
+        <label>Date</label>
+        <input id="inp-date" type="date">
+      </div>
+      <div class="field">
+        <label>Earliest tee time</label>
+        <select id="inp-tfrom">
+          <option value="5">5:00 AM</option>
+          <option value="6">6:00 AM</option>
+          <option value="7" selected>7:00 AM</option>
+          <option value="8">8:00 AM</option>
+          <option value="9">9:00 AM</option>
+          <option value="10">10:00 AM</option>
+          <option value="11">11:00 AM</option>
+          <option value="12">12:00 PM</option>
+          <option value="13">1:00 PM</option>
+          <option value="14">2:00 PM</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Latest tee time</label>
+        <select id="inp-tto">
+          <option value="9">9:00 AM</option>
+          <option value="10">10:00 AM</option>
+          <option value="11">11:00 AM</option>
+          <option value="12" selected>12:00 PM</option>
+          <option value="13">1:00 PM</option>
+          <option value="14">2:00 PM</option>
+          <option value="15">3:00 PM</option>
+          <option value="16">4:00 PM</option>
+          <option value="17">5:00 PM</option>
+          <option value="18">6:00 PM</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-row one">
+      <div class="field">
+        <label>Number of golfers</label>
+        <div class="golfer-picker" id="golfer-picker">
+          <button class="g-btn" onclick="setGolfers(1)">1</button>
+          <button class="g-btn" onclick="setGolfers(2)">2</button>
+          <button class="g-btn active" onclick="setGolfers(3)">3</button>
+          <button class="g-btn" onclick="setGolfers(4)">4</button>
+          <button class="g-btn" onclick="setGolfers(5)">5</button>
+          <button class="g-btn" onclick="setGolfers(6)">6</button>
+          <button class="g-btn" onclick="setGolfers(7)">7</button>
+          <button class="g-btn" onclick="setGolfers(8)">8</button>
+        </div>
+      </div>
+    </div>
+    <button class="search-btn" onclick="doSearch()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      Find Tee Times
+    </button>
+  </div>
+
+  <div class="hero-footnote">
+    <span>✓ No booking fees</span>
+    <span>✓ Best available price</span>
+    <span>✓ Book directly with the course</span>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════
+     RESULTS PAGE
+══════════════════════════════════════════════ -->
+<div id="results-page">
+  <div class="r-header">
+    <div class="r-header-inner">
+      <span class="r-logo" onclick="goHome()">Swing<em>First</em></span>
+      <div class="r-pill" onclick="goHome()">
+        <div class="r-pill-seg"><span class="lbl">Play</span><span id="pill-play">—</span></div>
+        <div class="r-pill-seg"><span class="lbl">From</span><span id="pill-from">—</span></div>
+        <div class="r-pill-seg"><span class="lbl">Date</span><span id="pill-date">—</span></div>
+        <div class="r-pill-seg"><span class="lbl">Time</span><span id="pill-time">—</span></div>
+        <div class="r-pill-seg"><span class="lbl">Golfers</span><span id="pill-golfers">—</span></div>
+      </div>
+      <button class="modify-btn" onclick="goHome()">Modify search</button>
+    </div>
+  </div>
+
+  <div class="sort-bar">
+    <span class="sort-lbl">Sort by:</span>
+    <button class="sort-btn active" id="sb-recommended" onclick="sortBy('recommended')">✦ Recommended</button>
+    <button class="sort-btn"        id="sb-price"       onclick="sortBy('price')">💰 Lowest Price</button>
+    <button class="sort-btn"        id="sb-distance"    onclick="sortBy('distance')">📍 Nearest</button>
+    <button class="sort-btn"        id="sb-rating"      onclick="sortBy('rating')">⭐ Top Rated</button>
+  </div>
+
+  <div class="results-meta" id="results-meta"></div>
+  <div class="cards-grid" id="cards-grid"></div>
+  <div class="r-footer">
+    Prices shown per golfer &nbsp;·&nbsp; Click any tee time to book directly with the course — no fees, no middleman<br>
+    <span style="opacity:.7">✦ Featured listings are paid placements by courses that have verified and enhanced their SwingFirst profile</span>
+  </div>
+</div>
+
+
+<script>
+/* ──────────────────────────────────────────────
+   GOLFER PICKER
+────────────────────────────────────────────── */
+let selectedGolfers = 3;
+function setGolfers(n) {
+  selectedGolfers = n;
+  document.querySelectorAll('.g-btn').forEach((b, i) => b.classList.toggle('active', i + 1 === n));
+}
+
+/* ──────────────────────────────────────────────
+   STOCK PHOTOS
+   6 varied golf images rotate across free courses
+   so every card looks different and real.
+────────────────────────────────────────────── */
+const STOCK = [
+  "https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=800&h=480&fit=crop&q=82", // classic green + flag
+  "https://images.unsplash.com/photo-1619680465416-a99a4a6ff02b?w=800&h=480&fit=crop&q=82", // mountain backdrop
+  "https://images.unsplash.com/photo-1568576612857-a5ee8b91e0e1?w=800&h=480&fit=crop&q=82", // aerial fairway
+  "https://images.unsplash.com/photo-1561632669-7f55f7975606?w=800&h=480&fit=crop&q=82", // water feature hole
+  "https://images.unsplash.com/photo-1510572538264-42a7e9e57da1?w=800&h=480&fit=crop&q=82", // putting green close
+  "https://images.unsplash.com/photo-1593111774642-a746f08e40f2?w=800&h=480&fit=crop&q=82", // lush tree-lined fairway
+];
+
+/* ──────────────────────────────────────────────
+   COURSE DATA
+   premium: true  = Featured (paid, verified, with photos + description)
+   premium: false = Standard free listing
+   stockIdx       = which STOCK photo to use (free courses only)
+────────────────────────────────────────────── */
+const COURSES = [
+
+  // ── PREMIUM (6 courses) ─────────────────────
+  {
+    id:1, name:"TPC Scottsdale", premium:true,
+    areas:["scottsdale","tpc","tpc scottsdale","north scottsdale","phoenix"],
+    address:"7601 E Indian Bend Rd, Scottsdale, AZ 85250",
+    lat:33.5622, lng:-111.8910, rating:4.6, reviews:3842,
+    website:"https://www.tpc.com/tpcscottsdale/tee-times/",
+    img:"https://images.unsplash.com/photo-1587174486073-ae5e5cff23aa?w=800&h=500&fit=crop&q=85",
+    description:"Home of the WM Phoenix Open, TPC Scottsdale's Stadium Course puts you on the same fairways as the PGA Tour. Stunning desert layout with four sets of tees for every level.",
+    specialOffer:null,
+    prices:[{s:5,e:7,p:145},{s:7,e:9,p:185},{s:9,e:12,p:220},{s:12,e:15,p:170},{s:15,e:19,p:140}],
+    slots:[5.75,6,6.25,6.5,6.75,7,7.25,7.5,7.75,8,8.25,8.5,8.75,9,9.25,9.5,9.75,10,10.25,10.5,11,11.5,12,12.5,13,14,15]
+  },
+  {
+    id:2, name:"We-Ko-Pa Golf Club", premium:true,
+    areas:["scottsdale","we-ko-pa","wekopa","fort mcdowell","east valley","fountain hills"],
+    address:"18200 E Toh Vee Cir, Fort McDowell, AZ 85264",
+    lat:33.5892, lng:-111.6521, rating:4.8, reviews:2741,
+    website:"https://www.wekopa.com/tee-times/",
+    img:"https://images.unsplash.com/photo-1622279888535-3d2bdb851d48?w=800&h=500&fit=crop&q=85",
+    description:"Consistently ranked among Arizona's finest, We-Ko-Pa's two courses wind through untouched Sonoran Desert. The Saguaro course by Coore/Crenshaw is a true bucket-list round.",
+    specialOffer:"Twilight rates from $75 after 2 PM",
+    prices:[{s:5,e:7,p:95},{s:7,e:9,p:145},{s:9,e:12,p:175},{s:12,e:15,p:130},{s:15,e:19,p:75}],
+    slots:[6,6.25,6.5,6.75,7,7.25,7.75,8,8.5,9,9.5,10,10.5,11,12,13,14,15]
+  },
+  {
+    id:3, name:"Troon North Golf Club", premium:true,
+    areas:["scottsdale","north scottsdale","troon","troon north","cave creek"],
+    address:"10320 E Dynamite Blvd, Scottsdale, AZ 85262",
+    lat:33.7217, lng:-111.8625, rating:4.7, reviews:1956,
+    website:"https://www.troonnorthgolf.com/tee-times/",
+    img:"https://images.unsplash.com/photo-1510572538264-42a7e9e57da1?w=800&h=500&fit=crop&q=85",
+    description:"Carved through dramatic Sonoran Desert in North Scottsdale, Troon North's Monument course is a perennial Top-10 in Arizona. Sweeping mountain views on every hole.",
+    specialOffer:null,
+    prices:[{s:5,e:7,p:120},{s:7,e:9,p:165},{s:9,e:12,p:195},{s:12,e:15,p:145},{s:15,e:19,p:115}],
+    slots:[5.75,6,6.25,6.5,7,7.25,7.5,8,8.25,8.75,9,9.5,10,10.5,11,11.5,12,12.5,13,14,15]
+  },
+  {
+    id:4, name:"Grayhawk Golf Club", premium:true,
+    areas:["scottsdale","north scottsdale","grayhawk","paradise valley"],
+    address:"8620 E Thompson Peak Pkwy, Scottsdale, AZ 85255",
+    lat:33.6387, lng:-111.9238, rating:4.5, reviews:2218,
+    website:"https://grayhawkgolf.com/tee-times/",
+    img:"https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=800&h=500&fit=crop&q=85",
+    description:"Two championship courses — Raptor and Talon — set against the McDowell Mountains. Grayhawk is a Scottsdale staple: world-class without the resort price tag.",
+    specialOffer:"Book 3+ golfers and save 15%",
+    prices:[{s:5,e:7,p:85},{s:7,e:9,p:125},{s:9,e:12,p:165},{s:12,e:15,p:110},{s:15,e:19,p:85}],
+    slots:[5.75,6,6.25,6.5,6.75,7,7.25,7.5,7.75,8,8.25,8.5,8.75,9,9.25,9.5,10,10.5,11,11.5,12,12.5,13,14,15]
+  },
+  {
+    id:5, name:"Ocotillo Golf Resort", premium:true,
+    areas:["chandler","ocotillo","east valley","south valley","gilbert","tempe"],
+    address:"3751 S Clubhouse Dr, Chandler, AZ 85248",
+    lat:33.2918, lng:-111.8423, rating:4.4, reviews:2208,
+    website:"https://www.ocotillogolf.com/tee-times/",
+    img:"https://images.unsplash.com/photo-1561632669-7f55f7975606?w=800&h=500&fit=crop&q=85",
+    description:"27 holes woven around 90 acres of shimmering lakes in Chandler. Ocotillo's water features make it one of the most scenic layouts in the East Valley — playable year-round.",
+    specialOffer:null,
+    prices:[{s:5,e:7,p:45},{s:7,e:9,p:75},{s:9,e:12,p:85},{s:12,e:15,p:65},{s:15,e:19,p:45}],
+    slots:[5.75,6,6.25,6.5,7,7.25,7.5,8,8.25,8.5,8.75,9,9.5,10,10.5,11,12,12.5,13,14,15]
+  },
+  {
+    id:6, name:"Gold Canyon Golf Resort", premium:true,
+    areas:["gold canyon","apache junction","east valley","queen creek","superstition"],
+    address:"6100 S Kings Ranch Rd, Gold Canyon, AZ 85118",
+    lat:33.3119, lng:-111.4389, rating:4.5, reviews:2033,
+    website:"https://www.gcgr.com/tee-times/",
+    img:"https://images.unsplash.com/photo-1568576612857-a5ee8b91e0e1?w=800&h=500&fit=crop&q=85",
+    description:"Nestled at the base of the Superstition Mountains, Gold Canyon delivers some of the most dramatic scenery in Arizona golf. The Dinosaur Mountain course is genuinely breathtaking.",
+    specialOffer:"Resort guest rates available",
+    prices:[{s:5,e:7,p:65},{s:7,e:9,p:105},{s:9,e:12,p:125},{s:12,e:15,p:95},{s:15,e:19,p:65}],
+    slots:[6,6.25,6.5,6.75,7,7.25,7.5,8,8.25,8.75,9,9.5,10,10.5,11,11.5,12,13,14,15]
+  },
+
+  // ── FREE LISTINGS (12 courses, varied stock photos) ──
+  {
+    id:7, name:"Kierland Golf Club", premium:false, stockIdx:0,
+    areas:["scottsdale","north scottsdale","kierland","paradise valley"],
+    address:"15636 N Clubgate Dr, Scottsdale, AZ 85254",
+    lat:33.6219, lng:-111.9216, rating:4.3, reviews:1624,
+    website:"https://www.kierlandgolf.com/tee-times/",
+    prices:[{s:5,e:7,p:65},{s:7,e:9,p:95},{s:9,e:12,p:135},{s:12,e:15,p:90},{s:15,e:19,p:65}],
+    slots:[5.75,6,6.25,6.5,7,7.25,7.5,8,8.5,9,9.5,10,10.5,11,11.5,12,12.5,13,13.5,14,14.5,15]
+  },
+  {
+    id:8, name:"Gainey Ranch Golf Club", premium:false, stockIdx:1,
+    areas:["scottsdale","gainey ranch","gainey","south scottsdale","paradise valley"],
+    address:"7600 Gainey Club Dr, Scottsdale, AZ 85258",
+    lat:33.5444, lng:-111.8992, rating:4.3, reviews:1289,
+    website:"https://www.gaineyranchgolfclub.com/reservations/",
+    prices:[{s:5,e:7,p:55},{s:7,e:9,p:90},{s:9,e:12,p:120},{s:12,e:15,p:85},{s:15,e:19,p:60}],
+    slots:[5.75,6,6.5,7,7.5,8,8.5,9,9.5,10,10.5,11,11.5,12,12.5,13,14,15]
+  },
+  {
+    id:9, name:"McCormick Ranch Golf Club", premium:false, stockIdx:2,
+    areas:["scottsdale","mccormick ranch","mccormick","south scottsdale"],
+    address:"7505 E McCormick Pkwy, Scottsdale, AZ 85258",
+    lat:33.5391, lng:-111.9021, rating:4.2, reviews:1445,
+    website:"https://www.mccormickranchgolf.com/tee-times/",
+    prices:[{s:5,e:7,p:40},{s:7,e:9,p:65},{s:9,e:12,p:95},{s:12,e:15,p:70},{s:15,e:19,p:45}],
+    slots:[5.75,6,6.25,6.5,6.75,7,7.25,7.5,7.75,8,8.25,8.5,8.75,9,9.5,10,10.5,11,11.5,12,12.5,13,14,15]
+  },
+  {
+    id:10, name:"Papago Golf Course", premium:false, stockIdx:3,
+    areas:["phoenix","papago","central phoenix","tempe","east phoenix","scottsdale"],
+    address:"5595 E Moreland St, Phoenix, AZ 85008",
+    lat:33.4644, lng:-111.9503, rating:4.4, reviews:3112,
+    website:"https://www.papagogolfcourse.net/tee-times/",
+    prices:[{s:5,e:7,p:35},{s:7,e:10,p:55},{s:10,e:14,p:65},{s:14,e:19,p:45}],
+    slots:[5.5,5.75,6,6.25,6.5,6.75,7,7.25,7.5,7.75,8,8.25,8.5,8.75,9,9.25,9.5,9.75,10,10.25,10.5,11,11.5,12,12.5,13,13.5,14,14.5,15,15.5]
+  },
+  {
+    id:11, name:"Arizona Biltmore Golf", premium:false, stockIdx:4,
+    areas:["phoenix","biltmore","central phoenix","camelback","paradise valley"],
+    address:"2400 E Missouri Ave, Phoenix, AZ 85016",
+    lat:33.5182, lng:-112.0145, rating:4.2, reviews:1534,
+    website:"https://www.arizonabiltmore.com/golf/tee-times/",
+    prices:[{s:5,e:7,p:75},{s:7,e:9,p:115},{s:9,e:12,p:145},{s:12,e:15,p:105},{s:15,e:19,p:75}],
+    slots:[6,6.5,7,7.25,7.5,8,8.5,9,9.5,10,10.5,11,11.5,12,13,14,15]
+  },
+  {
+    id:12, name:"Raven Golf Club", premium:false, stockIdx:5,
+    areas:["phoenix","south phoenix","raven","ahwatukee","chandler","tempe"],
+    address:"3636 E Baseline Rd, Phoenix, AZ 85042",
+    lat:33.3628, lng:-111.9865, rating:4.3, reviews:1889,
+    website:"https://www.ravengolf.com/phoenix/tee-times/",
+    prices:[{s:5,e:7,p:45},{s:7,e:9,p:75},{s:9,e:12,p:95},{s:12,e:15,p:75},{s:15,e:19,p:55}],
+    slots:[5.75,6,6.25,6.5,7,7.25,7.5,7.75,8,8.25,8.5,8.75,9,9.25,9.5,9.75,10,10.5,11,11.5,12,12.5,13,14,15]
+  },
+  {
+    id:13, name:"Stonecreek Golf Club", premium:false, stockIdx:0,
+    areas:["phoenix","stonecreek","paradise valley","northeast phoenix","north phoenix"],
+    address:"4435 E Paradise Village Pkwy, Phoenix, AZ 85032",
+    lat:33.5623, lng:-111.9827, rating:4.2, reviews:1102,
+    website:"https://www.stonecreekgolfclub.com/tee-times/",
+    prices:[{s:5,e:7,p:40},{s:7,e:9,p:65},{s:9,e:12,p:85},{s:12,e:15,p:65},{s:15,e:19,p:45}],
+    slots:[5.75,6,6.25,6.5,7,7.5,8,8.5,9,9.5,10,10.5,11,11.5,12,12.5,13,14,15]
+  },
+  {
+    id:14, name:"Whirlwind Golf Club", premium:false, stockIdx:2,
+    areas:["chandler","whirlwind","gila river","east valley","south valley","gilbert","phoenix"],
+    address:"5594 W Wild Horse Pass Blvd, Chandler, AZ 85226",
+    lat:33.3086, lng:-111.9642, rating:4.3, reviews:1756,
+    website:"https://www.whirlwindgolf.com/tee-times/",
+    prices:[{s:5,e:7,p:50},{s:7,e:9,p:85},{s:9,e:12,p:95},{s:12,e:15,p:75},{s:15,e:19,p:55}],
+    slots:[5.75,6,6.5,7,7.5,8,8.5,9,9.5,10,10.5,11,12,13,14,15]
+  },
+  {
+    id:15, name:"Dobson Ranch Golf Course", premium:false, stockIdx:3,
+    areas:["mesa","dobson","east valley","gilbert","tempe","chandler"],
+    address:"2155 S Dobson Rd, Mesa, AZ 85202",
+    lat:33.3847, lng:-111.8674, rating:4.0, reviews:1122,
+    website:"https://www.mesaaz.gov/residents/parks/golf-courses/dobson-ranch",
+    prices:[{s:5,e:8,p:30},{s:8,e:12,p:45},{s:12,e:16,p:55},{s:16,e:19,p:35}],
+    slots:[5.5,5.75,6,6.25,6.5,6.75,7,7.25,7.5,7.75,8,8.25,8.5,8.75,9,9.25,9.5,9.75,10,10.5,11,11.5,12,12.5,13,14,15,15.5,16]
+  },
+  {
+    id:16, name:"Starfire Golf Club", premium:false, stockIdx:4,
+    areas:["scottsdale","starfire","south scottsdale"],
+    address:"11500 N Hayden Rd, Scottsdale, AZ 85260",
+    lat:33.5726, lng:-111.9003, rating:4.1, reviews:987,
+    website:"https://www.starfiregolf.com/tee-times/",
+    prices:[{s:5,e:7,p:45},{s:7,e:9,p:75},{s:9,e:12,p:95},{s:12,e:15,p:70},{s:15,e:19,p:50}],
+    slots:[5.75,6,6.25,6.5,6.75,7,7.25,7.5,7.75,8,8.5,9,9.5,10,10.5,11,11.5,12,12.5,13,14,15]
+  },
+  {
+    id:17, name:"Wigwam Golf Club", premium:false, stockIdx:5,
+    areas:["litchfield park","goodyear","west valley","wigwam","glendale","peoria","avondale"],
+    address:"300 Wigwam Blvd, Litchfield Park, AZ 85340",
+    lat:33.5056, lng:-112.3389, rating:4.4, reviews:1678,
+    website:"https://www.wigwamarizona.com/golf/tee-times/",
+    prices:[{s:5,e:7,p:70},{s:7,e:9,p:115},{s:9,e:12,p:145},{s:12,e:15,p:105},{s:15,e:19,p:75}],
+    slots:[6,6.25,6.5,7,7.25,7.5,8,8.5,9,9.5,10,10.5,11,12,12.5,13,14,15]
+  },
+  {
+    id:18, name:"Palmbrook Golf Club", premium:false, stockIdx:1,
+    areas:["sun city","northwest valley","peoria","palmbrook","glendale","surprise"],
+    address:"9350 W Greenway Rd, Sun City, AZ 85351",
+    lat:33.6248, lng:-112.2695, rating:3.8, reviews:2155,
+    website:"https://www.palmbrookgolfclub.com/tee-times/",
+    prices:[{s:5,e:7,p:43},{s:7,e:9,p:53},{s:9,e:12,p:80},{s:12,e:15,p:65},{s:15,e:19,p:45}],
+    slots:[5.75,5.92,6.12,6.25,6.37,6.5,6.62,6.75,7.75,7.87,8,8.25,8.5,8.62,8.75,9,9.12,9.25,10,10.12,10.5,10.87,11,11.25,12,12.5,13]
+  }
+];
+
+/* ──────────────────────────────────────────────
+   GEO
+────────────────────────────────────────────── */
+const CITIES = {
+  'scottsdale':{lat:33.4942,lng:-111.9261},'north scottsdale':{lat:33.6387,lng:-111.9238},
+  'south scottsdale':{lat:33.4600,lng:-111.9260},'phoenix':{lat:33.4484,lng:-112.0740},
+  'north phoenix':{lat:33.6500,lng:-112.0740},'south phoenix':{lat:33.3800,lng:-112.0740},
+  'central phoenix':{lat:33.4600,lng:-112.0740},'chandler':{lat:33.3062,lng:-111.8413},
+  'tempe':{lat:33.4255,lng:-111.9400},'mesa':{lat:33.4152,lng:-111.8315},
+  'gilbert':{lat:33.3528,lng:-111.7890},'peoria':{lat:33.5806,lng:-112.2374},
+  'glendale':{lat:33.5387,lng:-112.1860},'surprise':{lat:33.6292,lng:-112.3679},
+  'litchfield park':{lat:33.5056,lng:-112.3389},'goodyear':{lat:33.4353,lng:-112.3576},
+  'avondale':{lat:33.4353,lng:-112.3493},'sun city':{lat:33.6248,lng:-112.2695},
+  'cave creek':{lat:33.8328,lng:-111.9659},'paradise valley':{lat:33.5323,lng:-111.9420},
+  'ahwatukee':{lat:33.3272,lng:-112.0019},'fountain hills':{lat:33.6114,lng:-111.7224},
+  'gold canyon':{lat:33.3119,lng:-111.4389},'apache junction':{lat:33.4153,lng:-111.5496},
+  'queen creek':{lat:33.2489,lng:-111.6341},'east valley':{lat:33.4200,lng:-111.7890},
+  'west valley':{lat:33.5000,lng:-112.3000}
+};
+
+function parseOrigin(str) {
+  if (!str) return CITIES['phoenix'];
+  const q = str.toLowerCase().trim();
+  const keys = Object.keys(CITIES).sort((a,b) => b.length - a.length);
+  for (const k of keys) if (q.includes(k)) return CITIES[k];
+  return CITIES['phoenix'];
+}
+
+function haversine(a,b,c,d) {
+  const R=3958.8,r=Math.PI/180,dL=(c-a)*r,dN=(d-b)*r;
+  const x=Math.sin(dL/2)**2+Math.cos(a*r)*Math.cos(c*r)*Math.sin(dN/2)**2;
+  return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));
+}
+
+/* ──────────────────────────────────────────────
+   TEE TIME HELPERS
+────────────────────────────────────────────── */
+function fmtH(h) {
+  const H=Math.floor(h),m=Math.round((h-H)*60);
+  const ap=H<12?'AM':'PM',dh=H>12?H-12:(H===0?12:H);
+  return `${dh}:${String(m).padStart(2,'0')} ${ap}`;
+}
+function priceAt(c,h) {
+  for (const p of c.prices) if (h>=p.s&&h<p.e) return p.p;
+  return c.prices[0].p;
+}
+function filteredSlots(c,f,t) {
+  return c.slots.filter(h=>h>=f&&h<=t).map(h=>({h,label:fmtH(h),price:priceAt(c,h)}));
+}
+function priceRange(slots) {
+  if (!slots.length) return null;
+  const ps=slots.map(s=>s.price);
+  return {lo:Math.min(...ps),hi:Math.max(...ps)};
+}
+
+/* ──────────────────────────────────────────────
+   RECOMMENDED SCORE
+   Blends: premium placement, rating, proximity,
+   and price value — just like Booking.com.
+   Course owners can influence this via premium.
+────────────────────────────────────────────── */
+function recommendedScore(c) {
+  const premium  = c.premium ? 45 : 0;                          // featured boost
+  const rating   = (c.rating / 5) * 30;                         // 0–30 pts
+  const dist     = Math.max(0, 20 - c.distance * 0.8);          // closer = higher, 0–20 pts
+  const price    = c.pr ? Math.max(0, 15 - (c.pr.lo / 20)) : 0; // cheaper = slightly higher
+  return premium + rating + dist + price;
+}
+
+/* ──────────────────────────────────────────────
+   SEARCH STATE
+────────────────────────────────────────────── */
+let currentSort = 'recommended';
+let results = [];
+let searchState = {};
+
+function matchCourse(c, q) {
+  if (!q || !q.trim()) return true;
+  const lq = q.toLowerCase().trim();
+  if (c.name.toLowerCase().includes(lq)) return true;
+  if (lq.includes('arizona') || lq === 'az') return true;
+  for (const a of c.areas) if (a.includes(lq) || lq.includes(a)) return true;
+  return false;
+}
+
+function doSearch() {
+  const play  = document.getElementById('inp-play').value.trim();
+  const from  = document.getElementById('inp-from').value.trim();
+  const date  = document.getElementById('inp-date').value;
+  const tfrom = parseFloat(document.getElementById('inp-tfrom').value);
+  const tto   = parseFloat(document.getElementById('inp-tto').value);
+  const origin = parseOrigin(from);
+  searchState  = {play,from,date,tfrom,tto,golfers:selectedGolfers};
+
+  results = COURSES
+    .filter(c => matchCourse(c, play))
+    .map(c => {
+      const distance = haversine(origin.lat, origin.lng, c.lat, c.lng);
+      const slots    = filteredSlots(c, tfrom, tto);
+      const pr       = priceRange(slots);
+      const img      = c.premium ? c.img : STOCK[c.stockIdx % STOCK.length];
+      return {...c, distance, slots, pr, img};
+    })
+    .filter(c => c.slots.length > 0);
+
+  document.getElementById('pill-play').textContent    = play || 'Arizona';
+  document.getElementById('pill-from').textContent    = from || 'Phoenix, AZ';
+  document.getElementById('pill-date').textContent    = date
+    ? new Date(date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}) : 'Any date';
+  document.getElementById('pill-time').textContent    = fmtH(tfrom)+' – '+fmtH(tto);
+  document.getElementById('pill-golfers').textContent = selectedGolfers+(selectedGolfers===1?' golfer':' golfers');
+
+  renderResults();
+  document.getElementById('landing').style.display = 'none';
+  document.getElementById('results-page').style.display = 'block';
+  window.scrollTo(0,0);
+}
+
+function goHome() {
+  document.getElementById('landing').style.display  = 'flex';
+  document.getElementById('results-page').style.display = 'none';
+}
+
+/* ──────────────────────────────────────────────
+   SORT
+────────────────────────────────────────────── */
+function sortBy(key) {
+  currentSort = key;
+  document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('sb-' + key).classList.add('active');
+  renderResults();
+}
+
+function applySort(arr) {
+  const a = [...arr];
+  if (currentSort === 'recommended') a.sort((x,y) => recommendedScore(y) - recommendedScore(x));
+  if (currentSort === 'price')       a.sort((x,y) => (x.pr?.lo??9999) - (y.pr?.lo??9999));
+  if (currentSort === 'distance')    a.sort((x,y) => x.distance - y.distance);
+  if (currentSort === 'rating')      a.sort((x,y) => y.rating - x.rating);
+  return a;
+}
+
+/* ──────────────────────────────────────────────
+   RENDER
+────────────────────────────────────────────── */
+function stars(r) {
+  const f=Math.floor(r),h=(r%1)>=.5?1:0,e=5-f-h;
+  return '<span style="color:#f59e0b">'+'★'.repeat(f)+(h?'✦':'')+'</span>'
+        +'<span style="color:#e2e8f0">'+'★'.repeat(e)+'</span>';
+}
+
+function chipsHtml(slots, website, maxShow) {
+  const vis = slots.slice(0, maxShow);
+  const extra = slots.length - vis.length;
+  let html = vis.map(s =>
+    `<a class="tee-chip" href="${website}" target="_blank" rel="noopener">
+       <span class="chip-time">${s.label}</span>
+       <span class="chip-price">$${s.price}</span>
+     </a>`
+  ).join('');
+  if (extra > 0) html += `<span class="tee-chip more"><span class="chip-time">+${extra} more</span></span>`;
+  return html;
+}
+
+function renderCard(c) {
+  const g      = searchState.golfers || 1;
+  const pr     = c.pr;
+  const prStr  = pr ? (pr.lo === pr.hi ? `$${pr.lo}` : `$${pr.lo}–$${pr.hi}`) : '—';
+  const dist   = c.distance < 1 ? '<1 mi' : `${c.distance.toFixed(1)} mi`;
+  const distSvg = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>`;
+  const bookSvg = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>`;
+  const checkSvg = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+
+  if (c.premium) {
+    const offerHtml = c.specialOffer
+      ? `<div class="offer-banner">🏷️ ${c.specialOffer}</div>` : '';
+    return `
+    <div class="course-card premium">
+      <div class="card-img-wrap">
+        <div class="featured-badge">✦ Featured</div>
+        <img class="card-img" src="${c.img}" alt="${c.name}" onerror="this.src='${STOCK[0]}'">
+        <div class="img-rating">${stars(c.rating)} <strong>${c.rating}</strong> <span class="review-ct">(${c.reviews.toLocaleString()})</span></div>
+        <div class="img-dist">${distSvg} ${dist}</div>
+      </div>
+      <div class="card-body pb-premium">
+        <div class="card-top">
+          <div class="card-name lg">${c.name}</div>
+          <div class="price-badge">${prStr} / golfer</div>
+        </div>
+        <div class="verified-tag">${checkSvg} Verified by course</div>
+        <p class="card-description">${c.description}</p>
+        ${offerHtml}
+        <div class="tee-section-lbl">Tee times · ${g} golfer${g!==1?'s':''} · click to book direct</div>
+        <div class="tee-chips">${chipsHtml(c.slots, c.website, 8)}</div>
+        <a class="book-btn" href="${c.website}" target="_blank" rel="noopener">${bookSvg} Book at ${c.name}</a>
+      </div>
+    </div>`;
+  }
+
+  // Free card
+  return `
+  <div class="course-card">
+    <div class="card-img-wrap">
+      <div class="claim-badge">📷 Claim this listing</div>
+      <img class="card-img" src="${c.img}" alt="${c.name}" onerror="this.src='${STOCK[0]}'">
+      <div class="img-rating">${stars(c.rating)} <strong>${c.rating}</strong> <span class="review-ct">(${c.reviews.toLocaleString()})</span></div>
+      <div class="img-dist">${distSvg} ${dist}</div>
+    </div>
+    <div class="card-body">
+      <div class="card-top">
+        <div class="card-name">${c.name}</div>
+        <div class="price-badge">${prStr} / golfer</div>
+      </div>
+      <div class="card-address">${distSvg} ${c.address}</div>
+      <div class="tee-section-lbl">Tee times · ${g} golfer${g!==1?'s':''} · click to book direct</div>
+      <div class="tee-chips">${chipsHtml(c.slots, c.website, 7)}</div>
+      <a class="book-btn" href="${c.website}" target="_blank" rel="noopener">${bookSvg} Book at ${c.name}</a>
+    </div>
+  </div>`;
+}
+
+function renderResults() {
+  const grid = document.getElementById('cards-grid');
+  const meta = document.getElementById('results-meta');
+  const g    = searchState.golfers || 1;
+  const s    = searchState;
+
+  if (!results.length) {
+    meta.textContent = '';
+    grid.innerHTML = `
+      <div class="no-results">
+        <h3>No courses found</h3>
+        <p>Try a broader area, or pick a region below:</p>
+        <div class="hint">
+          <span class="hint-tag" onclick="quickSearch('Scottsdale')">Scottsdale</span>
+          <span class="hint-tag" onclick="quickSearch('North Scottsdale')">North Scottsdale</span>
+          <span class="hint-tag" onclick="quickSearch('Phoenix')">Phoenix</span>
+          <span class="hint-tag" onclick="quickSearch('Chandler')">Chandler</span>
+          <span class="hint-tag" onclick="quickSearch('Arizona')">All Arizona</span>
+        </div>
+      </div>`;
+    return;
+  }
+
+  const sorted = applySort(results);
+  const featuredCount = sorted.filter(c => c.premium).length;
+
+  meta.innerHTML = `<strong>${sorted.length} course${sorted.length!==1?'s':''}</strong> with tee times ${fmtH(s.tfrom)} – ${fmtH(s.tto)} &nbsp;·&nbsp; ${g} golfer${g!==1?'s':''}`
+    + (featuredCount ? ` &nbsp;·&nbsp; <strong style="color:var(--green-700)">${featuredCount} featured</strong>` : '');
+
+  grid.innerHTML = sorted.map(renderCard).join('');
+}
+
+function quickSearch(area) {
+  document.getElementById('inp-play').value = area;
+  doSearch();
+}
+
+/* ──────────────────────────────────────────────
+   INIT
+────────────────────────────────────────────── */
+const tmrw = new Date(); tmrw.setDate(tmrw.getDate()+1);
+document.getElementById('inp-date').value = tmrw.toISOString().split('T')[0];
+document.querySelectorAll('#landing input,#landing select').forEach(el => {
+  el.addEventListener('keydown', e => { if (e.key==='Enter') doSearch(); });
+});
+</script>
+</body>
+</html>
