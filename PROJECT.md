@@ -95,7 +95,7 @@ All entries in the `courses` table. Back-9 entries have slug ending in `-back-9`
 | San Tan Highlands | `san-tan-highlands` | `c7bcbc26-d1a8-493d-835d-60ce437d80db` | 18 |
 | San Tan Highlands Back 9 | `san-tan-highlands-back-9` | `120fcf66-1613-44bc-bd27-2961dc9113c1` | 9 |
 | Scottsdale Country Club | `scottsdale-cc` | `f43be1a2-c2bb-45cd-aa68-118349acb172` | 18 |
-| Scottsdale CC Back 9 | `scottsdale-cc-back-9` | **NEEDS TO BE ADDED** | 9 |
+| Scottsdale CC Back 9 | `scottsdale-cc-back-9` | `c0bedc8b-6a84-4145-b612-930dd36da8ee` | 9 |
 | Six Shooter | `six-shooter` | `5734b89d-4771-4ca7-a39b-4c432bdf08af` | 10 |
 | Briarwood Country Club | `briarwood-cc` | `ba607049-1b66-49fc-a2ac-36fd6f0f8b28` | 18 |
 
@@ -113,8 +113,8 @@ All entries in the `courses` table. Back-9 entries have slug ending in `-back-9`
   5. For group (GRP) bookings: replaces first-name-only player cells with the group's last name (e.g. "GRP: Donald" → "SCARFF")
   6. Upserts into Supabase via `sync_quick18_tee_sheet` RPC
 
-- **Currently syncing:** Palmbrook only (Facility 917, courses 1614 + 1669)
-- **Pending:** Extend to all 4 remaining facilities (see §9)
+- **Currently syncing:** All 5 facilities — Palmbrook, Coyote Lakes, Union Hills, San Tan Highlands, Scottsdale CC (18h + 9h each = 10 courses × 2 dates = 20 sheets per run)
+- **Deployed version:** 5 (ACTIVE as of July 2026)
 
 ### Player Name Parsing Notes
 - Normal booking: `"Tim Boling Summer $46"` → name=`"Tim Boling"`, rate=`"Summer"`, price=`$46`
@@ -138,13 +138,9 @@ All entries in the `courses` table. Back-9 entries have slug ending in `-back-9`
 ## 9. In-Progress / Next Tasks
 
 ### Immediate
-1. **Add Scottsdale CC Back 9 to Supabase** — insert row into `courses` table with slug `scottsdale-cc-back-9`, holes=9
-2. **Extend sync to all 4 facilities** — update `sync-tee-sheet-edge.ts`:
-   - Restructure `COURSES` into `FACILITIES` array with per-facility `facilityId` and `courses[]`
-   - Handle `courseId = 'default'` (string, not number) in URL construction
-   - Cover: Coyote Lakes, Union Hills, San Tan Highlands, Scottsdale CC (18h + 9h each)
-   - Skip Six Shooter
-3. **Deploy updated Edge Function** to Supabase
+~~1. Add Scottsdale CC Back 9 to Supabase~~ ✓ Done — UUID `c0bedc8b-6a84-4145-b612-930dd36da8ee`
+~~2. Extend sync to all 4 facilities~~ ✓ Done — `sync-tee-sheet-edge.ts` now uses FACILITIES array with per-facility facilityId; handles `courseId='default'`; covers all 5 facilities (10 courses)
+~~3. Deploy updated Edge Function~~ ✓ Done — deployed as v5, ACTIVE
 
 ### Soon
 4. **Per-course URLs** for `operator.swingfirst.ai` — one-line `history.pushState` addition to `switchCourse()` + Netlify redirect rule
