@@ -10,9 +10,55 @@ const SB_URL   = 'https://ojgxfeaesnaohskxdvam.supabase.co';
 const SB_KEY   = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qZ3hmZWFlc25hb2hza3hkdmFtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2Mjk4MzQsImV4cCI6MjA5MjIwNTgzNH0.zYOq7MUb1ro9vCwLyz-QUhjnWDX9DDLWGqVn4_ONa_U';
 const UA       = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36';
 
-const COURSES = [
-  { q18Id: 1614, sbId: '29e81e43-7b49-4b58-8b61-ee7271389c74', name: '18-hole' },
-  { q18Id: 1669, sbId: '9b97051a-1535-4bb4-96c9-4c0a894724b8', name: '9-hole' },
+// ─── Facility & Course Config ─────────────────────────────────────────────
+
+interface CourseConfig {
+  q18Id: number | 'default';
+  sbId:  string;
+  name:  string;
+}
+
+interface FacilityConfig {
+  facilityId: number;
+  courses:    CourseConfig[];
+}
+
+const FACILITIES: FacilityConfig[] = [
+  {
+    facilityId: 917,
+    courses: [
+      { q18Id: 1614, sbId: '29e81e43-7b49-4b58-8b61-ee7271389c74', name: 'Palmbrook 18h' },
+      { q18Id: 1669, sbId: '9b97051a-1535-4bb4-96c9-4c0a894724b8', name: 'Palmbrook 9h'  },
+    ],
+  },
+  {
+    facilityId: 136,
+    courses: [
+      { q18Id: 1046, sbId: '097952a0-e291-4498-8012-469da1cfa890', name: 'Coyote Lakes 18h' },
+      { q18Id: 1047, sbId: '8ec6d400-47b7-4b1a-88c9-a33651ca55a6', name: 'Coyote Lakes 9h'  },
+    ],
+  },
+  {
+    facilityId: 962,
+    courses: [
+      { q18Id: 'default', sbId: 'ffa7f44f-9388-4ec7-b1ca-01319dc9857c', name: 'Union Hills 18h' },
+      { q18Id: 1671,      sbId: '2b85c2fd-c487-4fe0-ac00-fa6381038a7a', name: 'Union Hills 9h'  },
+    ],
+  },
+  {
+    facilityId: 1384,
+    courses: [
+      { q18Id: 'default', sbId: 'c7bcbc26-d1a8-493d-835d-60ce437d80db', name: 'San Tan 18h' },
+      { q18Id: 18503,     sbId: '120fcf66-1613-44bc-bd27-2961dc9113c1', name: 'San Tan 9h'  },
+    ],
+  },
+  {
+    facilityId: 1030,
+    courses: [
+      { q18Id: 'default', sbId: 'f43be1a2-c2bb-45cd-aa68-118349acb172', name: 'Scottsdale CC 18h' },
+      { q18Id: 18510,     sbId: 'c0bedc8b-6a84-4145-b612-930dd36da8ee', name: 'Scottsdale CC 9h'  },
+    ],
+  },
 ];
 
 // ─── Dates (Arizona = always UTC-7) ───────────────────────────────────────
@@ -143,7 +189,7 @@ function scrapeTeeTimes(html: string) {
   }).filter(Boolean);
 }
 
-// ─── Auth ─────────────────────────────────────────────────────────────────
+// ─── Auth ────────────────────────────────────────────────────────────────
 
 function parseCookieHeaders(headers: Headers): Record<string, string> {
   const jar: Record<string, string> = {};
@@ -205,11 +251,14 @@ async function login(): Promise<string> {
 // ─── Booking meta fetch (DIA + group name) ───────────────────────────────
 
 async function fetchBookingMeta(
-  courseId: number, resvId: string, cookieStr: string
+  facilityId: number,
+  courseId:   number | 'default',
+  resvId:     string,
+  cookieStr:  string
 ): Promise<{ dia: number | null; grpName: string | null }> {
   try {
     const r = await fetch(
-      `${Q18_BASE}/Facility/917/Course/${courseId}/Booking/Details/${resvId}`,
+      `${Q18_BASE}/Facility/${facilityId}/Course/${courseId}/Booking/Details/${resvId}`,
       { headers: { Cookie: cookieStr, 'User-Agent': UA } }
     );
     if (!r.ok) return { dia: null, grpName: null };
@@ -233,11 +282,12 @@ async function fetchBookingMeta(
 // ─── Per-sheet sync ───────────────────────────────────────────────────────
 
 async function syncSheet(
-  course: typeof COURSES[0],
-  date:   { yyyymmdd: string; iso: string },
-  cookieStr: string
+  facilityId: number,
+  course:     CourseConfig,
+  date:       { yyyymmdd: string; iso: string },
+  cookieStr:  string
 ) {
-  const url = `${Q18_BASE}/Facility/917/Course/${course.q18Id}/TeeSheetView?teedate=${date.yyyymmdd}`;
+  const url = `${Q18_BASE}/Facility/${facilityId}/Course/${course.q18Id}/TeeSheetView?teedate=${date.yyyymmdd}`;
   try {
     const r = await fetch(url, {
       headers: { Cookie: cookieStr, 'User-Agent': UA },
@@ -257,7 +307,9 @@ async function syncSheet(
 
     const metaMap: Record<string, { dia: number | null; grpName: string | null }> =
       Object.fromEntries(
-        await Promise.all(resvIds.map(async id => [id, await fetchBookingMeta(course.q18Id, id, cookieStr)]))
+        await Promise.all(
+          resvIds.map(async id => [id, await fetchBookingMeta(facilityId, course.q18Id, id, cookieStr)])
+        )
       );
 
     for (const tt of teeTimes) {
@@ -312,9 +364,13 @@ serve(async (_req: Request) => {
     return new Response(`Login failed: ${e.message}`, { status: 500 });
   }
 
-  // All 4 sheets (2 courses × 2 dates) in parallel
+  // All sheets (5 facilities × 2 courses × 2 dates = 20) in parallel
   const results = await Promise.all(
-    COURSES.flatMap(course => dates.map(date => syncSheet(course, date, cookieStr)))
+    FACILITIES.flatMap(fac =>
+      fac.courses.flatMap(course =>
+        dates.map(date => syncSheet(fac.facilityId, course, date, cookieStr))
+      )
+    )
   );
 
   const summary = results.map((r: any) =>
