@@ -57,6 +57,7 @@ const FACILITIES: FacilityConfig[] = [
     courses: [
       { q18Id: 'default', sbId: 'f43be1a2-c2bb-45cd-aa68-118349acb172', name: 'Scottsdale CC 18h' },
       { q18Id: 18510,     sbId: 'c0bedc8b-6a84-4145-b612-930dd36da8ee', name: 'Scottsdale CC 9h'  },
+      { q18Id: 1771,      sbId: '5734b89d-4771-4ca7-a39b-4c432bdf08af', name: 'The Shooter'       },
     ],
   },
 ];
