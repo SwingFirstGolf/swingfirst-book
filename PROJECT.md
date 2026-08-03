@@ -74,7 +74,7 @@ All facilities use the same login. "Course/default" is accepted by Quick18 as a 
 | Union Hills | 962 | `default` | 1671 |
 | San Tan Highlands | 1384 | `default` | 18503 |
 | Scottsdale CC | 1030 | `default` | 18510 (= "Scottsdale CC Back 9") |
-| Six Shooter | 1030 | *(skip for now)* | — |
+| The Shooter (Six Shooter) | 1030 | 1771 | — (full rounds only) |
 
 > **Note:** "Course/default" literally works in Quick18 URLs for all three 18-hole courses. The sync function uses this string directly.
 
@@ -96,7 +96,7 @@ All entries in the `courses` table. Back-9 entries have slug ending in `-back-9`
 | San Tan Highlands Back 9 | `san-tan-highlands-back-9` | `120fcf66-1613-44bc-bd27-2961dc9113c1` | 9 |
 | Scottsdale Country Club | `scottsdale-cc` | `f43be1a2-c2bb-45cd-aa68-118349acb172` | 18 |
 | Scottsdale CC Back 9 | `scottsdale-cc-back-9` | `c0bedc8b-6a84-4145-b612-930dd36da8ee` | 9 |
-| Six Shooter | `six-shooter` | `5734b89d-4771-4ca7-a39b-4c432bdf08af` | 10 |
+| The Shooter | `six-shooter` | `5734b89d-4771-4ca7-a39b-4c432bdf08af` | 10 |
 | Briarwood Country Club | `briarwood-cc` | `ba607049-1b66-49fc-a2ac-36fd6f0f8b28` | 18 |
 
 ---
@@ -113,8 +113,8 @@ All entries in the `courses` table. Back-9 entries have slug ending in `-back-9`
   5. For group (GRP) bookings: replaces first-name-only player cells with the group's last name (e.g. "GRP: Donald" → "SCARFF")
   6. Upserts into Supabase via `sync_quick18_tee_sheet` RPC
 
-- **Currently syncing:** All 5 facilities — Palmbrook, Coyote Lakes, Union Hills, San Tan Highlands, Scottsdale CC (18h + 9h each = 10 courses × 2 dates = 20 sheets per run)
-- **Deployed version:** 5 (ACTIVE as of July 2026)
+- **Currently syncing:** All 5 facilities + The Shooter — Palmbrook, Coyote Lakes, Union Hills, San Tan Highlands, Scottsdale CC (18h + 9h each), The Shooter (full rounds only) = 11 courses × 2 dates = 22 sheets per run
+- **Deployed version:** 6 (ACTIVE as of August 2026)
 
 ### Player Name Parsing Notes
 - Normal booking: `"Tim Boling Summer $46"` → name=`"Tim Boling"`, rate=`"Summer"`, price=`$46`
@@ -148,7 +148,7 @@ All entries in the `courses` table. Back-9 entries have slug ending in `-back-9`
 
 ### Deferred
 6. Briarwood CC — appears in DB and operator UI sidebar but no Q18 sync configured yet. Dave hasn't mentioned it.
-7. Six Shooter — in DB, in sidebar, skip Q18 sync for now.
+7. The Shooter (Six Shooter) — added Aug 2026. Syncing q18Id 1771, facility 1030. Full rounds only (no 9h). Display name updated to "The Shooter" in DB and both tee sheets.
 
 ---
 
