@@ -605,7 +605,7 @@
     <div class="course-banner" id="courseBanner" style="background:#4ade80;color:#14532d;">
       <div>
         <div class="course-banner-name" id="courseBannerName">Palmbrook Golf Club</div>
-        <div class="course-banner-sub">Operator C� Tee Sheet</div>
+        <div class="course-banner-sub">Operator · Tee Sheet</div>
       </div>
       <div style="display:flex;align-items:center;gap:10px;">
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;opacity:.9;">
@@ -1405,7 +1405,7 @@ function recordActivity(text, eventType, name, dateLabel, offset) {
 // ─── Fake QR ────────────────────────────────────────────────────
 function makeFakeQR(seed) {
   const N=21, g=Array.from({length:N},()=>Array(N).fill(0));
-  const FP=T�l1,1,1,1,1,1,1],[1,0,0,0,0,0,1],[1,0,1,1,1,0,1],[1,0,1,1,1,0,1],[1,0,1,1,1,0,1],[1,0,0,0,0,0,1],[1,1,1,1,1,1,1]];
+  const FP=[[1,1,1,1,1,1,1],[1,0,0,0,0,0,1],[1,0,1,1,1,0,1],[1,0,1,1,1,0,1],[1,0,1,1,1,0,1],[1,0,0,0,0,0,1],[1,1,1,1,1,1,1]];
   const dFP=(or,oc)=>{for(let r=0;r<7;r++)for(let c=0;c<7;c++)g[or+r][oc+c]=FP[r][c];};
   dFP(0,0); dFP(0,N-7); dFP(N-7,0);
   for(let i=8;i<N-8;i++){g[6][i]=i%2===0?1:0;g[i][6]=i%2===0?1:0;}
@@ -1416,7 +1416,7 @@ function makeFakeQR(seed) {
   for(let r=0;r<N;r++)for(let c=0;c<N;c++)if(g[r][c])rects+=`<rect x="${c+1}" y="${r+1}" width="1" height="1"/>`;
   return `<svg viewBox="0 0 23 23" style="width:168px;height:168px;display:block" xmlns="http://www.w3.org/2000/svg"><rect width="23" height="23" fill="white"/><g fill="#0d1f17">${rects}</g></svg>`;
 }
-function fakeToken(pid,sid){ const C="ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789"; let t="SE.",s=(pid*7919+1sid*4001)|0; for(let i=0;i<24;i++){s=(s*1664525+1013904223)|0;t+=C[Math.abs(s)%C.length];if(i===7||i===15)t+=".";} return t; }
+function fakeToken(pid,sid){ const C="ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789"; let t="SF.",s=(pid*7919+sid*4001)|0; for(let i=0;i<24;i++){s=(s*1664525+1013904223)|0;t+=C[Math.abs(s)%C.length];if(i===7||i===15)t+=".";} return t; }
 
 // ─── Rendering ──────────────────────────────────────────────────
 function renderRows() {
@@ -1727,7 +1727,7 @@ function renderActivity() {
     }
     ul.appendChild(li);
   });
-  if (!state.activity.length) ul.innerHTML<`<li style="color:var(--ink-muted);cursor:default">No activity yet.</li>`;
+  if (!state.activity.length) ul.innerHTML=`<li style="color:var(--ink-muted);cursor:default">No activity yet.</li>`;
 }
 
 // ─── Squeeze tee time ────────────────────────────────────────────
@@ -2456,8 +2456,7 @@ document.getElementById('opSearchClear').addEventListener('click', function() {
   renderRows();
 });
 
-// ─── Clock ──────────────────────────────────────────────────────
-let opSearchQuery = '';
+// ─── Clock ───────────────────────────────────────────────────────
 function tickClock() {
   document.getElementById("clock").textContent =
     new Date().toLocaleDateString(undefined,{month:"short",day:"numeric"})+" · "+
