@@ -844,6 +844,7 @@
     </div>
     <div class="modal-footer">
       <button class="btn-cancel" id="moveConfirmCancel">Cancel</button>
+      <button class="btn-cancel" id="moveConfirmSingle" style="display:none">Just Player</button>
       <button class="btn-save" id="moveConfirmOk">Move Player</button>
     </div>
   </div>
@@ -1346,35 +1347,79 @@ let dragInfo    = null;
 let pendingDrop = null; // held while move-confirm modal is open
 
 function confirmDrop(targetSlot, emptyIdxs) {
-  const srcSlot = state.slots.find(s => s.id === dragInfo.sourceSlotId);
-  const moved   = [...dragInfo.players];
+  const srcSlot       = state.slots.find(s => s.id === dragInfo.sourceSlotId);
+  const groupMoved    = [...dragInfo.players];
+  const draggedPi     = dragInfo.draggedPi;
+  const draggedPlayer = dragInfo.draggedPlayer;
+  const fromSel       = !!dragInfo.fromSelection;
+  const isGroup       = groupMoved.length > 1;
+  const roomForGroup  = emptyIdxs.length >= groupMoved.length;
 
-  // Capture everything needed, then clear drag state so dragend is a no-op
-  pendingDrop = { srcSlot, moved, targetSlot, emptyIdxs };
+  pendingDrop = { srcSlot, groupMoved, targetSlot, emptyIdxs, draggedPi, draggedPlayer };
   document.querySelectorAll('.is-dragging').forEach(el => el.classList.remove('is-dragging'));
   dragInfo = null;
 
-  // Build message: "Move Jose Garcia & Maria Lopez from 8:00 AM to 9:30 AM?"
-  const names   = moved.map(m => m.player.name).join(' & ');
-  const srcTime = fmt12(srcSlot.hour, srcSlot.minute);
-  const dstTime = fmt12(targetSlot.hour, targetSlot.minute);
-  document.getElementById('moveConfirmMsg').textContent =
-    `Move ${names} from ${srcTime} to ${dstTime}?`;
-  document.getElementById('moveConfirmOk').textContent =
-    moved.length > 1 ? `Move ${moved.length} Players` : 'Move Player';
+  const srcTime  = fmt12(srcSlot.hour, srcSlot.minute);
+  const dstTime  = fmt12(targetSlot.hour, targetSlot.minute);
+  const msgEl    = document.getElementById('moveConfirmMsg');
+  const okEl     = document.getElementById('moveConfirmOk');
+  const singleEl = document.getElementById('moveConfirmSingle');
+  const firstName = draggedPlayer.name.split(' ')[0];
+
+  singleEl.style.display = 'none'; // hidden by default, shown only for group-drag choice
+
+  if (fromSel) {
+    // Multi-select drag: confirm exactly what was selected, no single option
+    if (!roomForGroup) {
+      toast(`Need ${groupMoved.length} open slots, only ${emptyIdxs.length} available.`);
+      pendingDrop = null;
+      return;
+    }
+    const selNames = groupMoved.map(m => m.player.name).join(', ');
+    msgEl.textContent = `Move ${groupMoved.length} players (${selNames}) from ${srcTime} to ${dstTime}?`;
+    okEl.textContent  = `Move ${groupMoved.length} Players`;
+  } else if (isGroup && roomForGroup) {
+    // Group drag (pi=0): offer move whole group OR just the dragged player
+    const groupNames = groupMoved.map(m => m.player.name).join(', ');
+    msgEl.textContent      = `Move group (${groupMoved.length} players: ${groupNames}) from ${srcTime} to ${dstTime}?`;
+    okEl.textContent       = `Move Group (${groupMoved.length})`;
+    singleEl.textContent   = `Just ${firstName}`;
+    singleEl.style.display = '';
+  } else if (isGroup && !roomForGroup) {
+    // Group drag but not enough room — offer single-player only
+    msgEl.textContent = `Not enough room for the full group of ${groupMoved.length}. Move just ${draggedPlayer.name} from ${srcTime} to ${dstTime}?`;
+    okEl.textContent  = 'Move Player';
+  } else {
+    // Single-player drag (pi>0) — simple confirm
+    msgEl.textContent = `Move ${draggedPlayer.name} from ${srcTime} to ${dstTime}?`;
+    okEl.textContent  = 'Move Player';
+  }
 
   document.getElementById('moveConfirmModal').classList.add('open');
 }
 
 function executePendingDrop() {
   if (!pendingDrop) return;
-  const { srcSlot, moved, targetSlot, emptyIdxs } = pendingDrop;
-  moved.forEach(({ pi, player }, i) => {
+  const { srcSlot, groupMoved, targetSlot, emptyIdxs } = pendingDrop;
+  groupMoved.forEach(({ pi, player }, i) => {
     if (srcSlot) srcSlot.players[pi] = null;
     targetSlot.players[emptyIdxs[i]] = player;
   });
-  const names = moved.map(m => m.player.name.split(' ')[0]).join(', ');
+  const names = groupMoved.map(m => m.player.name.split(' ')[0]).join(', ');
   recordActivity(`Moved ${names} → ${fmt12(targetSlot.hour, targetSlot.minute)}`);
+  toast(`Moved to ${fmt12(targetSlot.hour, targetSlot.minute)}`);
+  sel.slotId = null; sel.indices.clear(); updateSelBar();
+  pendingDrop = null;
+  document.getElementById('moveConfirmModal').classList.remove('open');
+  renderRows();
+}
+
+function executePendingDropSingle() {
+  if (!pendingDrop) return;
+  const { srcSlot, draggedPi, draggedPlayer, targetSlot, emptyIdxs } = pendingDrop;
+  if (srcSlot) srcSlot.players[draggedPi] = null;
+  targetSlot.players[emptyIdxs[0]] = draggedPlayer;
+  recordActivity(`Moved ${draggedPlayer.name.split(' ')[0]} → ${fmt12(targetSlot.hour, targetSlot.minute)}`);
   toast(`Moved to ${fmt12(targetSlot.hour, targetSlot.minute)}`);
   sel.slotId = null; sel.indices.clear(); updateSelBar();
   pendingDrop = null;
@@ -1504,9 +1549,10 @@ function renderRows() {
       row.addEventListener("dragover", e => {
         if (!dragInfo) return;
         const empty = slot.players.filter(p=>!p).length;
-        if (empty >= dragInfo.players.length && slot.id !== dragInfo.sourceSlotId) {
+        // Accept drop if there's room for at least one player (modal handles group vs single)
+        if (empty >= 1 && slot.id !== dragInfo.sourceSlotId) {
           e.preventDefault();
-          e.dataTransfer.dropEffect = "move"; // always treat as move even if Cmd held
+          e.dataTransfer.dropEffect = "move";
           row.classList.add("drop-valid");
         } else {
           row.classList.add("drop-invalid");
@@ -1525,7 +1571,7 @@ function renderRows() {
 
         const emptyIdxs = [];
         for (let i=0; i<4; i++) { if (!slot.players[i]) emptyIdxs.push(i); }
-        if (emptyIdxs.length < dragInfo.players.length) { toast("Not enough open slots here."); dragInfo=null; return; }
+        if (emptyIdxs.length === 0) { toast("No open slots here."); dragInfo=null; return; }
 
         // Show confirmation before committing the move
         confirmDrop(slot, emptyIdxs);
@@ -1657,19 +1703,21 @@ function renderRows() {
           // ── Drag events ──
           cell.addEventListener("dragstart", e => {
             let dragPlayers;
+            let fromSelection = false;
             if (sel.slotId === slot.id && sel.indices.size > 0) {
               // Ctrl+click multi-select is already active — use that selection
               dragPlayers = [...sel.indices].map(idx => ({ pi: idx, player: slot.players[idx] }));
-            } else if (e.ctrlKey || e.metaKey) {
-              // Ctrl/Cmd+drag — move just this one player
-              dragPlayers = [{ pi, player }];
-            } else {
-              // Regular drag — move the entire booking group (all players with same bookingRef)
+              fromSelection = true;
+            } else if (pi === 0) {
+              // First position: start with the booking group — modal will offer single option
               dragPlayers = slot.players
                 .map((p, idx) => ({ pi: idx, player: p }))
                 .filter(({ player: p }) => p && p.bookingRef === player.bookingRef);
+            } else {
+              // Second/third/fourth position: drag just this one player
+              dragPlayers = [{ pi, player }];
             }
-            dragInfo = { sourceSlotId: slot.id, players: dragPlayers };
+            dragInfo = { sourceSlotId: slot.id, players: dragPlayers, draggedPi: pi, draggedPlayer: player, fromSelection };
             e.dataTransfer.effectAllowed = "all"; // allow copy/move so Cmd+drag on macOS doesn't reject the drop
             e.dataTransfer.setData("text","sf-drag");
             // Fade dragged cells
@@ -2155,6 +2203,7 @@ document.getElementById("addModal").addEventListener("click", e => { if (e.targe
 
 // ─── Move Confirmation Modal wiring ──────────────────────────────
 document.getElementById("moveConfirmOk").addEventListener("click", executePendingDrop);
+document.getElementById("moveConfirmSingle").addEventListener("click", executePendingDropSingle);
 document.getElementById("moveConfirmCancel").addEventListener("click", cancelPendingDrop);
 document.getElementById("moveConfirmModal").addEventListener("click", e => { if (e.target.id === "moveConfirmModal") cancelPendingDrop(); });
 document.addEventListener("keydown", e => {
