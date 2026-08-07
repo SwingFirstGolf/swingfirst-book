@@ -516,6 +516,9 @@
   .sel-bar button { border: 0; background: transparent; color: var(--green-700); font-size: 12px; font-weight: 700; padding: 0; cursor: pointer; margin-left: auto; }
 
   /* ─── Trash drawer ─── */
+  .undo-main-btn { display: inline-flex; align-items: center; gap: 4px; padding: 4px 11px; border-radius: 999px; background: rgba(0,0,0,.15); color: inherit; font-size: 12px; font-weight: 600; border: 1px solid rgba(255,255,255,.3); cursor: pointer; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; transition: opacity 180ms; }
+  .undo-main-btn:disabled { opacity: 0.35; cursor: default; }
+  .undo-main-btn:not(:disabled):hover { background: rgba(0,0,0,.25); }
   .trash-btn { border: none; background: none; color: var(--ink-muted); font-size: 16px; cursor: pointer; padding: 5px 8px; border-radius: 6px; position: relative; transition: background .12s, color .12s; line-height: 1; }
   .trash-btn:hover { background: var(--slate-100); color: var(--ink); }
   .trash-btn-badge { position: absolute; top: 3px; right: 3px; width: 7px; height: 7px; border-radius: 999px; background: var(--rose-700); display: none; border: 1.5px solid var(--card); }
@@ -613,6 +616,7 @@
           <span id="clock" style="font-size:12px;"></span>
         </div>
         <a href="https://book.swingfirst.ai/" style="display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:999px;background:rgba(0,0,0,.15);color:inherit;font-size:12px;font-weight:600;text-decoration:none;border:1px solid rgba(255,255,255,.3);" target="_blank">🌐 Golfer View</a>
+        <button class="undo-main-btn" id="undoBtn" disabled title="Nothing to undo">↩ Undo</button>
         <button class="trash-btn" id="trashBtn" title="Cancelled players">🗑<span class="trash-btn-badge" id="trashBadge"></span></button>
         <div class="avatar" id="avatarEl" title="Set staff name" style="background:rgba(0,0,0,.2);color:inherit;border-color:rgba(255,255,255,.3);">?</div>
       </div>
@@ -1401,6 +1405,8 @@ function confirmDrop(targetSlot, emptyIdxs) {
 function executePendingDrop() {
   if (!pendingDrop) return;
   const { srcSlot, groupMoved, targetSlot, emptyIdxs } = pendingDrop;
+  const _names = groupMoved.map(m => m.player.name.split(' ')[0]).join(', ');
+  pushUndo(`Move ${_names} → ${fmt12(targetSlot.hour, targetSlot.minute)}`);
   groupMoved.forEach(({ pi, player }, i) => {
     if (srcSlot) srcSlot.players[pi] = null;
     targetSlot.players[emptyIdxs[i]] = player;
@@ -1417,6 +1423,7 @@ function executePendingDrop() {
 function executePendingDropSingle() {
   if (!pendingDrop) return;
   const { srcSlot, draggedPi, draggedPlayer, targetSlot, emptyIdxs } = pendingDrop;
+  pushUndo(`Move ${draggedPlayer.name.split(' ')[0]} → ${fmt12(targetSlot.hour, targetSlot.minute)}`);
   if (srcSlot) srcSlot.players[draggedPi] = null;
   targetSlot.players[emptyIdxs[0]] = draggedPlayer;
   recordActivity(`Moved ${draggedPlayer.name.split(' ')[0]} → ${fmt12(targetSlot.hour, targetSlot.minute)}`);
@@ -1835,6 +1842,7 @@ async function squeezeTeeTime(afterIdx) {
   }
   const h = Math.floor(newMin/60), m = newMin%60;
   const newSlot = { id: _nextSlotId++, hour:h, minute:m, rateCents:slot.rateCents, status:"open", players:[null,null,null,null], squeezed:true };
+  pushUndo(`Insert squeeze ${fmt12(h,m)}`);
   state.slots.splice(afterIdx+1, 0, newSlot);
   recordActivity(`Squeeze tee time inserted — ${fmt12(h,m)}`);
   toast(`Squeeze added at ${fmt12(h,m)}`);
@@ -1899,6 +1907,7 @@ ctxMenu.addEventListener("click", e => {
     openTeeOffModal(slot);  // closes ctx menu internally
 
   } else if (action === "unblockTime") {
+    pushUndo(`Unblock ${fmt12(slot.hour, slot.minute)}`);
     slot.status = "open";
     delete slot.block_label;
     if (slot._sb_id) {
@@ -1925,6 +1934,7 @@ ctxMenu.addEventListener("click", e => {
     // Collect unique booking IDs and all bpIds before clearing
     const bookingIds = [...new Set(occ.map(p => p.bookingId).filter(Boolean))];
     const bpIds      = occ.map(p => p.bpId).filter(Boolean);
+    pushUndo(`Cancel booking ${fmt12(slot.hour, slot.minute)}`);
     slot.players = [null, null, null, null];
     recordActivity(`Booking cancelled: <b>${names}</b> — ${fmt12(slot.hour, slot.minute)}`);
     toast(`Booking cancelled — ${fmt12(slot.hour, slot.minute)}`);
@@ -1967,7 +1977,7 @@ ctxMenu.addEventListener("click", e => {
         try {
           await sbDelete('tee_times', slot._sb_id);
           const slotIdx = state.slots.indexOf(slot);
-          if (slotIdx !== -1) state.slots.splice(slotIdx, 1);
+          if (slotIdx !== -1) { pushUndo(`Delete squeeze ${label}`); state.slots.splice(slotIdx, 1); }
           recordActivity(`Squeeze tee time removed — ${label}`);
           toast(`Squeeze tee time at ${label} deleted`);
           renderRows(); closeCtxMenu();
@@ -1980,7 +1990,7 @@ ctxMenu.addEventListener("click", e => {
     } else {
       // Never persisted to DB — just remove from in-memory state
       const slotIdx = state.slots.indexOf(slot);
-      if (slotIdx !== -1) state.slots.splice(slotIdx, 1);
+      if (slotIdx !== -1) { pushUndo(`Delete squeeze ${label}`); state.slots.splice(slotIdx, 1); }
       toast(`Squeeze tee time at ${label} deleted`);
       renderRows(); closeCtxMenu();
     }
@@ -1988,7 +1998,11 @@ ctxMenu.addEventListener("click", e => {
 });
 
 document.addEventListener("click", e => { if (!ctxMenu.contains(e.target)) closeCtxMenu(); });
-document.addEventListener("keydown", e => { if (e.key==="Escape") { closeCtxMenu(); closeQRModal(); closeAddModal(); closeTeeOffModal(); closeBlockModal(); closePriceModal(); closePlayerCtx(); } });
+document.addEventListener("keydown", e => {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'z') { e.preventDefault(); undoLast(); return; }
+  if (e.key==="Escape") { closeCtxMenu(); closeQRModal(); closeAddModal(); closeTeeOffModal(); closeBlockModal(); closePriceModal(); closePlayerCtx(); }
+});
+document.getElementById('undoBtn').addEventListener('click', undoLast);
 
 // ─── QR Modal ────────────────────────────────────────────────────
 let qrTarget = null;
@@ -2244,6 +2258,7 @@ document.getElementById("addSave").addEventListener("click", async () => {
   const toAdd = names.slice(0, emptyIndices.length); // cap at available slots
 
   // Optimistically update local state
+  pushUndo(`Add ${toAdd.join(', ')} to ${fmt12(slot.hour, slot.minute)}`);
   const existingBookingId = slot.players.find(p => p && p.bookingId)?.bookingId || null;
   toAdd.forEach((name, i) => {
     slot.players[emptyIndices[i]] = { id: _nextPid++, name, status, rateType,
@@ -2371,6 +2386,35 @@ document.addEventListener("click", e => {
   if (!playerCtxEl.contains(e.target)) closePlayerCtx();
 });
 
+// ─── Global undo stack ───────────────────────────────────────────
+const UNDO_MAX   = 20;
+const undoStack  = [];
+
+function pushUndo(label) {
+  undoStack.push({ slots: JSON.parse(JSON.stringify(state.slots)), label });
+  if (undoStack.length > UNDO_MAX) undoStack.shift();
+  updateUndoBtn();
+}
+
+function undoLast() {
+  const entry = undoStack.pop();
+  if (!entry) return;
+  state.slots = entry.slots;
+  sel.slotId = null; sel.indices.clear(); updateSelBar();
+  toast(`↩ Undone: ${entry.label}`);
+  updateUndoBtn();
+  renderRows();
+}
+
+function updateUndoBtn() {
+  const btn = document.getElementById('undoBtn');
+  if (!btn) return;
+  const top = undoStack[undoStack.length - 1];
+  btn.disabled = !top;
+  btn.title    = top ? `Undo: ${top.label} (⌘Z)` : 'Nothing to undo';
+  btn.textContent = top ? `↩ ${top.label}` : '↩ Undo';
+}
+
 // ─── Cancel player with undo ──────────────────────────────────────
 let undoBuffer = null;
 let undoTimer  = null;
@@ -2381,6 +2425,7 @@ function cancelPlayer(slot, pi) {
   // Clear any pending undo
   if (undoTimer) { clearTimeout(undoTimer); undoTimer = null; }
   undoBuffer = { slot, pi, player: {...player} };
+  pushUndo(`Remove ${player.name} — ${fmt12(slot.hour, slot.minute)}`);
   slot.players[pi] = null;
   recordActivity(`Player removed: <b>${player.name}</b> — ${fmt12(slot.hour, slot.minute)}`);
   renderRows();
@@ -2481,6 +2526,7 @@ window.addEventListener("storage", e => {
     const result = JSON.parse(e.newValue);
     const slot = state.slots.find(s => s.id === result.slotId);
     if (!slot) return;
+    pushUndo(`Edit booking ${fmt12(slot.hour, slot.minute)}`);
     result.players.forEach((p, i) => { slot.players[i] = p; });
     if (result.notes !== undefined) slot.bookingNotes = result.notes;
     recordActivity(`Booking updated — ${fmt12(slot.hour, slot.minute)}`);
@@ -2632,6 +2678,7 @@ document.getElementById("blockModal").addEventListener("click", e => { if (e.tar
 document.getElementById("blockSave").addEventListener("click", () => {
   if (!blockTarget) return;
   const label = document.getElementById("blockLabel").value.trim() || "Blocked";
+  pushUndo(`Block ${fmt12(blockTarget.hour, blockTarget.minute)}`);
   blockTarget.players = [null, null, null, null];
   blockTarget.status = "blocked";
   blockTarget.block_label = label;
@@ -2668,6 +2715,7 @@ document.getElementById("priceSave").addEventListener("click", () => {
   const val = parseInt(document.getElementById("priceInput").value, 10);
   if (isNaN(val) || val < 0) { document.getElementById("priceInput").focus(); return; }
   const oldPrice = money(priceTarget.rateCents);
+  pushUndo(`Price ${fmt12(priceTarget.hour, priceTarget.minute)}: ${oldPrice} → ${money(val*100)}`);
   priceTarget.rateCents = val * 100;
   recordActivity(`Price override: ${fmt12(priceTarget.hour, priceTarget.minute)} — ${oldPrice} → ${money(priceTarget.rateCents)}`);
   toast(`Rate updated to ${money(priceTarget.rateCents)} — ${fmt12(priceTarget.hour, priceTarget.minute)}`);
