@@ -1418,6 +1418,7 @@ function executePendingDrop() {
   pendingDrop = null;
   document.getElementById('moveConfirmModal').classList.remove('open');
   renderRows();
+  _persistMove(groupMoved, srcSlot, targetSlot);
 }
 
 function executePendingDropSingle() {
@@ -1432,11 +1433,84 @@ function executePendingDropSingle() {
   pendingDrop = null;
   document.getElementById('moveConfirmModal').classList.remove('open');
   renderRows();
+  _persistMove([{ player: draggedPlayer }], srcSlot, targetSlot);
 }
 
 function cancelPendingDrop() {
   pendingDrop = null;
   document.getElementById('moveConfirmModal').classList.remove('open');
+}
+
+// ─── Persist a player move to Supabase ───────────────────────────
+// movedPlayers: array of { player } objects that have been moved.
+// srcSlot: the slot they came from (already mutated in memory — used to count remaining).
+// targetSlot: the slot they moved to.
+async function _persistMove(movedPlayers, srcSlot, targetSlot) {
+  if (!targetSlot._sb_id) return; // target not in DB yet, nothing to update
+  _writeInFlight++;
+  try {
+    // Group moved players by bookingId so we handle multi-player bookings correctly
+    const byBooking = {};
+    for (const { player } of movedPlayers) {
+      if (!player || !player.bookingId) continue;
+      (byBooking[player.bookingId] = byBooking[player.bookingId] || []).push(player);
+    }
+
+    for (const [bookingId, players] of Object.entries(byBooking)) {
+      // Count how many players from this booking still remain at the source (already mutated in memory)
+      const remainingAtSrc = (srcSlot?.players || []).filter(p => p && String(p.bookingId) === String(bookingId)).length;
+
+      if (remainingAtSrc === 0) {
+        // Full-group move: just update the booking's tee_time_id — all its players follow
+        await fetch(`${SB_URL}/rest/v1/bookings?id=eq.${bookingId}`, {
+          method: 'PATCH',
+          headers: { ...SB_H, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+          body: JSON.stringify({ tee_time_id: targetSlot._sb_id }),
+        });
+        // Keep booking_players.tee_time_id in sync for consistency
+        for (const player of players) {
+          if (!player.bpId) continue;
+          await fetch(`${SB_URL}/rest/v1/booking_players?id=eq.${player.bpId}`, {
+            method: 'PATCH',
+            headers: { ...SB_H, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+            body: JSON.stringify({ tee_time_id: targetSlot._sb_id }),
+          });
+        }
+      } else {
+        // Partial move (splitting a booking): reassign the moved players to a booking at the target slot
+        let targetBookingId = targetSlot.players.find(p => p && p.bookingId)?.bookingId || null;
+        if (!targetBookingId) {
+          // No existing booking at target — create one
+          const lead = players[0];
+          const newB = await sbPost('bookings', {
+            tee_time_id:  targetSlot._sb_id,
+            course_id:    currentCourseId,
+            lead_name:    lead.name,
+            player_count: players.length,
+            total_cents:  targetSlot.rateCents * players.length,
+            status:       lead.status === 'paid' ? 'paid' : 'booked',
+            booking_ref:  lead.bookingRef || null,
+            booking_notes: null,
+          });
+          targetBookingId = newB.id;
+        }
+        for (const player of players) {
+          if (!player.bpId) continue;
+          await fetch(`${SB_URL}/rest/v1/booking_players?id=eq.${player.bpId}`, {
+            method: 'PATCH',
+            headers: { ...SB_H, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+            body: JSON.stringify({ booking_id: targetBookingId, tee_time_id: targetSlot._sb_id }),
+          });
+          player.bookingId = targetBookingId;
+        }
+      }
+    }
+  } catch(err) {
+    console.error('Move persist error:', err);
+    toast('⚠️ Move saved locally but DB sync failed: ' + err.message);
+  } finally {
+    _writeInFlight--;
+  }
 }
 
 // ─── Utils ──────────────────────────────────────────────────────
@@ -2303,7 +2377,7 @@ document.getElementById("addSave").addEventListener("click", async () => {
       // Save each player to booking_players
       for (let i = 0; i < toAdd.length; i++) {
         const isLead = i === 0 && !existingBookingId;
-        await sbPost('booking_players', {
+        const newBp = await sbPost('booking_players', {
           booking_id:  bookingId,
           tee_time_id: slot._sb_id,
           name:        toAdd[i],
@@ -2312,6 +2386,9 @@ document.getElementById("addSave").addEventListener("click", async () => {
           status,
           is_lead:     isLead,
         });
+        // Store bpId on the player object so moves can be persisted later
+        const playerObj = slot.players[emptyIndices[i]];
+        if (playerObj && newBp?.id) { playerObj.bpId = newBp.id; playerObj.bookingId = bookingId; }
       }
     } catch (err) {
       console.error('Walk-in save failed:', err);
