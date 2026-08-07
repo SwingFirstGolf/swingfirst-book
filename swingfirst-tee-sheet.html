@@ -835,6 +835,20 @@
   </div>
 </div>
 
+<!-- Move Confirmation Modal -->
+<div class="modal-overlay" id="moveConfirmModal">
+  <div class="modal-card" style="max-width:360px">
+    <div class="modal-head"><h2>Move Player</h2></div>
+    <div class="modal-body" style="padding:20px 20px 8px">
+      <p id="moveConfirmMsg" style="margin:0;font-size:14px;line-height:1.6;color:var(--ink)"></p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" id="moveConfirmCancel">Cancel</button>
+      <button class="btn-save" id="moveConfirmOk">Move Player</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -1328,7 +1342,50 @@ function updateSelBar() {
 document.getElementById("selClear").addEventListener("click", clearSelection);
 
 // ─── Drag state ─────────────────────────────────────────────────
-let dragInfo = null;
+let dragInfo    = null;
+let pendingDrop = null; // held while move-confirm modal is open
+
+function confirmDrop(targetSlot, emptyIdxs) {
+  const srcSlot = state.slots.find(s => s.id === dragInfo.sourceSlotId);
+  const moved   = [...dragInfo.players];
+
+  // Capture everything needed, then clear drag state so dragend is a no-op
+  pendingDrop = { srcSlot, moved, targetSlot, emptyIdxs };
+  document.querySelectorAll('.is-dragging').forEach(el => el.classList.remove('is-dragging'));
+  dragInfo = null;
+
+  // Build message: "Move Jose Garcia & Maria Lopez from 8:00 AM to 9:30 AM?"
+  const names   = moved.map(m => m.player.name).join(' & ');
+  const srcTime = fmt12(srcSlot.hour, srcSlot.minute);
+  const dstTime = fmt12(targetSlot.hour, targetSlot.minute);
+  document.getElementById('moveConfirmMsg').textContent =
+    `Move ${names} from ${srcTime} to ${dstTime}?`;
+  document.getElementById('moveConfirmOk').textContent =
+    moved.length > 1 ? `Move ${moved.length} Players` : 'Move Player';
+
+  document.getElementById('moveConfirmModal').classList.add('open');
+}
+
+function executePendingDrop() {
+  if (!pendingDrop) return;
+  const { srcSlot, moved, targetSlot, emptyIdxs } = pendingDrop;
+  moved.forEach(({ pi, player }, i) => {
+    if (srcSlot) srcSlot.players[pi] = null;
+    targetSlot.players[emptyIdxs[i]] = player;
+  });
+  const names = moved.map(m => m.player.name.split(' ')[0]).join(', ');
+  recordActivity(`Moved ${names} → ${fmt12(targetSlot.hour, targetSlot.minute)}`);
+  toast(`Moved to ${fmt12(targetSlot.hour, targetSlot.minute)}`);
+  sel.slotId = null; sel.indices.clear(); updateSelBar();
+  pendingDrop = null;
+  document.getElementById('moveConfirmModal').classList.remove('open');
+  renderRows();
+}
+
+function cancelPendingDrop() {
+  pendingDrop = null;
+  document.getElementById('moveConfirmModal').classList.remove('open');
+}
 
 // ─── Utils ──────────────────────────────────────────────────────
 function fmt12(h,m) { const mer=h>=12?"PM":"AM"; return ((h+11)%12+1)+":"+String(m).padStart(2,"0")+" "+mer; }
@@ -1470,20 +1527,8 @@ function renderRows() {
         for (let i=0; i<4; i++) { if (!slot.players[i]) emptyIdxs.push(i); }
         if (emptyIdxs.length < dragInfo.players.length) { toast("Not enough open slots here."); dragInfo=null; return; }
 
-        const srcSlot = state.slots.find(s=>s.id===dragInfo.sourceSlotId);
-        const moved = [...dragInfo.players];
-        moved.forEach(({pi, player}, i) => {
-          if (srcSlot) srcSlot.players[pi] = null;
-          slot.players[emptyIdxs[i]] = player;
-        });
-
-        const names = moved.map(m=>m.player.name.split(" ")[0]).join(", ");
-        recordActivity(`Moved ${names} → ${fmt12(slot.hour,slot.minute)}`);
-        toast(`Moved to ${fmt12(slot.hour,slot.minute)}`);
-
-        sel.slotId=null; sel.indices.clear(); updateSelBar();
-        dragInfo = null;
-        renderRows();
+        // Show confirmation before committing the move
+        confirmDrop(slot, emptyIdxs);
       });
     }
 
@@ -2107,6 +2152,16 @@ function closeAddModal() { document.getElementById("addModal").classList.remove(
 document.getElementById("addClose").addEventListener("click", closeAddModal);
 document.getElementById("addCancel").addEventListener("click", closeAddModal);
 document.getElementById("addModal").addEventListener("click", e => { if (e.target.id === "addModal") closeAddModal(); });
+
+// ─── Move Confirmation Modal wiring ──────────────────────────────
+document.getElementById("moveConfirmOk").addEventListener("click", executePendingDrop);
+document.getElementById("moveConfirmCancel").addEventListener("click", cancelPendingDrop);
+document.getElementById("moveConfirmModal").addEventListener("click", e => { if (e.target.id === "moveConfirmModal") cancelPendingDrop(); });
+document.addEventListener("keydown", e => {
+  if (!document.getElementById("moveConfirmModal").classList.contains("open")) return;
+  if (e.key === "Enter")  { e.preventDefault(); executePendingDrop(); }
+  if (e.key === "Escape") { e.preventDefault(); cancelPendingDrop(); }
+});
 
 document.getElementById("addSave").addEventListener("click", async () => {
   if (!addTarget) return;
