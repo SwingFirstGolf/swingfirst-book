@@ -1506,7 +1506,7 @@ function renderRows() {
         const empty = slot.players.filter(p=>!p).length;
         if (empty >= dragInfo.players.length && slot.id !== dragInfo.sourceSlotId) {
           e.preventDefault();
-          e.dataTransfer.dropEffect = "move";
+          e.dataTransfer.dropEffect = "move"; // always treat as move even if Cmd held
           row.classList.add("drop-valid");
         } else {
           row.classList.add("drop-invalid");
@@ -1670,7 +1670,7 @@ function renderRows() {
                 .filter(({ player: p }) => p && p.bookingRef === player.bookingRef);
             }
             dragInfo = { sourceSlotId: slot.id, players: dragPlayers };
-            e.dataTransfer.effectAllowed = "move";
+            e.dataTransfer.effectAllowed = "all"; // allow copy/move so Cmd+drag on macOS doesn't reject the drop
             e.dataTransfer.setData("text","sf-drag");
             // Fade dragged cells
             setTimeout(() => {
