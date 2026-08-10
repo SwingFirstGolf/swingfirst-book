@@ -519,6 +519,9 @@
   .undo-main-btn { display: inline-flex; align-items: center; gap: 4px; padding: 4px 11px; border-radius: 999px; background: rgba(0,0,0,.15); color: inherit; font-size: 12px; font-weight: 600; border: 1px solid rgba(255,255,255,.3); cursor: pointer; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; transition: opacity 180ms; }
   .undo-main-btn:disabled { opacity: 0.35; cursor: default; }
   .undo-main-btn:not(:disabled):hover { background: rgba(0,0,0,.25); }
+  .sync-toggle-btn { display: inline-flex; align-items: center; gap: 4px; padding: 4px 11px; border-radius: 999px; background: rgba(0,0,0,.15); color: inherit; font-size: 12px; font-weight: 600; border: 1px solid rgba(255,255,255,.3); cursor: pointer; transition: background 180ms; white-space: nowrap; }
+  .sync-toggle-btn:hover { background: rgba(0,0,0,.25); }
+  .sync-toggle-btn.sync-paused { background: rgba(234,179,8,.3); border-color: rgba(234,179,8,.7); }
   .trash-btn { border: none; background: none; color: var(--ink-muted); font-size: 16px; cursor: pointer; padding: 5px 8px; border-radius: 6px; position: relative; transition: background .12s, color .12s; line-height: 1; }
   .trash-btn:hover { background: var(--slate-100); color: var(--ink); }
   .trash-btn-badge { position: absolute; top: 3px; right: 3px; width: 7px; height: 7px; border-radius: 999px; background: var(--rose-700); display: none; border: 1.5px solid var(--card); }
@@ -616,6 +619,7 @@
           <span id="clock" style="font-size:12px;"></span>
         </div>
         <a href="https://book.swingfirst.ai/" style="display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:999px;background:rgba(0,0,0,.15);color:inherit;font-size:12px;font-weight:600;text-decoration:none;border:1px solid rgba(255,255,255,.3);" target="_blank">🌐 Golfer View</a>
+        <button class="sync-toggle-btn sync-live" id="syncToggleBtn" style="display:none" title="Sync is live (every 30 min)">⏸ Pause Sync</button>
         <button class="undo-main-btn" id="undoBtn" disabled title="Nothing to undo">↩ Undo</button>
         <button class="trash-btn" id="trashBtn" title="Cancelled players">🗑<span class="trash-btn-badge" id="trashBadge"></span></button>
         <div class="avatar" id="avatarEl" title="Set staff name" style="background:rgba(0,0,0,.2);color:inherit;border-color:rgba(255,255,255,.3);">?</div>
@@ -917,6 +921,8 @@ let sheetMode = '18';       // '18' | '9'
 let _mainCourseId   = null; // saved 18-hole course ID while in 9-hole view
 let _mainCourseSlug = null; // saved 18-hole slug while in 9-hole view
 let _viewingB9      = false;// true when the 9-hole tab is active & loaded
+let _syncPaused     = false;// sync_paused state for the current facility
+let _facilitySlug   = null; // facility_slug for the current course
 
 function setSheetMode(mode) {
   sheetMode = mode;
@@ -954,7 +960,7 @@ let _writeInFlight = 0;     // blocks auto-refresh from overwriting optimistic s
 
 async function initCourses() {
   try {
-    const r = await fetch(`${SB_URL}/rest/v1/courses?select=id,slug,name,back_nine_cutoff,back_nine_rate_cents&active=eq.true`, { headers: SB_H });
+    const r = await fetch(`${SB_URL}/rest/v1/courses?select=id,slug,name,back_nine_cutoff,back_nine_rate_cents,facility_slug,sync_paused&active=eq.true`, { headers: SB_H });
     if (!r.ok) throw new Error('Courses fetch: ' + r.status);
     const rows = await r.json();
     _dbCourses = rows;
@@ -977,7 +983,10 @@ async function initCourses() {
     currentCourseSlug = startCourse.slug;
     currentCourseName = startCourse.name;
     currentCourseId   = _courseCache[startCourse.slug] || null;
+    _syncPaused       = !!startCourse.sync_paused;
+    _facilitySlug     = startCourse.facility_slug || null;
   }
+  updateSyncBtn();
   applyCourseBanner(currentCourseSlug, currentCourseName);
   renderCourseNav();
   await loadSheetFromSupabase();
@@ -1014,8 +1023,11 @@ async function switchCourse(slug) {
   localStorage.setItem('sf_op_course', slug);
   currentCourseSlug = slug;
   currentCourseId   = id;
-  currentCourseName = _dbCourses.find(c => c.slug === slug)?.name
-                   || COURSES.find(c => c.slug === slug)?.name || slug;
+  const _sc = _dbCourses.find(c => c.slug === slug);
+  currentCourseName = _sc?.name || COURSES.find(c => c.slug === slug)?.name || slug;
+  _syncPaused   = !!_sc?.sync_paused;
+  _facilitySlug = _sc?.facility_slug || null;
+  updateSyncBtn();
   applyCourseBanner(slug, currentCourseName);
   renderCourseNav();
   await loadSheetFromSupabase();
@@ -2077,6 +2089,7 @@ document.addEventListener("keydown", e => {
   if (e.key==="Escape") { closeCtxMenu(); closeQRModal(); closeAddModal(); closeTeeOffModal(); closeBlockModal(); closePriceModal(); closePlayerCtx(); }
 });
 document.getElementById('undoBtn').addEventListener('click', undoLast);
+document.getElementById('syncToggleBtn').addEventListener('click', toggleSync);
 
 // ─── QR Modal ────────────────────────────────────────────────────
 let qrTarget = null;
@@ -2490,6 +2503,62 @@ function updateUndoBtn() {
   btn.disabled = !top;
   btn.title    = top ? `Undo: ${top.label} (⌘Z)` : 'Nothing to undo';
   btn.textContent = top ? `↩ ${top.label}` : '↩ Undo';
+}
+
+// ─── Sync Pause/Resume ───────────────────────────────────────────────
+function updateSyncBtn() {
+  const btn = document.getElementById('syncToggleBtn');
+  if (!btn) return;
+  if (!_facilitySlug) { btn.style.display = 'none'; return; }
+  btn.style.display = '';
+  if (_syncPaused) {
+    btn.textContent = '▶ Resume Sync';
+    btn.className   = 'sync-toggle-btn sync-paused';
+    btn.title       = 'Sync is paused — staff edits are preserved. Click to resume syncing from Quick18.';
+  } else {
+    btn.textContent = '⏸ Pause Sync';
+    btn.className   = 'sync-toggle-btn sync-live';
+    btn.title       = 'Sync is live (every 30 min). Click to pause so staff edits are preserved.';
+  }
+}
+
+async function toggleSync() {
+  if (!_facilitySlug) return;
+  const newPaused = !_syncPaused;
+  _syncPaused = newPaused;
+  updateSyncBtn();
+  // Update all courses sharing this facility_slug
+  try {
+    await fetch(`${SB_URL}/rest/v1/courses?facility_slug=eq.${encodeURIComponent(_facilitySlug)}`, {
+      method: 'PATCH',
+      headers: { ...SB_H, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ sync_paused: newPaused }),
+    });
+    // Keep _dbCourses in sync so switching back doesn't reset the button
+    _dbCourses.forEach(c => { if (c.facility_slug === _facilitySlug) c.sync_paused = newPaused; });
+  } catch(e) {
+    console.error('toggleSync PATCH failed:', e);
+    toast('⚠️ Failed to update sync state: ' + e.message);
+    // Revert optimistic UI
+    _syncPaused = !newPaused;
+    updateSyncBtn();
+    return;
+  }
+  if (!newPaused) {
+    toast('▶ Sync resumed — refreshing from Quick18…');
+    // Trigger immediate sync, then reload the sheet
+    try {
+      const SB_FUNC_URL = SB_URL.replace('/rest/v1', '') + '/functions/v1/sync-tee-sheet';
+      await fetch(SB_FUNC_URL, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' },
+        body: '{}',
+      });
+    } catch(e) { console.warn('Immediate sync trigger failed:', e); }
+    await loadSheetFromSupabase();
+  } else {
+    toast('⏸ Sync paused — your changes will be preserved');
+  }
 }
 
 // ─── Cancel player with undo ──────────────────────────────────────
