@@ -403,7 +403,7 @@
 </div>
 
 <div class="top-bar">
-  <a class='top-logo' href='/swingfirst-tee-sheet'>
+  <a class="top-logo" href="swingfirst-tee-sheet.html">
     ⛳ SwingFirst
     <span class="top-badge">Staff</span>
   </a>
@@ -527,7 +527,7 @@ function buildPage() {
         '<div class="slot-time-ampm">' + tAmPm + '</div>' +
       '</div>' +
       '<div class="slot-meta">' +
-        '<div class="slot-meta-course">San Tan Highlands</div>' +
+        '<div class="slot-meta-course">' + (d.courseName || 'SwingFirst') + '</div>' +
         '<div class="slot-meta-row">' +
           '<span>' + todayLabel() + '</span>' +
           '<span class="slot-meta-pill">Rack ' + money(d.rateCents) + '</span>' +
