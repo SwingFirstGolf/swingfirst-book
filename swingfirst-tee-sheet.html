@@ -690,6 +690,10 @@
     <div class="player-ctx-time" id="pctxTime">—</div>
   </div>
   <div class="player-ctx-item" id="pctxEdit"><span class="pci-ico">✏️</span> Edit Booking</div>
+  <div class="player-ctx-sep"></div>
+  <div class="player-ctx-item" id="pctxCopy"><span class="pci-ico">📋</span> Copy Player</div>
+  <div class="player-ctx-item" id="pctxCut"><span class="pci-ico">✂️</span> Cut Player</div>
+  <div class="player-ctx-item" id="pctxPaste"><span class="pci-ico">📋</span> <span id="pctxPasteLabel">Paste Player</span></div>
   <div class="player-ctx-sep" id="pctxCancelSep"></div>
   <div class="player-ctx-item danger" id="pctxCancel"><span class="pci-ico">🗑</span> Cancel Player</div>
 </div>
@@ -1861,7 +1865,7 @@ function renderRows() {
               toggleSelect(slot.id, pi);
               return;
             }
-            openPlaceholderModal(slot, player);
+            editBooking(slot, pi);
           });
         }
 
@@ -1994,16 +1998,23 @@ function openCtxMenu(e, slot, si) {
   // Copy / Cut / Paste
   show("ctxCopyItem",   !isBlocked && hasBookings);
   show("ctxCutItem",    !isBlocked && hasBookings);
-  show("ctxPasteItem",  !isBlocked && !hasBookings && !!_clipboard);
-  show("ctxClipSep",    !isBlocked && (hasBookings || (!hasBookings && !!_clipboard)));
+  const hasEmptyPos = slot.players.some(p => !p);
+  const canPasteHere = !isBlocked && !!_clipboard && (
+    (_clipboard.type === 'booking' && !hasBookings) ||
+    (_clipboard.type === 'player' && hasEmptyPos)
+  );
+  show("ctxPasteItem",  canPasteHere);
+  show("ctxClipSep",    !isBlocked && (hasBookings || canPasteHere));
   if (_clipboard) {
-    const names = _clipboard.players.filter(Boolean).map(p => p.name.split(" ")[0]).join(", ");
-    document.getElementById("ctxPasteLabel").textContent = `Paste — ${names}`;
+    const label = _clipboard.type === 'player'
+      ? `Paste — ${_clipboard.player.name.split(" ")[0]}`
+      : `Paste — ${_clipboard.players.filter(Boolean).map(p=>p.name.split(" ")[0]).join(", ")}`;
+    document.getElementById("ctxPasteLabel").textContent = label;
   }
   show("ctxGroupItem",    !isBlocked && !hasBookings);
   show("ctxCancelItem",   !isBlocked && hasBookings);
   show("deleteSqueezeItem", !isBlocked && !!slot.squeezed);
-  show("ctxDangerSep",    !isBlocked && (hasBookings || !!slot.squeezed || (!hasBookings && !!_clipboard)));
+  show("ctxDangerSep",    !isBlocked && (hasBookings || !!slot.squeezed || canPasteHere));
 
   const rect = e.currentTarget.getBoundingClientRect();
   let x = rect.left, y = rect.bottom+4;
@@ -2100,6 +2111,7 @@ ctxMenu.addEventListener("click", e => {
 
   if (action === "copyBooking") {
     _clipboard = {
+      type: 'booking',
       players: slot.players.map(p => p ? {...p} : null),
       rateCents: slot.rateCents,
       notes: slot.bookingNotes || "",
@@ -2112,10 +2124,10 @@ ctxMenu.addEventListener("click", e => {
     const occ = slot.players.filter(Boolean);
     if (!occ.length) { closeCtxMenu(); return; }
     _clipboard = {
+      type: 'booking',
       players: slot.players.map(p => p ? {...p} : null),
       rateCents: slot.rateCents,
       notes: slot.bookingNotes || "",
-      cut: true,
     };
     const names = occ.map(p => p.name.split(" ")[0]).join(", ");
     pushUndo(`Cut booking @ ${fmt12(slot.hour, slot.minute)}`);
@@ -2127,13 +2139,23 @@ ctxMenu.addEventListener("click", e => {
 
   } else if (action === "pasteBooking") {
     if (!_clipboard) { closeCtxMenu(); return; }
-    pushUndo(`Paste booking @ ${fmt12(slot.hour, slot.minute)}`);
-    slot.players = _clipboard.players.map(p => p ? {...p, bookingId: null, bpId: null} : null);
-    if (_clipboard.notes) slot.bookingNotes = _clipboard.notes;
-    const names = slot.players.filter(Boolean).map(p => p.name.split(" ")[0]).join(", ");
-    recordActivity(`Booking pasted: <b>${names}</b> → ${fmt12(slot.hour, slot.minute)}`);
-    toast(`📋 Pasted — ${names} → ${fmt12(slot.hour, slot.minute)}`);
-    _clipboard = null; // consume clipboard after paste
+    pushUndo(`Paste @ ${fmt12(slot.hour, slot.minute)}`);
+    if (_clipboard.type === 'player') {
+      // Paste single player into first empty position
+      const emptyIdx = slot.players.findIndex(p => !p);
+      if (emptyIdx === -1) { toast('⚠ No empty player positions in this tee time.'); closeCtxMenu(); return; }
+      slot.players[emptyIdx] = {..._clipboard.player, bookingId: null, bpId: null};
+      const name = _clipboard.player.name.split(" ")[0];
+      recordActivity(`Player pasted: <b>${name}</b> → ${fmt12(slot.hour, slot.minute)}`);
+      toast(`📋 Pasted ${name} → ${fmt12(slot.hour, slot.minute)}`);
+    } else {
+      slot.players = _clipboard.players.map(p => p ? {...p, bookingId: null, bpId: null} : null);
+      if (_clipboard.notes) slot.bookingNotes = _clipboard.notes;
+      const names = slot.players.filter(Boolean).map(p => p.name.split(" ")[0]).join(", ");
+      recordActivity(`Booking pasted: <b>${names}</b> → ${fmt12(slot.hour, slot.minute)}`);
+      toast(`📋 Pasted — ${names} → ${fmt12(slot.hour, slot.minute)}`);
+    }
+    _clipboard = null;
     renderRows(); closeCtxMenu();
 
   } else if (action === "groupBooking") {
@@ -2603,10 +2625,25 @@ function openPlayerCtx(e, slot, pi) {
   document.getElementById("pctxName").textContent    = player.name;
   document.getElementById("pctxTime").textContent    = fmt12(slot.hour, slot.minute) + " · " + player.rateType + " · " + money(slot.rateCents);
 
+  // Copy/Cut/Paste visibility
+  const pshow = (id, vis) => { document.getElementById(id).style.display = vis ? "" : "none"; };
+  const hasEmptyPos = slot.players.some(p => !p);
+  const canPaste = !!_clipboard && (
+    (_clipboard.type === 'player') ||
+    (_clipboard.type === 'booking' && hasEmptyPos)
+  );
+  pshow("pctxPaste", canPaste);
+  if (_clipboard) {
+    const label = _clipboard.type === 'player'
+      ? `Paste — ${_clipboard.player.name.split(" ")[0]}`
+      : `Paste — ${_clipboard.players.filter(Boolean).map(p=>p.name.split(" ")[0]).join(", ")}`;
+    document.getElementById("pctxPasteLabel").textContent = label;
+  }
+
   // Position
   let x = e.clientX, y = e.clientY + 6;
   if (x + 220 > window.innerWidth)  x = window.innerWidth - 228;
-  if (y + 160 > window.innerHeight) y = e.clientY - 160;
+  if (y + 200 > window.innerHeight) y = e.clientY - 200;
   playerCtxEl.style.left = x + "px";
   playerCtxEl.style.top  = y + "px";
   playerCtxEl.classList.add("open");
@@ -2617,6 +2654,45 @@ document.getElementById("pctxEdit").addEventListener("click", () => {
   const { slot, pi } = playerCtxTarget;
   editBooking(slot, pi);
   closePlayerCtx();
+});
+document.getElementById("pctxCopy").addEventListener("click", () => {
+  if (!playerCtxTarget) { closePlayerCtx(); return; }
+  const { slot, pi } = playerCtxTarget;
+  const player = slot.players[pi];
+  if (!player) { closePlayerCtx(); return; }
+  _clipboard = { type: 'player', player: {...player} };
+  toast(`📋 Copied ${player.name}. Right-click any tee time with an open spot to paste.`);
+  closePlayerCtx();
+});
+document.getElementById("pctxCut").addEventListener("click", () => {
+  if (!playerCtxTarget) { closePlayerCtx(); return; }
+  const { slot, pi } = playerCtxTarget;
+  const player = slot.players[pi];
+  if (!player) { closePlayerCtx(); return; }
+  _clipboard = { type: 'player', player: {...player} };
+  pushUndo(`Cut ${player.name} from ${fmt12(slot.hour, slot.minute)}`);
+  slot.players[pi] = null;
+  recordActivity(`Player cut: <b>${player.name}</b> from ${fmt12(slot.hour, slot.minute)}`);
+  toast(`✂️ Cut ${player.name}. Right-click any tee time with an open spot to paste.`);
+  renderRows(); closePlayerCtx();
+});
+document.getElementById("pctxPaste").addEventListener("click", () => {
+  if (!playerCtxTarget || !_clipboard) { closePlayerCtx(); return; }
+  const { slot } = playerCtxTarget;
+  const emptyIdx = slot.players.findIndex(p => !p);
+  if (emptyIdx === -1) { toast('⚠ No empty player positions here.'); closePlayerCtx(); return; }
+  pushUndo(`Paste player @ ${fmt12(slot.hour, slot.minute)}`);
+  if (_clipboard.type === 'player') {
+    slot.players[emptyIdx] = {..._clipboard.player, bookingId: null, bpId: null};
+    toast(`📋 Pasted ${_clipboard.player.name} → ${fmt12(slot.hour, slot.minute)}`);
+  } else {
+    // Paste next available player from booking clipboard
+    const nextPlayer = _clipboard.players.find(Boolean);
+    if (nextPlayer) slot.players[emptyIdx] = {...nextPlayer, bookingId: null, bpId: null};
+    toast(`📋 Pasted → ${fmt12(slot.hour, slot.minute)}`);
+  }
+  _clipboard = null;
+  renderRows(); closePlayerCtx();
 });
 document.getElementById("pctxCancel").addEventListener("click", () => {
   if (!playerCtxTarget) { closePlayerCtx(); return; }
