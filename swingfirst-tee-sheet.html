@@ -724,8 +724,28 @@
   <div class="ctx-item" data-action="teeOff" id="ctxTeeOffItem"><span class="ctx-ico">🏌️</span> Tee Off</div>
   <div class="ctx-item" data-action="overridePrice" id="ctxPriceItem"><span class="ctx-ico">💰</span> Override Price</div>
   <div class="ctx-sep" id="ctxDangerSep"></div>
+  <div class="ctx-item" data-action="groupBooking" id="ctxGroupItem"><span class="ctx-ico">👥</span> Group Booking</div>
   <div class="ctx-item ctx-danger" data-action="cancelResv" id="ctxCancelItem"><span class="ctx-ico">✕</span> Cancel Booking</div>
   <div class="ctx-item ctx-danger" data-action="deleteSqueeze" id="deleteSqueezeItem" style="display:none"><span class="ctx-ico">🗑️</span> Delete Squeeze</div>
+</div>
+
+<!-- Group Booking Modal -->
+<div class="modal-overlay" id="groupModal">
+  <div class="modal-card">
+    <div class="modal-head"><h2>👥 Group Booking</h2><button class="modal-close" id="groupClose">✕</button></div>
+    <div class="modal-body">
+      <div class="slot-info">Starting at: <strong id="groupStartLabel">—</strong></div>
+      <div class="form-group" style="margin-top:12px">
+        <label class="form-label">Number of players in the group</label>
+        <input type="number" class="form-input" id="groupPlayerCount" min="5" max="64" value="12" autocomplete="off"/>
+      </div>
+      <div id="groupAvailInfo" style="margin-top:10px;font-size:13px;line-height:1.6;min-height:40px;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" id="groupCancel">Cancel</button>
+      <button class="btn-save" id="groupConfirm" disabled>Block Tee Times</button>
+    </div>
+  </div>
 </div>
 
 <!-- Tee Off Modal -->
@@ -1966,6 +1986,7 @@ function openCtxMenu(e, slot, si) {
   show("ctxTeeOffItem",   !isBlocked);
   show("ctxPriceItem",    !isBlocked);
   const hasBookings = slot.players.some(Boolean);
+  show("ctxGroupItem",    !isBlocked && !hasBookings);
   show("ctxCancelItem",   !isBlocked && hasBookings);
   show("deleteSqueezeItem", !isBlocked && !!slot.squeezed);
   show("ctxDangerSep",    !isBlocked && (hasBookings || !!slot.squeezed));
@@ -1980,6 +2001,82 @@ function openCtxMenu(e, slot, si) {
 }
 function closeCtxMenu() { ctxMenu.classList.remove("open"); ctxSlot=null; }
 
+// ─── Group Booking ────────────────────────────────────────────────────────
+let groupSlot = null;
+
+function openGroupModal(slot) {
+  groupSlot = slot;
+  document.getElementById('groupStartLabel').textContent = fmt12(slot.hour, slot.minute);
+  document.getElementById('groupPlayerCount').value = 12;
+  updateGroupInfo();
+  document.getElementById('groupModal').classList.add('open');
+  closeCtxMenu();
+  setTimeout(() => { const el = document.getElementById('groupPlayerCount'); el.focus(); el.select(); }, 60);
+}
+
+function closeGroupModal() {
+  document.getElementById('groupModal').classList.remove('open');
+  groupSlot = null;
+}
+
+function updateGroupInfo() {
+  const players   = parseInt(document.getElementById('groupPlayerCount').value) || 0;
+  const infoEl    = document.getElementById('groupAvailInfo');
+  const confirmBtn = document.getElementById('groupConfirm');
+
+  if (players < 5) {
+    infoEl.innerHTML = '<span style="color:var(--rose-700)">For groups of 4 or fewer, use a standard booking.</span>';
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = 'Block Tee Times';
+    return;
+  }
+
+  const timesNeeded = Math.ceil(players / 4);
+  const startIdx    = state.slots.findIndex(s => s.id === groupSlot?.id);
+  if (startIdx === -1) return;
+
+  // Count consecutive empty + non-blocked slots
+  let consecutive = 0;
+  for (let i = startIdx; i < state.slots.length; i++) {
+    const s = state.slots[i];
+    if (s.status === 'blocked' || s.players.some(Boolean)) break;
+    consecutive++;
+    if (consecutive === timesNeeded) break;
+  }
+
+  if (consecutive >= timesNeeded) {
+    const times = state.slots.slice(startIdx, startIdx + timesNeeded)
+                             .map(s => fmt12(s.hour, s.minute)).join(' · ');
+    infoEl.innerHTML = `<span style="color:var(--green-700)">✓ ${timesNeeded} consecutive empty slots available:<br><b>${times}</b></span>`;
+    confirmBtn.disabled = false;
+    confirmBtn.textContent = `Block ${timesNeeded} Tee Times`;
+  } else {
+    const needed = timesNeeded, have = consecutive;
+    infoEl.innerHTML = `<span style="color:var(--rose-700)">⚠ Need <b>${needed}</b> consecutive empty tee times but only <b>${have}</b> available from ${fmt12(groupSlot.hour, groupSlot.minute)}.<br>Try a different starting time or reduce the group size.</span>`;
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = 'Block Tee Times';
+  }
+}
+
+function executeGroupBooking() {
+  if (!groupSlot) return;
+  const players     = parseInt(document.getElementById('groupPlayerCount').value) || 0;
+  const timesNeeded = Math.ceil(players / 4);
+  const startIdx    = state.slots.findIndex(s => s.id === groupSlot.id);
+  const toBlock     = state.slots.slice(startIdx, startIdx + timesNeeded);
+
+  pushUndo(`Group hold ${players} players @ ${fmt12(groupSlot.hour, groupSlot.minute)}`);
+  toBlock.forEach(s => {
+    s.status      = 'blocked';
+    s.block_label = `Group Hold — ${players} players`;
+  });
+
+  recordActivity(`Group hold: ${players} players × ${timesNeeded} tee times from ${fmt12(groupSlot.hour, groupSlot.minute)}`);
+  toast(`${timesNeeded} tee times held for group of ${players}`);
+  renderRows();
+  closeGroupModal();
+}
+
 ctxMenu.addEventListener("click", e => {
   const item = e.target.closest(".ctx-item");
   if (!item) return;
@@ -1987,7 +2084,10 @@ ctxMenu.addEventListener("click", e => {
   const { slot, si } = ctxSlot || {};
   if (!slot) { closeCtxMenu(); return; }
 
-  if (action === "teeOff") {
+  if (action === "groupBooking") {
+    openGroupModal(slot); // closes ctx menu internally
+
+  } else if (action === "teeOff") {
     const occ = slot.players.filter(Boolean);
     if (!occ.length) { toast("No players on this tee time."); closeCtxMenu(); return; }
     openTeeOffModal(slot);  // closes ctx menu internally
@@ -2818,6 +2918,17 @@ function openBlockModal(slot) {
   closeCtxMenu();
 }
 function closeBlockModal() { document.getElementById("blockModal").classList.remove("open"); blockTarget = null; }
+// Group Booking modal wiring
+document.getElementById("groupClose").addEventListener("click", closeGroupModal);
+document.getElementById("groupCancel").addEventListener("click", closeGroupModal);
+document.getElementById("groupModal").addEventListener("click", e => { if (e.target.id === "groupModal") closeGroupModal(); });
+document.getElementById("groupConfirm").addEventListener("click", executeGroupBooking);
+document.getElementById("groupPlayerCount").addEventListener("input", updateGroupInfo);
+document.getElementById("groupPlayerCount").addEventListener("keydown", e => {
+  if (e.key === "Enter" && !document.getElementById("groupConfirm").disabled) executeGroupBooking();
+  if (e.key === "Escape") closeGroupModal();
+});
+
 document.getElementById("blockClose").addEventListener("click", closeBlockModal);
 document.getElementById("blockCancel").addEventListener("click", closeBlockModal);
 document.getElementById("blockModal").addEventListener("click", e => { if (e.target.id === "blockModal") closeBlockModal(); });
