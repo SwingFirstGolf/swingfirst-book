@@ -2759,6 +2759,7 @@ function editBooking(slot, pi) {
     focusPi: pi,
     groupIndices,
     players: slot.players.map(p => p ? {...p} : null),
+    courseName: currentCourseName,
   };
   localStorage.setItem("sf_edit_data", JSON.stringify(editData));
   window.open("swingfirst-edit-booking.html", "_blank");
