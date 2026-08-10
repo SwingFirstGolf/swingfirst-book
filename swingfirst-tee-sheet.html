@@ -3388,14 +3388,14 @@ const PASS_TYPES = {
 };
 const SFC_WINDOW_DAYS = 7; // SFC rate requires booking within 7 days of tee time
 
-// Course abbreviations for AP home-course labels
+// Course abbreviations for AP home-course labels (only courses that offer Annual Passes)
 const AP_COURSE_ABBR = {
-  'palmbrook':         'PH',
-  'coyote-lakes':      'CL',
-  'union-hills':       'UH',
-  'san-tan-highlands': 'ST',
-  'six-shooter':       'SS',
-  'briarwood-cc':      'BW',
+  'san-tan-highlands': 'ST',   // APST
+  'coyote-lakes':      'CL',   // APCL
+  'palmbrook':         'PB',   // APPB
+  'union-hills':       'UH',   // APUH
+  'scottsdale-cc':     'CC',   // APCC
+  // No AP at briarwood-cc or six-shooter
 };
 
 function getPassType(rateType) {
