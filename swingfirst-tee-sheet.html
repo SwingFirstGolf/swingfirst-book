@@ -723,6 +723,10 @@
   <div class="ctx-item" data-action="blockTime" id="ctxBlockItem"><span class="ctx-ico">🚫</span> Block Tee Time</div>
   <div class="ctx-item" data-action="teeOff" id="ctxTeeOffItem"><span class="ctx-ico">🏌️</span> Tee Off</div>
   <div class="ctx-item" data-action="overridePrice" id="ctxPriceItem"><span class="ctx-ico">💰</span> Override Price</div>
+  <div class="ctx-sep" id="ctxClipSep"></div>
+  <div class="ctx-item" data-action="copyBooking" id="ctxCopyItem"><span class="ctx-ico">📋</span> Copy Booking</div>
+  <div class="ctx-item" data-action="cutBooking"  id="ctxCutItem"><span class="ctx-ico">✂️</span> Cut Booking</div>
+  <div class="ctx-item" data-action="pasteBooking" id="ctxPasteItem"><span class="ctx-ico">📋</span> <span id="ctxPasteLabel">Paste Booking</span></div>
   <div class="ctx-sep" id="ctxDangerSep"></div>
   <div class="ctx-item" data-action="groupBooking" id="ctxGroupItem"><span class="ctx-ico">👥</span> Group Booking</div>
   <div class="ctx-item ctx-danger" data-action="cancelResv" id="ctxCancelItem"><span class="ctx-ico">✕</span> Cancel Booking</div>
@@ -943,6 +947,7 @@ let _mainCourseSlug = null; // saved 18-hole slug while in 9-hole view
 let _viewingB9      = false;// true when the 9-hole tab is active & loaded
 let _syncPaused     = false;// sync_paused state for the current facility
 let _facilitySlug   = null; // facility_slug for the current course
+let _clipboard      = null; // { players: [...], rateCents, notes } for copy/paste across days
 
 function setSheetMode(mode) {
   sheetMode = mode;
@@ -1986,10 +1991,19 @@ function openCtxMenu(e, slot, si) {
   show("ctxTeeOffItem",   !isBlocked);
   show("ctxPriceItem",    !isBlocked);
   const hasBookings = slot.players.some(Boolean);
+  // Copy / Cut / Paste
+  show("ctxCopyItem",   !isBlocked && hasBookings);
+  show("ctxCutItem",    !isBlocked && hasBookings);
+  show("ctxPasteItem",  !isBlocked && !hasBookings && !!_clipboard);
+  show("ctxClipSep",    !isBlocked && (hasBookings || (!hasBookings && !!_clipboard)));
+  if (_clipboard) {
+    const names = _clipboard.players.filter(Boolean).map(p => p.name.split(" ")[0]).join(", ");
+    document.getElementById("ctxPasteLabel").textContent = `Paste — ${names}`;
+  }
   show("ctxGroupItem",    !isBlocked && !hasBookings);
   show("ctxCancelItem",   !isBlocked && hasBookings);
   show("deleteSqueezeItem", !isBlocked && !!slot.squeezed);
-  show("ctxDangerSep",    !isBlocked && (hasBookings || !!slot.squeezed));
+  show("ctxDangerSep",    !isBlocked && (hasBookings || !!slot.squeezed || (!hasBookings && !!_clipboard)));
 
   const rect = e.currentTarget.getBoundingClientRect();
   let x = rect.left, y = rect.bottom+4;
@@ -2084,7 +2098,45 @@ ctxMenu.addEventListener("click", e => {
   const { slot, si } = ctxSlot || {};
   if (!slot) { closeCtxMenu(); return; }
 
-  if (action === "groupBooking") {
+  if (action === "copyBooking") {
+    _clipboard = {
+      players: slot.players.map(p => p ? {...p} : null),
+      rateCents: slot.rateCents,
+      notes: slot.bookingNotes || "",
+    };
+    const names = _clipboard.players.filter(Boolean).map(p => p.name.split(" ")[0]).join(", ");
+    toast(`📋 Copied — ${names}. Navigate to target day and right-click an empty tee time to paste.`);
+    closeCtxMenu();
+
+  } else if (action === "cutBooking") {
+    const occ = slot.players.filter(Boolean);
+    if (!occ.length) { closeCtxMenu(); return; }
+    _clipboard = {
+      players: slot.players.map(p => p ? {...p} : null),
+      rateCents: slot.rateCents,
+      notes: slot.bookingNotes || "",
+      cut: true,
+    };
+    const names = occ.map(p => p.name.split(" ")[0]).join(", ");
+    pushUndo(`Cut booking @ ${fmt12(slot.hour, slot.minute)}`);
+    slot.players = [null, null, null, null];
+    delete slot.bookingNotes;
+    recordActivity(`Booking cut: <b>${names}</b> from ${fmt12(slot.hour, slot.minute)}`);
+    toast(`✂️ Cut — ${names}. Navigate to target day and right-click an empty tee time to paste.`);
+    renderRows(); closeCtxMenu();
+
+  } else if (action === "pasteBooking") {
+    if (!_clipboard) { closeCtxMenu(); return; }
+    pushUndo(`Paste booking @ ${fmt12(slot.hour, slot.minute)}`);
+    slot.players = _clipboard.players.map(p => p ? {...p, bookingId: null, bpId: null} : null);
+    if (_clipboard.notes) slot.bookingNotes = _clipboard.notes;
+    const names = slot.players.filter(Boolean).map(p => p.name.split(" ")[0]).join(", ");
+    recordActivity(`Booking pasted: <b>${names}</b> → ${fmt12(slot.hour, slot.minute)}`);
+    toast(`📋 Pasted — ${names} → ${fmt12(slot.hour, slot.minute)}`);
+    _clipboard = null; // consume clipboard after paste
+    renderRows(); closeCtxMenu();
+
+  } else if (action === "groupBooking") {
     openGroupModal(slot); // closes ctx menu internally
 
   } else if (action === "teeOff") {
