@@ -528,6 +528,50 @@
   .trash-btn-badge.visible { display: block; }
   .trash-overlay { position: fixed; inset: 0; z-index: 299; display: none; background: rgba(13,31,23,.25); }
   .trash-overlay.open { display: block; }
+  /* ─── Customer Drawer ─── */
+  .cust-drawer { position: fixed; top: 0; right: 0; bottom: 0; width: 400px; background: var(--card); border-left: 1px solid var(--line); box-shadow: -4px 0 28px rgba(13,31,23,.15); z-index: 350; transform: translateX(100%); transition: transform 240ms cubic-bezier(.4,0,.2,1); display: flex; flex-direction: column; }
+  .cust-drawer.open { transform: translateX(0); }
+  .cust-head { display: flex; align-items: center; justify-content: space-between; padding: 15px 16px 13px; border-bottom: 1px solid var(--line); flex-shrink: 0; }
+  .cust-head-title { font-size: 14px; font-weight: 700; color: var(--ink); }
+  .cust-head-close { border: 0; background: 0; color: var(--ink-muted); font-size: 17px; padding: 3px 7px; border-radius: 6px; cursor: pointer; }
+  .cust-head-close:hover { background: var(--slate-100); color: var(--ink); }
+  .cust-search-wrap { padding: 12px 14px; border-bottom: 1px solid var(--line); flex-shrink: 0; }
+  .cust-search-input { width: 100%; box-sizing: border-box; padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px; font-size: 13px; background: var(--surface); color: var(--ink); outline: none; }
+  .cust-search-input:focus { border-color: var(--green-600); box-shadow: 0 0 0 2px rgba(22,163,74,.15); }
+  .cust-body { flex: 1; overflow-y: auto; }
+  .cust-empty { padding: 36px 20px; text-align: center; color: var(--ink-muted); font-size: 13px; line-height: 1.6; }
+  /* Results */
+  .cust-result { padding: 10px 14px; border-bottom: 1px solid var(--line); cursor: pointer; }
+  .cust-result:hover { background: var(--green-50); }
+  .cust-result-name { font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 3px; }
+  .cust-result-meta { font-size: 11px; color: var(--ink-muted); display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+  .cust-badge { display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; }
+  .cust-badge-sf   { background: #ede9fe; color: #5b21b6; border: 1px solid #ddd6fe; }
+  .cust-badge-rate { background: var(--green-50); color: var(--green-900); border: 1px solid var(--green-200); }
+  /* Profile */
+  .cust-profile { padding: 14px 16px; }
+  .cust-back { background: none; border: none; color: var(--green-700); font-size: 12px; font-weight: 600; cursor: pointer; padding: 0; margin-bottom: 14px; display: flex; align-items: center; gap: 4px; }
+  .cust-profile-name { font-size: 19px; font-weight: 800; color: var(--ink); margin-bottom: 12px; }
+  .cust-stat-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+  .cust-stat-card { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+  .cust-stat-card .k { font-size: 10px; color: var(--ink-muted); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+  .cust-stat-card .v { font-size: 18px; font-weight: 800; color: var(--ink); margin-top: 2px; }
+  .cust-stat-card .sub { font-size: 10px; color: var(--ink-muted); margin-top: 1px; }
+  .cust-section-head { font-size: 10px; font-weight: 700; color: var(--ink-muted); text-transform: uppercase; letter-spacing: .07em; margin: 14px 0 7px; }
+  .cust-member-card { border-radius: 8px; padding: 11px 14px; margin-bottom: 10px; border: 1px solid var(--line); }
+  .cust-member-card.sf { border-color: #7c3aed; background: #f5f3ff; }
+  .cust-member-card.public { background: var(--surface); }
+  .cust-member-type { font-size: 13px; font-weight: 700; }
+  .cust-member-note { font-size: 11px; color: var(--ink-muted); margin-top: 4px; line-height: 1.5; }
+  .cust-booking-row { display: flex; justify-content: space-between; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid var(--line); gap: 8px; }
+  .cust-booking-left { flex: 1; min-width: 0; }
+  .cust-booking-date { font-size: 12px; font-weight: 600; color: var(--ink); }
+  .cust-booking-course { font-size: 11px; color: var(--ink-muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cust-booking-right { text-align: right; flex-shrink: 0; }
+  .cust-booking-rate { font-size: 11px; font-weight: 600; }
+  .cust-window-ok   { font-size: 10px; color: var(--green-700); font-weight: 600; margin-top: 2px; }
+  .cust-window-warn { font-size: 10px; color: #d97706; font-weight: 600; margin-top: 2px; }
+  .cust-window-na   { font-size: 10px; color: var(--ink-muted); margin-top: 2px; }
   .trash-drawer { position: fixed; top: 0; right: 0; bottom: 0; width: 310px; background: var(--card); border-left: 1px solid var(--line); box-shadow: -4px 0 24px rgba(13,31,23,.13); z-index: 300; transform: translateX(100%); transition: transform 240ms cubic-bezier(.4,0,.2,1); display: flex; flex-direction: column; }
   .trash-drawer.open { transform: translateX(0); }
   .trash-drawer-head { display: flex; align-items: flex-start; justify-content: space-between; padding: 15px 16px 13px; border-bottom: 1px solid var(--line); flex-shrink: 0; }
@@ -702,6 +746,20 @@
 <div class="undo-bar" id="undoBar">
   <span id="undoBarText">Player removed</span>
   <button class="undo-bar-btn" id="undoBarBtn">↩ Undo</button>
+</div>
+
+<!-- Customer drawer -->
+<div class="cust-drawer" id="custDrawer">
+  <div class="cust-head">
+    <div class="cust-head-title">👥 Customer Lookup</div>
+    <button class="cust-head-close" id="custDrawerClose">✕</button>
+  </div>
+  <div class="cust-search-wrap">
+    <input type="text" class="cust-search-input" id="custSearchInput" placeholder="Search by name…" autocomplete="off" spellcheck="false"/>
+  </div>
+  <div class="cust-body" id="custBody">
+    <div class="cust-empty">Type a name to look up a customer.<br><span style="font-size:12px">Shows booking history across all SwingFirst courses.</span></div>
+  </div>
 </div>
 
 <!-- Trash drawer -->
@@ -3292,6 +3350,233 @@ async function restorePlayer(bpId, bookingId, playerName, btn) {
   if (closeEl) closeEl.addEventListener('click', closeTrash);
   if (overlay) overlay.addEventListener('click', closeTrash);
 })();
+
+// ─── Customer Drawer ─────────────────────────────────────────────
+// Rate types that indicate a SwingFirst card or summer pass holder
+const SF_RATE_RE = /member|sf|swing|pass|summer/i;
+const SF_WINDOW_DAYS = 8; // SwingFirst cards: must book within 8 days of tee time
+
+function openCustomerDrawer() {
+  document.getElementById('custDrawer').classList.add('open');
+  setTimeout(() => { const el = document.getElementById('custSearchInput'); if (el) { el.focus(); el.select(); } }, 250);
+}
+function closeCustomerDrawer() {
+  document.getElementById('custDrawer').classList.remove('open');
+}
+document.getElementById('custDrawerClose').addEventListener('click', closeCustomerDrawer);
+
+// Wire up "Customers" nav link
+document.querySelector('.nav-item[href="#"]')?.closest('.nav-group');
+document.querySelectorAll('.nav-item').forEach(link => {
+  if (link.textContent.trim().includes('Customers')) {
+    link.addEventListener('click', e => { e.preventDefault(); openCustomerDrawer(); });
+  }
+});
+
+// Search (debounced 300ms)
+let _custSearchTimer = null;
+let _custLastQuery   = '';
+document.getElementById('custSearchInput').addEventListener('input', e => {
+  clearTimeout(_custSearchTimer);
+  const q = e.target.value.trim();
+  if (q.length < 2) {
+    document.getElementById('custBody').innerHTML = '<div class="cust-empty">Type at least 2 characters to search.</div>';
+    return;
+  }
+  document.getElementById('custBody').innerHTML = '<div class="cust-empty">Searching…</div>';
+  _custLastQuery = q;
+  _custSearchTimer = setTimeout(() => custSearch(q), 300);
+});
+
+async function custSearch(query) {
+  try {
+    const enc = encodeURIComponent(query);
+    // Fetch booking_players rows matching name, with nested booking + tee_time + course
+    const url = `${SB_URL}/rest/v1/booking_players?name=ilike.*${enc}*` +
+      `&select=name,rate_type,status,price_cents,bookings(created_at,tee_times(date,courses(name)))` +
+      `&order=name.asc&limit=500`;
+    const resp = await fetch(url, { headers: SB_H });
+    const rows = await resp.json();
+
+    if (!Array.isArray(rows) || !rows.length) {
+      document.getElementById('custBody').innerHTML = `<div class="cust-empty">No customers found matching "<b>${query}</b>".<br><span style="font-size:12px">Only players with past bookings appear here.</span></div>`;
+      return;
+    }
+
+    // Deduplicate by normalised name
+    const byName = {};
+    for (const row of rows) {
+      const key = (row.name || '').trim().toLowerCase();
+      if (!key) continue;
+      if (!byName[key]) byName[key] = { name: row.name.trim(), bookings: [], rates: new Set() };
+      const rateType = row.rate_type || 'Public';
+      byName[key].rates.add(rateType);
+      const date = row.bookings?.tee_times?.date;
+      if (date) byName[key].bookings.push({ date, rate_type: rateType, course: row.bookings?.tee_times?.courses?.name, created_at: row.bookings?.created_at });
+    }
+
+    const customers = Object.values(byName).sort((a, b) => a.name.localeCompare(b.name));
+    const body = document.getElementById('custBody');
+    body.innerHTML = `<div style="padding:8px 14px 6px;font-size:11px;color:var(--ink-muted)">${customers.length} customer${customers.length !== 1 ? 's' : ''} found</div>`;
+
+    for (const c of customers) {
+      const sorted = c.bookings.sort((a, b) => b.date.localeCompare(a.date));
+      const last   = sorted[0];
+      const isSF   = [...c.rates].some(r => SF_RATE_RE.test(r));
+      const div = document.createElement('div');
+      div.className = 'cust-result';
+      div.innerHTML =
+        `<div class="cust-result-name">${c.name}</div>` +
+        `<div class="cust-result-meta">` +
+          (isSF ? `<span class="cust-badge cust-badge-sf">SF Member</span>` : '') +
+          [...c.rates].slice(0,3).map(r => `<span class="cust-badge cust-badge-rate">${r}</span>`).join('') +
+          `<span>· ${c.bookings.length} booking${c.bookings.length !== 1 ? 's' : ''}` +
+          (last ? ` · Last: ${custFmtDate(last.date)}` : '') +
+          `</span></div>`;
+      div.addEventListener('click', () => custShowProfile(c.name));
+      body.appendChild(div);
+    }
+  } catch(err) {
+    console.error('custSearch error:', err);
+    document.getElementById('custBody').innerHTML = '<div class="cust-empty">Error loading results. Please try again.</div>';
+  }
+}
+
+async function custShowProfile(name) {
+  document.getElementById('custBody').innerHTML = '<div class="cust-empty">Loading profile…</div>';
+  try {
+    const enc = encodeURIComponent(name);
+    const url = `${SB_URL}/rest/v1/booking_players?name=eq.${enc}` +
+      `&select=name,rate_type,status,price_cents,bookings(created_at,status,tee_times(date,hour,minute,courses(name,slug)))` +
+      `&limit=200`;
+    const resp = await fetch(url, { headers: SB_H });
+    const rows = await resp.json();
+
+    // Build sorted history
+    const history = rows.map(row => {
+      const b       = row.bookings;
+      const teeDate = b?.tee_times?.date;
+      const created = b?.created_at;
+      const daysOut = (teeDate && created)
+        ? Math.round((new Date(teeDate) - new Date(created)) / 86400000)
+        : null;
+      return {
+        date:       teeDate,
+        hour:       b?.tee_times?.hour,
+        minute:     b?.tee_times?.minute,
+        course:     b?.tee_times?.courses?.name || 'Unknown course',
+        rate_type:  row.rate_type || 'Public',
+        status:     row.status,
+        price_cents:row.price_cents,
+        daysOut,
+        created_at: created,
+      };
+    }).filter(h => h.date).sort((a, b) => b.date.localeCompare(a.date));
+
+    // Rate type frequency
+    const rateCounts = {};
+    history.forEach(h => { rateCounts[h.rate_type] = (rateCounts[h.rate_type] || 0) + 1; });
+    const isSF = Object.keys(rateCounts).some(r => SF_RATE_RE.test(r));
+
+    // Membership expiry heuristic: Sept 30 of current year, or last year if we're past it
+    const now = new Date();
+    const expiryYear = (now.getMonth() >= 9) ? now.getFullYear() : now.getFullYear();
+    const expiryDate = new Date(expiryYear, 8, 30); // Sept 30
+    const expired    = isSF && now > expiryDate;
+
+    const body = document.getElementById('custBody');
+    body.innerHTML = `
+      <div class="cust-profile">
+        <button class="cust-back" id="custBackBtn">← Back to results</button>
+        <div class="cust-profile-name">${name}</div>
+
+        <div class="cust-stat-row">
+          <div class="cust-stat-card">
+            <div class="k">Bookings</div>
+            <div class="v">${history.length}</div>
+            <div class="sub">across all courses</div>
+          </div>
+          <div class="cust-stat-card">
+            <div class="k">Last Visit</div>
+            <div class="v" style="font-size:13px;padding-top:5px">${history[0] ? custFmtDate(history[0].date) : '—'}</div>
+            <div class="sub">${history[0]?.course || ''}</div>
+          </div>
+        </div>
+
+        <div class="cust-section-head">SwingFirst Membership</div>
+        <div class="cust-member-card ${isSF ? 'sf' : 'public'}">
+          <div class="cust-member-type" style="color:${isSF ? '#5b21b6' : 'var(--ink-muted)'}">
+            ${isSF ? '✅ SwingFirst Card / Member' : '⚪ No member rate on file'}
+          </div>
+          <div class="cust-member-note">
+            ${isSF
+              ? `Cards &amp; Summer Passes expire Sept 30${expired ? ` — <b style="color:var(--rose-700)">EXPIRED</b>` : `, ${expiryYear} — Active`}.<br>Booking window: must book within ${SF_WINDOW_DAYS} days of tee time.`
+              : 'Books at public rates. No booking window restriction.'}
+          </div>
+        </div>
+
+        <div class="cust-section-head">Rate Types Used</div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:14px">
+          ${Object.entries(rateCounts).sort((a,b)=>b[1]-a[1]).map(([r,c])=>
+            `<span class="cust-badge ${SF_RATE_RE.test(r) ? 'cust-badge-sf' : 'cust-badge-rate'}">${r} <strong>(${c})</strong></span>`
+          ).join('')}
+        </div>
+
+        <div class="cust-section-head">Booking History ${history.length > 30 ? '(showing last 30)' : ''}</div>
+        <div id="custHistList"></div>
+      </div>
+    `;
+
+    document.getElementById('custBackBtn').addEventListener('click', () => {
+      const q = document.getElementById('custSearchInput').value.trim();
+      if (q.length >= 2) custSearch(q);
+      else document.getElementById('custBody').innerHTML = '<div class="cust-empty">Type a name to look up a customer.</div>';
+    });
+
+    const listEl = document.getElementById('custHistList');
+    if (!history.length) {
+      listEl.innerHTML = '<div class="cust-empty" style="padding:16px 0">No booking history found.</div>';
+    } else {
+      history.slice(0, 30).forEach(h => {
+        const sfRate  = SF_RATE_RE.test(h.rate_type);
+        let windowEl  = '';
+        if (h.daysOut !== null) {
+          if (sfRate) {
+            if (h.daysOut <= SF_WINDOW_DAYS) {
+              windowEl = `<div class="cust-window-ok">✓ Booked ${h.daysOut}d out — within window</div>`;
+            } else {
+              windowEl = `<div class="cust-window-warn">⚠ Booked ${h.daysOut}d out — outside ${SF_WINDOW_DAYS}d window</div>`;
+            }
+          } else {
+            windowEl = `<div class="cust-window-na">Booked ${h.daysOut}d out</div>`;
+          }
+        }
+        const div = document.createElement('div');
+        div.className = 'cust-booking-row';
+        div.innerHTML =
+          `<div class="cust-booking-left">` +
+            `<div class="cust-booking-date">${custFmtDate(h.date)}${h.hour !== undefined ? ' · ' + fmt12(h.hour, h.minute ?? 0) : ''}</div>` +
+            `<div class="cust-booking-course">${h.course}</div>` +
+          `</div>` +
+          `<div class="cust-booking-right">` +
+            `<div class="cust-booking-rate" style="color:${sfRate ? '#5b21b6' : 'var(--ink-muted)'}">${h.rate_type}</div>` +
+            windowEl +
+          `</div>`;
+        listEl.appendChild(div);
+      });
+    }
+  } catch(err) {
+    console.error('custShowProfile error:', err);
+    document.getElementById('custBody').innerHTML = '<div class="cust-empty">Error loading profile. Please try again.</div>';
+  }
+}
+
+function custFmtDate(dateStr) {
+  if (!dateStr) return '—';
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${months[m-1]} ${d}, ${y}`;
+}
 </script>
 </body>
 </html>
