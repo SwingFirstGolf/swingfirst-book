@@ -520,6 +520,15 @@
   .sel-bar { display: none; align-items: center; gap: 10px; padding: 7px 12px; background: var(--green-50); border: 1px solid var(--green-200); border-radius: var(--radius-sm); font-size: 12px; color: var(--green-700); font-weight: 600; margin-bottom: 10px; }
   .sel-bar.visible { display: flex; }
   .sel-bar button { border: 0; background: transparent; color: var(--green-700); font-size: 12px; font-weight: 700; padding: 0; cursor: pointer; margin-left: auto; }
+  /* Bulk block bar */
+  .bulk-bar { display: none; align-items: center; gap: 10px; padding: 7px 12px; background: #f5f3ff; border: 1px solid #c4b5fd; border-radius: var(--radius-sm); font-size: 12px; color: #5b21b6; font-weight: 600; margin-bottom: 10px; user-select: none; }
+  .bulk-bar.visible { display: flex; }
+  .bulk-bar-range { font-weight: 400; opacity: .75; }
+  .bulk-bar-block { border: none; background: var(--rose-700); color: #fff; font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 6px; cursor: pointer; }
+  .bulk-bar-block:hover { background: #b91c1c; }
+  .bulk-bar-clear { border: 0; background: transparent; color: #5b21b6; font-size: 12px; font-weight: 700; padding: 0; cursor: pointer; margin-left: auto; }
+  /* Time cell block-selection highlight */
+  .row-time.bsel { background: #ede9fe !important; color: #5b21b6 !important; outline: 2px solid #7c3aed; outline-offset: -2px; font-weight: 700; }
 
   /* ─── Trash drawer ─── */
   .undo-main-btn { display: inline-flex; align-items: center; gap: 4px; padding: 4px 11px; border-radius: 999px; background: rgba(0,0,0,.15); color: inherit; font-size: 12px; font-weight: 600; border: 1px solid rgba(255,255,255,.3); cursor: pointer; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; transition: opacity 180ms; }
@@ -698,6 +707,15 @@
       <span id="selCount">0 players selected</span>
       <span style="color:var(--ink-muted);font-weight:400">— drag any selected cell to move the group</span>
       <button id="selClear">✕ Clear</button>
+    </div>
+
+    <div class="bulk-bar" id="bulkBar">
+      <span>🚫</span>
+      <span id="bulkBarCount">0 tee times selected</span>
+      <span class="bulk-bar-range" id="bulkBarRange"></span>
+      <span style="color:#7c3aed;font-weight:400;font-size:11px">— Ctrl+click or drag the time column to select</span>
+      <button class="bulk-bar-block" id="bulkBlockBtn">Block Selected</button>
+      <button class="bulk-bar-clear" id="bulkClearBtn">✕ Clear</button>
     </div>
 
     <div class="sheet" id="sheet">
@@ -1016,6 +1034,14 @@ let _viewingB9      = false;// true when the 9-hole tab is active & loaded
 let _syncPaused     = false;// sync_paused state for the current facility
 let _facilitySlug   = null; // facility_slug for the current course
 let _clipboard      = null; // { players: [...], rateCents, notes } for copy/paste across days
+
+// ── Bulk block selection state ───────────────────────────────────
+const blockSel      = new Set(); // slot IDs selected for bulk block
+let blockSelAnchor  = null;      // slot.id used as range anchor
+let _bselDown       = false;     // mouse is held on time column
+let _bselDragAnchor = null;      // slot.id where drag started
+let _bselDragActive = false;     // at least two cells visited → drag mode
+document.addEventListener("mouseup", () => { _bselDown = false; });
 
 function setSheetMode(mode) {
   sheetMode = mode;
@@ -1440,6 +1466,50 @@ function toggleSelect(slotId, pi) {
   renderRows();
 }
 function clearSelection() { sel.slotId = null; sel.indices.clear(); updateSelBar(); renderRows(); }
+
+// ── Bulk block selection helpers ─────────────────────────────────
+function setBSelRange(fromId, toId) {
+  const slots  = state.slots;
+  const fromIdx = slots.findIndex(s => s.id === fromId);
+  const toIdx   = slots.findIndex(s => s.id === toId);
+  if (fromIdx === -1 || toIdx === -1) return;
+  const [lo, hi] = fromIdx <= toIdx ? [fromIdx, toIdx] : [toIdx, fromIdx];
+  blockSel.clear();
+  for (let i = lo; i <= hi; i++) blockSel.add(slots[i].id);
+  blockSelAnchor = fromId;
+  updateBulkBar();
+}
+
+function clearBSel() {
+  blockSel.clear();
+  blockSelAnchor  = null;
+  _bselDragActive = false;
+  _bselDown       = false;
+  updateBulkBar();
+}
+
+function updateBulkBar() {
+  const bar = document.getElementById('bulkBar');
+  if (blockSel.size === 0) { bar.classList.remove('visible'); renderRows(); return; }
+  bar.classList.add('visible');
+  document.getElementById('bulkBarCount').textContent =
+    `${blockSel.size} tee time${blockSel.size !== 1 ? 's' : ''} selected`;
+  const selSlots = state.slots
+    .filter(s => blockSel.has(s.id))
+    .sort((a, b) => (a.hour * 60 + a.minute) - (b.hour * 60 + b.minute));
+  const rangeStr = selSlots.length > 1
+    ? `${fmt12(selSlots[0].hour, selSlots[0].minute)} – ${fmt12(selSlots[selSlots.length-1].hour, selSlots[selSlots.length-1].minute)}`
+    : fmt12(selSlots[0].hour, selSlots[0].minute);
+  document.getElementById('bulkBarRange').textContent = rangeStr;
+  renderRows();
+}
+
+document.getElementById('bulkClearBtn').addEventListener('click', clearBSel);
+document.getElementById('bulkBlockBtn').addEventListener('click', () => {
+  const slots = state.slots.filter(s => blockSel.has(s.id));
+  if (!slots.length) return;
+  openBlockModal(slots);
+});
 function updateSelBar() {
   const bar = document.getElementById("selBar");
   if (sel.indices.size > 0) {
@@ -1764,13 +1834,47 @@ function renderRows() {
       });
     }
 
-    // Time cell (clickable → context menu) — coloured by time of day
+    // Time cell (clickable → context menu; ctrl/drag → bulk block selection)
     const _todOp = timeOfDayStyle(slot.hour, slot.minute);
     const te = document.createElement("div");
-    te.className = "row-time";
+    const _isBSel = blockSel.has(slot.id);
+    te.className = "row-time" + (_isBSel ? " bsel" : "");
     te.style.cssText = `background:${_todOp.bg};color:${_todOp.color};transition:background .3s;`;
     te.innerHTML = `<span class="time-text">${fmt12(slot.hour,slot.minute)}</span>`;
-    te.addEventListener("click", e => { e.stopPropagation(); openCtxMenu(e, slot, si); });
+
+    te.addEventListener("mousedown", e => {
+      if (e.button !== 0) return;
+      _bselDown      = true;
+      _bselDragAnchor = slot.id;
+      _bselDragActive = false;
+    });
+    te.addEventListener("mouseenter", e => {
+      if (!_bselDown || e.buttons !== 1) return;
+      if (!_bselDragActive) {
+        // First cell entered after mousedown on a different cell → activate drag mode
+        if (slot.id !== _bselDragAnchor) {
+          _bselDragActive = true;
+          setBSelRange(_bselDragAnchor, slot.id);
+        }
+      } else {
+        setBSelRange(_bselDragAnchor, slot.id);
+      }
+    });
+    te.addEventListener("click", e => {
+      e.stopPropagation();
+      if (_bselDragActive) { _bselDragActive = false; _bselDown = false; return; }
+      _bselDown = false;
+      if (e.ctrlKey || e.metaKey) {
+        // Toggle this slot in block selection
+        if (blockSel.has(slot.id)) blockSel.delete(slot.id);
+        else { blockSel.add(slot.id); blockSelAnchor = slot.id; }
+        updateBulkBar(); return;
+      }
+      if (e.shiftKey && blockSelAnchor) {
+        setBSelRange(blockSelAnchor, slot.id); return;
+      }
+      openCtxMenu(e, slot, si);
+    });
     row.appendChild(te);
 
     // Rate
@@ -3138,15 +3242,20 @@ document.getElementById("teeOffTimeInput").addEventListener("keydown", e => { if
 
 // ─── Block Times Modal ───────────────────────────────────────────
 let blockTarget = null;
-function openBlockModal(slot) {
-  blockTarget = slot;
-  document.getElementById("blockSlotLabel").textContent = fmt12(slot.hour, slot.minute);
-  document.getElementById("blockLabel").value = slot.block_label || "";
+let blockTargets = []; // always an array now
+function openBlockModal(slotOrSlots) {
+  blockTargets = Array.isArray(slotOrSlots) ? slotOrSlots : [slotOrSlots];
+  blockTarget  = blockTargets[0]; // keep legacy ref for blockSave
+  const sorted = [...blockTargets].sort((a,b)=>(a.hour*60+a.minute)-(b.hour*60+b.minute));
+  document.getElementById("blockSlotLabel").textContent = blockTargets.length > 1
+    ? `${blockTargets.length} tee times (${fmt12(sorted[0].hour,sorted[0].minute)} – ${fmt12(sorted[sorted.length-1].hour,sorted[sorted.length-1].minute)})`
+    : fmt12(sorted[0].hour, sorted[0].minute);
+  document.getElementById("blockLabel").value = blockTargets.length === 1 ? (blockTargets[0].block_label || "") : "";
   document.getElementById("blockModal").classList.add("open");
   setTimeout(() => document.getElementById("blockLabel").focus(), 100);
   closeCtxMenu();
 }
-function closeBlockModal() { document.getElementById("blockModal").classList.remove("open"); blockTarget = null; }
+function closeBlockModal() { document.getElementById("blockModal").classList.remove("open"); blockTargets = []; blockTarget = null; }
 // Group Booking modal wiring
 document.getElementById("groupClose").addEventListener("click", closeGroupModal);
 document.getElementById("groupCancel").addEventListener("click", closeGroupModal);
@@ -3162,21 +3271,28 @@ document.getElementById("blockClose").addEventListener("click", closeBlockModal)
 document.getElementById("blockCancel").addEventListener("click", closeBlockModal);
 document.getElementById("blockModal").addEventListener("click", e => { if (e.target.id === "blockModal") closeBlockModal(); });
 document.getElementById("blockSave").addEventListener("click", () => {
-  if (!blockTarget) return;
+  if (!blockTargets.length) return;
   const label = document.getElementById("blockLabel").value.trim() || "Blocked";
-  pushUndo(`Block ${fmt12(blockTarget.hour, blockTarget.minute)}`);
-  blockTarget.players = [null, null, null, null];
-  blockTarget.status = "blocked";
-  blockTarget.block_label = label;
-  if (blockTarget._sb_id) {
-    fetch(`${SB_URL}/rest/v1/tee_times?id=eq.${blockTarget._sb_id}`, {
-      method: 'PATCH',
-      headers: { ...SB_H, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-      body: JSON.stringify({ status: 'blocked' }),
-    }).catch(e => console.warn('Block save failed:', e));
+  const sorted = [...blockTargets].sort((a,b)=>(a.hour*60+a.minute)-(b.hour*60+b.minute));
+  const rangeStr = blockTargets.length > 1
+    ? `${fmt12(sorted[0].hour,sorted[0].minute)} – ${fmt12(sorted[sorted.length-1].hour,sorted[sorted.length-1].minute)}`
+    : fmt12(sorted[0].hour, sorted[0].minute);
+  pushUndo(`Block ${rangeStr}`);
+  for (const slot of blockTargets) {
+    slot.players = [null, null, null, null];
+    slot.status = "blocked";
+    slot.block_label = label;
+    if (slot._sb_id) {
+      fetch(`${SB_URL}/rest/v1/tee_times?id=eq.${slot._sb_id}`, {
+        method: 'PATCH',
+        headers: { ...SB_H, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        body: JSON.stringify({ status: 'blocked' }),
+      }).catch(e => console.warn('Block save failed:', e));
+    }
   }
-  recordActivity(`Time blocked: <b>${label}</b> — ${fmt12(blockTarget.hour, blockTarget.minute)}`);
-  toast(`${fmt12(blockTarget.hour, blockTarget.minute)} blocked`);
+  recordActivity(`Time${blockTargets.length > 1 ? 's' : ''} blocked: <b>${label}</b> — ${rangeStr}`);
+  toast(`${blockTargets.length > 1 ? blockTargets.length + ' tee times' : rangeStr} blocked`);
+  clearBSel();
   closeBlockModal(); renderRows();
 });
 document.getElementById("blockLabel").addEventListener("keydown", e => { if (e.key === "Enter") document.getElementById("blockSave").click(); });
