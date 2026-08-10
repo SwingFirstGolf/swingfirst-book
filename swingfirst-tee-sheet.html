@@ -300,13 +300,19 @@
   .notes-tooltip {
     position: fixed; z-index: 600;
     background: #1c2b24; color: #e8f4ed;
-    padding: 7px 11px; border-radius: 8px;
+    padding: 0; border-radius: 10px;
     font-size: 12px; line-height: 1.5;
-    max-width: 240px; pointer-events: none;
-    box-shadow: 0 4px 16px rgba(0,0,0,.35);
-    display: none; white-space: pre-wrap;
+    min-width: 200px; max-width: 280px; pointer-events: none;
+    box-shadow: 0 6px 20px rgba(0,0,0,.4);
+    display: none;
   }
   .notes-tooltip.visible { display: block; }
+  .ntt-head { padding: 8px 12px 6px; border-bottom: 1px solid rgba(255,255,255,.12); font-weight: 700; font-size: 13px; }
+  .ntt-body { padding: 7px 12px 9px; display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; }
+  .ntt-k { opacity: .55; white-space: nowrap; }
+  .ntt-v { font-weight: 600; }
+  .ntt-sep { grid-column: 1/-1; height: 1px; background: rgba(255,255,255,.1); margin: 4px 0; }
+  .ntt-plain { padding: 7px 12px 9px; white-space: pre-wrap; }
 
   /* ── Player right-click context menu ── */
   .player-ctx {
@@ -1861,19 +1867,10 @@ function renderRows() {
             ${_triHtml}
             ${isSelected && sel.indices.size>1 ? `<div class="drag-count-badge">${sel.indices.size}</div>` : ""}
           `;
-          // Tooltip on hover
-          if (player.consolidationDir) {
-            // Consolidation arrow tooltip
-            const dirLabel = player.consolidationDir === 'up' ? 'earlier ↑' : 'later ↓';
-            cell.addEventListener("mouseenter", e => showNotesTooltip(e, `Booking moved ${dirLabel}`));
-            cell.addEventListener("mousemove",  e => moveNotesTooltip(e));
-            cell.addEventListener("mouseleave", hideNotesTooltip);
-          } else if (player.dia !== null && player.dia !== undefined) {
-            // DIA hover tooltip for Q18-synced players
-            cell.addEventListener("mouseenter", e => showNotesTooltip(e, `Booked ${player.dia} day${player.dia === 1 ? '' : 's'} in advance`));
-            cell.addEventListener("mousemove",  e => moveNotesTooltip(e));
-            cell.addEventListener("mouseleave", hideNotesTooltip);
-          }
+          // Tooltip on hover — rich player card for all booked cells
+          cell.addEventListener("mouseenter", e => showPlayerTooltip(e, player, slot));
+          cell.addEventListener("mousemove",  e => moveNotesTooltip(e));
+          cell.addEventListener("mouseleave", hideNotesTooltip);
           // Right-click → player context menu
           cell.addEventListener("contextmenu", e => {
             e.preventDefault(); e.stopPropagation();
@@ -2656,18 +2653,63 @@ function undoCheckIn(slot,pi) {
 // ─── Notes tooltip ───────────────────────────────────────────────
 const notesTooltipEl = document.getElementById("notesTooltip");
 function showNotesTooltip(e, notes) {
-  notesTooltipEl.textContent = notes;
+  notesTooltipEl.innerHTML = `<div class="ntt-plain">${notes}</div>`;
   notesTooltipEl.classList.add("visible");
   moveNotesTooltip(e);
 }
 function moveNotesTooltip(e) {
   let x = e.clientX + 14, y = e.clientY + 14;
-  if (x + 250 > window.innerWidth)  x = e.clientX - 260;
-  if (y + 80  > window.innerHeight) y = e.clientY - 60;
+  if (x + 290 > window.innerWidth)  x = e.clientX - 295;
+  if (y + 160 > window.innerHeight) y = e.clientY - 165;
   notesTooltipEl.style.left = x + "px";
   notesTooltipEl.style.top  = y + "px";
 }
 function hideNotesTooltip() { notesTooltipEl.classList.remove("visible"); }
+
+function showPlayerTooltip(e, player, slot) {
+  const rate      = player.rateType  || 'Public';
+  const pc        = player.priceCents ?? null;
+  const priceStr  = pc !== null ? money(pc) : '—';
+  const wrfStr    = pc !== null ? money(Math.round(pc * 0.04)) : '—';
+  const rateLC    = rate.toLowerCase();
+  const cartStr   = /cart/.test(rateLC)    ? '✓ Included'
+                  : /walk/.test(rateLC)    ? '✗ Walking'
+                  : null; // unknown — omit row
+
+  // Pass type badge
+  const pt        = getPassType(rate);
+  const passBadge = pt
+    ? ` <span style="font-size:9px;background:${pt.bg};color:${pt.color};padding:1px 5px;border-radius:3px;font-weight:800">${pt.abbr}</span>`
+    : '';
+
+  // Status label
+  const statusMap = { paid:'Paid ✓', checked_in:'Checked In ✓', pending:'Pending', member:'Member', no_show:'No Show' };
+  const statusStr = statusMap[player.status] || player.status || '—';
+
+  // Consolidation note
+  const movNote   = player.consolidationDir === 'up'   ? '↑ Moved earlier'
+                  : player.consolidationDir === 'down'  ? '↓ Moved later'
+                  : null;
+
+  let rows = `
+    <span class="ntt-k">Rate</span><span class="ntt-v">${rate}${passBadge}</span>
+    <span class="ntt-k">Price</span><span class="ntt-v">${priceStr}</span>
+    <span class="ntt-k">WRF 4%</span><span class="ntt-v">${wrfStr}</span>
+  `;
+  if (cartStr)  rows += `<span class="ntt-k">Cart</span><span class="ntt-v">${cartStr}</span>`;
+  rows += `<div class="ntt-sep"></div>`;
+  if (player.dia !== null && player.dia !== undefined) {
+    rows += `<span class="ntt-k">DIA</span><span class="ntt-v">DIA:${player.dia} &nbsp;<span style="opacity:.7;font-weight:400">(booked ${player.dia} day${player.dia===1?'':'s'} out)</span></span>`;
+  }
+  rows += `<span class="ntt-k">Status</span><span class="ntt-v">${statusStr}</span>`;
+  if (movNote)  rows += `<span class="ntt-k">Note</span><span class="ntt-v">${movNote}</span>`;
+
+  notesTooltipEl.innerHTML =
+    `<div class="ntt-head">${player.name}</div>` +
+    `<div class="ntt-body">${rows}</div>`;
+  notesTooltipEl.classList.add("visible");
+  moveNotesTooltip(e);
+}
 
 // ─── Player context menu ─────────────────────────────────────────
 const playerCtxEl = document.getElementById("playerCtx");
