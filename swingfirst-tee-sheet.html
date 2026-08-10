@@ -3362,7 +3362,7 @@ const PASS_TYPES = {
     color: '#1d4ed8',
     bg:    '#dbeafe',
     border:'#93c5fd',
-    note:  'Plays free. No booking window restriction. Not available at Scottsdale CC.',
+    note:  'Plays free at their home course only. Weekend & weekday tee time restrictions apply. Not available at Scottsdale CC.',
     window: false,
   },
   SFC: {
@@ -3372,7 +3372,7 @@ const PASS_TYPES = {
     color: '#5b21b6',
     bg:    '#ede9fe',
     border:'#c4b5fd',
-    note:  'Discounted play all year. Must book within 8 days of tee time to use member rate.',
+    note:  '7 day advance tee times for SFC rate to be valid.',
     window: true,
   },
   SP: {
@@ -3386,7 +3386,17 @@ const PASS_TYPES = {
     window: false,
   },
 };
-const SFC_WINDOW_DAYS = 8; // SFCs must book within this many days to qualify for member rate
+const SFC_WINDOW_DAYS = 7; // SFC rate requires booking within 7 days of tee time
+
+// Course abbreviations for AP home-course labels
+const AP_COURSE_ABBR = {
+  'palmbrook':         'PH',
+  'coyote-lakes':      'CL',
+  'union-hills':       'UH',
+  'san-tan-highlands': 'ST',
+  'six-shooter':       'SS',
+  'briarwood-cc':      'BW',
+};
 
 function getPassType(rateType) {
   if (!rateType) return null;
@@ -3508,15 +3518,16 @@ async function custShowProfile(name) {
         ? Math.round((new Date(teeDate) - new Date(created)) / 86400000)
         : null;
       return {
-        date:       teeDate,
-        hour:       b?.tee_times?.hour,
-        minute:     b?.tee_times?.minute,
-        course:     b?.tee_times?.courses?.name || 'Unknown course',
-        rate_type:  row.rate_type || 'Public',
-        status:     row.status,
-        price_cents:row.price_cents,
+        date:        teeDate,
+        hour:        b?.tee_times?.hour,
+        minute:      b?.tee_times?.minute,
+        course:      b?.tee_times?.courses?.name || 'Unknown course',
+        courseSlug:  b?.tee_times?.courses?.slug || '',
+        rate_type:   row.rate_type || 'Public',
+        status:      row.status,
+        price_cents: row.price_cents,
         daysOut,
-        created_at: created,
+        created_at:  created,
       };
     }).filter(h => h.date).sort((a, b) => b.date.localeCompare(a.date));
 
@@ -3543,8 +3554,27 @@ async function custShowProfile(name) {
         const expiredNote = (key !== 'AP' && expired)
           ? ` · <b style="color:var(--rose-700)">EXPIRED</b> (Sept 30, ${now.getFullYear()})`
           : (key !== 'AP' ? ` · Active through Sept 30, ${now.getFullYear()}` : '');
+
+        // For AP: collect unique home courses from AP-rate bookings and build APCL/APUH etc.
+        let abbrHtml = '';
+        if (key === 'AP') {
+          const apCourses = [...new Set(
+            history
+              .filter(h => getPassType(h.rate_type)?.key === 'AP')
+              .map(h => h.courseSlug)
+              .filter(Boolean)
+          )];
+          const apLabels = apCourses.map(slug => {
+            const sfx = AP_COURSE_ABBR[slug] || slug.toUpperCase().slice(0,2);
+            return `<span style="font-size:10px;font-weight:700;background:${t.color};color:#fff;padding:1px 5px;border-radius:3px;margin-left:4px">AP${sfx}</span>`;
+          }).join('');
+          abbrHtml = apLabels || `<span style="font-size:10px;font-weight:700;background:${t.color};color:#fff;padding:1px 5px;border-radius:3px;margin-left:4px">AP</span>`;
+        } else {
+          abbrHtml = `<span style="font-size:10px;font-weight:700;background:${t.color};color:#fff;padding:1px 5px;border-radius:3px;margin-left:4px">${t.abbr}</span>`;
+        }
+
         membershipHtml += `<div class="cust-member-card" style="border-color:${t.border};background:${t.bg};margin-bottom:8px">
-          <div class="cust-member-type" style="color:${t.color}">✅ ${t.label} <span style="font-size:10px;font-weight:700;background:${t.color};color:#fff;padding:1px 5px;border-radius:3px;margin-left:4px">${t.abbr}</span>${expiredNote}</div>
+          <div class="cust-member-type" style="color:${t.color}">✅ ${t.label} ${abbrHtml}${expiredNote}</div>
           <div class="cust-member-note" style="color:${t.color};opacity:.8">${t.note}</div>
         </div>`;
       });
@@ -3614,6 +3644,14 @@ async function custShowProfile(name) {
           }
         }
         const rateColor = pt ? pt.color : 'var(--ink-muted)';
+        // For AP bookings, show course-specific abbreviation (e.g. APCL, APUH)
+        let histBadge = '';
+        if (pt) {
+          const abbr = (pt.key === 'AP')
+            ? 'AP' + (AP_COURSE_ABBR[h.courseSlug] || h.courseSlug.toUpperCase().slice(0,2) || 'AP')
+            : pt.abbr;
+          histBadge = ` <span style="font-size:9px;background:${pt.bg};color:${pt.color};padding:1px 4px;border-radius:3px;font-weight:700;border:1px solid ${pt.border}">${abbr}</span>`;
+        }
         const div = document.createElement('div');
         div.className = 'cust-booking-row';
         div.innerHTML =
@@ -3622,7 +3660,7 @@ async function custShowProfile(name) {
             `<div class="cust-booking-course">${h.course}</div>` +
           `</div>` +
           `<div class="cust-booking-right">` +
-            `<div class="cust-booking-rate" style="color:${rateColor}">${h.rate_type}${pt ? ` <span style="font-size:9px;background:${pt.bg};color:${pt.color};padding:1px 4px;border-radius:3px;font-weight:700">${pt.abbr}</span>` : ''}</div>` +
+            `<div class="cust-booking-rate" style="color:${rateColor}">${h.rate_type}${histBadge}</div>` +
             windowEl +
           `</div>`;
         listEl.appendChild(div);
