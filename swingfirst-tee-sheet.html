@@ -1236,7 +1236,7 @@ async function loadSheetFromSupabase() {
     if (!courseId) throw new Error('Course not found: ' + slug);
     currentCourseId = courseId;
 
-    const url = `${SB_URL}/rest/v1/tee_times?select=id,hour,minute,rack_cents,status,bookings(id,lead_name,booking_ref,booking_notes,status,dia,q18_resv_id,price_schedule,booking_players(id,name,rate_type,price_cents,status,is_lead,q18_color,checked_in))&course_id=eq.${courseId}&date=eq.${date}&order=hour.asc,minute.asc`;
+    const url = `${SB_URL}/rest/v1/tee_times?select=id,hour,minute,rack_cents,status,bookings(id,lead_name,booking_ref,booking_notes,status,dia,q18_resv_id,price_schedule,locked_rate_cents,booking_players(id,name,rate_type,price_cents,status,is_lead,q18_color,checked_in))&course_id=eq.${courseId}&date=eq.${date}&order=hour.asc,minute.asc`;
     const r = await fetch(url, { headers: SB_H });
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const tees = await r.json();
@@ -1297,7 +1297,8 @@ async function loadSheetFromSupabase() {
               checkedIn:      bp.checked_in  !== null && bp.checked_in !== undefined ? bp.checked_in : null,
               dia:            booking.dia    !== null && booking.dia    !== undefined ? booking.dia   : null,
               q18ResvId:      bp.q18_resv_id || booking.q18_resv_id    || null,
-              priceSchedule:  booking.price_schedule || null,
+              priceSchedule:   booking.price_schedule   || null,
+              lockedRateCents: booking.locked_rate_cents ?? null,
             };
             activePi++;
           });
@@ -2828,6 +2829,12 @@ function showPlayerTooltip(e, player, slot) {
                 : player.consolidationDir === 'down'  ? '↓ Moved later'
                 : null;
 
+  // Locked rate & SF discount
+  const lockedCents = player.lockedRateCents ?? null;
+  const currentRackCents = slot.rateCents ?? null;
+  const isSFCardholder = /^SF\d+$/i.test(effectiveRate);
+  const sfDiscountCents = (isSFCardholder && lockedCents) ? Math.round(lockedCents * 0.85) : null;
+
   let rows = `
     <span class="ntt-k">Rate</span><span class="ntt-v">${effectiveRate}${diaTag}</span>
     <span class="ntt-k">Price</span><span class="ntt-v">${priceStr}</span>
@@ -2835,6 +2842,18 @@ function showPlayerTooltip(e, player, slot) {
   `;
   if (cartStr) rows += `<span class="ntt-k">Cart</span><span class="ntt-v">${cartStr}</span>`;
   if (player.priceSchedule) rows += `<span class="ntt-k">Schedule</span><span class="ntt-v">${player.priceSchedule}</span>`;
+
+  // Rate lock section — show when we have a locked rate
+  if (lockedCents) {
+    rows += `<div class="ntt-sep"></div>`;
+    rows += `<span class="ntt-k">Locked rate</span><span class="ntt-v">${money(lockedCents)}</span>`;
+    if (currentRackCents && currentRackCents !== lockedCents) {
+      rows += `<span class="ntt-k">Current rack</span><span class="ntt-v">${money(currentRackCents)} <span style="opacity:.6;font-size:11px;font-weight:400">(today)</span></span>`;
+    }
+    if (sfDiscountCents) {
+      rows += `<span class="ntt-k" style="color:#5b21b6">SF rate</span><span class="ntt-v" style="color:#5b21b6;font-weight:700">${money(sfDiscountCents)} <span style="opacity:.7;font-size:10px;font-weight:400">15% off locked</span></span>`;
+    }
+  }
   rows += `<div class="ntt-sep"></div>`;
   rows += `<span class="ntt-k">Status</span><span class="ntt-v">${statusStr}</span>`;
   if (movNote) rows += `<span class="ntt-k">Note</span><span class="ntt-v">${movNote}</span>`;
