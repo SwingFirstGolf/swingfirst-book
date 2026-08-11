@@ -502,13 +502,21 @@ function _acSearch(query, callback) {
     var results = Object.entries(byName).map(function(entry) {
       var name = entry[0];
       var rates = entry[1];
-      var seen = new Map();
+      // Collect membership-type rate codes (e.g. SF26, SP26) with their colours
+      var rateCodes = [];
+      var seenCodes = new Set();
       rates.forEach(function(r) {
+        if (seenCodes.has(r)) return;
         var pt = _editGetPassType(r);
-        if (pt && !seen.has(pt.abbr)) seen.set(pt.abbr, pt);
+        if (pt) { rateCodes.push({ code: r, pt: pt }); seenCodes.add(r); }
       });
-      return { name: name, pts: [...seen.values()] };
-    }).slice(0, 10);
+      // Display name as "Last, First" for quick scanning
+      var parts = name.trim().split(/\s+/);
+      var displayName = parts.length >= 2
+        ? parts[parts.length - 1] + ', ' + parts.slice(0, -1).join(' ')
+        : name;
+      return { name: name, displayName: displayName, rateCodes: rateCodes };
+    }).sort(function(a, b) { return a.displayName.localeCompare(b.displayName); }).slice(0, 10);
     _acCache[query] = results;
     callback(results);
   }).catch(function() { callback([]); });
@@ -531,10 +539,10 @@ function _acOpen(input, results) {
   results.forEach(function(item, idx) {
     var div = document.createElement('div');
     div.className = 'ac-item';
-    var badges = item.pts.map(function(pt) {
-      return '<span class="ac-badge" style="background:' + pt.bg + ';color:' + pt.color + ';border-color:' + pt.border + '">' + pt.abbr + '</span>';
+    var badges = item.rateCodes.map(function(rc) {
+      return '<span class="ac-badge" style="background:' + rc.pt.bg + ';color:' + rc.pt.color + ';border-color:' + rc.pt.border + '">' + rc.code + '</span>';
     }).join('');
-    div.innerHTML = '<span class="ac-name">' + item.name.replace(/</g,'&lt;') + '</span>' +
+    div.innerHTML = '<span class="ac-name">' + item.displayName.replace(/</g,'&lt;') + '</span>' +
                     (badges ? '<span class="ac-badges">' + badges + '</span>' : '');
     div.addEventListener('mousedown', function(e) {
       e.preventDefault(); // don't blur the input
