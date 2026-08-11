@@ -2829,7 +2829,7 @@ function showPlayerTooltip(e, player, slot) {
                 : null;
 
   let rows = `
-    <span class="ntt-k">Rate</span><span class="ntt-v">${effectiveRate}${rateBadge}${diaTag}</span>
+    <span class="ntt-k">Rate</span><span class="ntt-v">${effectiveRate}${diaTag}</span>
     <span class="ntt-k">Price</span><span class="ntt-v">${priceStr}</span>
     <span class="ntt-k">WRF 4%</span><span class="ntt-v">${wrfStr}</span>
   `;
@@ -2841,8 +2841,11 @@ function showPlayerTooltip(e, player, slot) {
   // Placeholder for async membership enrichment
   rows += `<span class="ntt-k ntt-cards-k" style="display:none">Cards</span><span class="ntt-v ntt-cards-v" style="display:none"></span>`;
 
+  const _headBadge = ratePt
+    ? ` <span style="font-size:10px;background:${ratePt.bg};color:${ratePt.color};border:1px solid ${ratePt.border};padding:1px 6px;border-radius:4px;font-weight:800;vertical-align:middle;margin-left:4px">${ratePt.abbr}</span>`
+    : '';
   notesTooltipEl.innerHTML =
-    `<div class="ntt-head">${player.name}</div>` +
+    `<div class="ntt-head">${player.name}${_headBadge}</div>` +
     `<div class="ntt-body">${rows}</div>`;
   notesTooltipEl.classList.add("visible");
   moveNotesTooltip(e);
