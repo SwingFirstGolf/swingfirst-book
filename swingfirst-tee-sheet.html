@@ -2771,6 +2771,7 @@ function moveNotesTooltip(e) {
 function hideNotesTooltip() { notesTooltipEl.classList.remove("visible"); }
 
 function showPlayerTooltip(e, player, slot) {
+  const myVersion = ++_tooltipVersion;
   const rate      = player.rateType  || 'Public';
   const pc        = player.priceCents ?? null;
   const priceStr  = pc !== null ? money(pc) : '—';
@@ -2778,19 +2779,16 @@ function showPlayerTooltip(e, player, slot) {
   const rateLC    = rate.toLowerCase();
   const cartStr   = /cart/.test(rateLC)    ? '✓ Included'
                   : /walk/.test(rateLC)    ? '✗ Walking'
-                  : null; // unknown — omit row
+                  : null;
 
-  // Pass type badge
+  // Pass type badge for this booking's rate
   const pt        = getPassType(rate);
   const passBadge = pt
     ? ` <span style="font-size:9px;background:${pt.bg};color:${pt.color};padding:1px 5px;border-radius:3px;font-weight:800">${pt.abbr}</span>`
     : '';
 
-  // Status label
   const statusMap = { paid:'Paid ✓', checked_in:'Checked In ✓', pending:'Pending', member:'Member', no_show:'No Show' };
   const statusStr = statusMap[player.status] || player.status || '—';
-
-  // Consolidation note
   const movNote   = player.consolidationDir === 'up'   ? '↑ Moved earlier'
                   : player.consolidationDir === 'down'  ? '↓ Moved later'
                   : null;
@@ -2807,12 +2805,30 @@ function showPlayerTooltip(e, player, slot) {
   }
   rows += `<span class="ntt-k">Status</span><span class="ntt-v">${statusStr}</span>`;
   if (movNote)  rows += `<span class="ntt-k">Note</span><span class="ntt-v">${movNote}</span>`;
+  // Placeholder for async membership enrichment
+  rows += `<span class="ntt-k ntt-cards-k" style="display:none">Cards</span><span class="ntt-v ntt-cards-v" style="display:none"></span>`;
 
   notesTooltipEl.innerHTML =
     `<div class="ntt-head">${player.name}</div>` +
     `<div class="ntt-body">${rows}</div>`;
   notesTooltipEl.classList.add("visible");
   moveNotesTooltip(e);
+
+  // Async: show all membership cards on file (not just the one used for this booking)
+  getPlayerMemberships(player.name).then(allPts => {
+    if (_tooltipVersion !== myVersion) return; // tooltip has moved on
+    const currentAbbr = pt?.abbr;
+    const extra = allPts.filter(p => p.abbr !== currentAbbr);
+    if (!extra.length) return;
+    const kEl = notesTooltipEl.querySelector('.ntt-cards-k');
+    const vEl = notesTooltipEl.querySelector('.ntt-cards-v');
+    if (!kEl || !vEl) return;
+    kEl.style.display = '';
+    vEl.style.display = '';
+    vEl.innerHTML = extra.map(p =>
+      `<span style="font-size:10px;background:${p.bg};color:${p.color};padding:1px 5px;border-radius:3px;font-weight:700;border:1px solid ${p.border};margin-right:3px">${p.abbr}</span>`
+    ).join('');
+  });
 }
 
 // ─── Player context menu ─────────────────────────────────────────
@@ -3510,59 +3526,124 @@ async function restorePlayer(bpId, bookingId, playerName, btn) {
 })();
 
 // ─── Customer Drawer ─────────────────────────────────────────────
-// Three SwingFirst membership types — patterns are broad until we confirm exact Quick18 rate labels.
-// Update these regexes once you can confirm the exact strings Quick18 uses for each type.
+// Membership type definitions — keyed by type code.
+// Rate type formats used by Quick18: SF<yy>, SP<yy>, <COURSE>AP<yy>, BWP<yy>, BWC<yy>
+// Legacy formats (no year suffix): STSP, STAP
 const PASS_TYPES = {
-  AP: {
-    re:    /annual.*pass|ann.*pass|passholder|annual.*holder|\bap\b/i,
-    label: 'Annual Passholder',
-    abbr:  'AP',
-    color: '#1d4ed8',
-    bg:    '#dbeafe',
-    border:'#93c5fd',
-    note:  'Plays free at their home course only. Weekend & weekday tee time restrictions apply. Not available at Scottsdale CC.',
-    window: false,
-  },
-  SFC: {
-    re:    /swing.*first|sf.*card|swingfirst|sfcard|\bsfc\b/i,
-    label: 'SwingFirst Cardholder',
-    abbr:  'SFC',
-    color: '#5b21b6',
-    bg:    '#ede9fe',
-    border:'#c4b5fd',
-    note:  '7 day advance tee times for SFC rate to be valid.',
+  SF: {
+    label:  'SwingFirst Card',
+    abbr:   'SF',
+    color:  '#5b21b6',
+    bg:     '#ede9fe',
+    border: '#c4b5fd',
+    note:   '7-day advance tee times required for SF rate to be valid.',
     window: true,
   },
   SP: {
-    re:    /summer.*pass|summer.*hold|summer.*member|\bsp\b/i,
-    label: 'Summer Passholder',
-    abbr:  'SP',
-    color: '#0f766e',
-    bg:    '#ccfbf1',
-    border:'#5eead4',
-    note:  'Plays for $20/round, May–September only. Cards expire Sept 30.',
+    label:  'Summer Passholder',
+    abbr:   'SP',
+    color:  '#0f766e',
+    bg:     '#ccfbf1',
+    border: '#5eead4',
+    note:   'Plays for $20/round, May–September only. Cards expire Sept 30.',
+    window: false,
+  },
+  AP: {
+    label:  'Annual Passholder',
+    abbr:   'AP',
+    color:  '#1d4ed8',
+    bg:     '#dbeafe',
+    border: '#93c5fd',
+    note:   'Plays free at home course only. Weekend & weekday tee time restrictions apply. Not available at Scottsdale CC or Briarwood.',
+    window: false,
+  },
+  BWP: {
+    label:  'Briarwood Premier',
+    abbr:   'BWP',
+    color:  '#92400e',
+    bg:     '#fef3c7',
+    border: '#fcd34d',
+    note:   'Briarwood Premier golf member. Valid at other SwingFirst courses.',
+    window: false,
+  },
+  BWC: {
+    label:  'Briarwood Champion',
+    abbr:   'BWC',
+    color:  '#78350f',
+    bg:     '#fef9c3',
+    border: '#fde68a',
+    note:   'Briarwood Champion golf member. Valid at other SwingFirst courses.',
     window: false,
   },
 };
-const SFC_WINDOW_DAYS = 7; // SFC rate requires booking within 7 days of tee time
+const SF_WINDOW_DAYS = 7; // SF rate requires booking within 7 days of tee time
 
-// Course abbreviations for AP home-course labels (only courses that offer Annual Passes)
-const AP_COURSE_ABBR = {
-  'san-tan-highlands': 'ST',   // APST
-  'coyote-lakes':      'CL',   // APCL
-  'palmbrook':         'PB',   // APPB
-  'union-hills':       'UH',   // APUH
-  'scottsdale-cc':     'CC',   // APCC
-  // No AP at briarwood-cc or six-shooter
-};
-
+// getPassType — returns membership info for a single rate_type string, or null.
+// For AP, abbr is course-specific (e.g. STAP, CLAP). Unrecognised member-looking
+// codes (CL26, UH26, PM25…) return key:'UNKNOWN' with a grey badge.
 function getPassType(rateType) {
   if (!rateType) return null;
-  for (const [key, t] of Object.entries(PASS_TYPES)) {
-    if (t.re.test(rateType)) return { key, ...t };
+  const r = rateType.trim();
+
+  // SwingFirst Card: SF26, SF27…
+  if (/^SF\d+$/i.test(r)) return { key: 'SF', ...PASS_TYPES.SF };
+
+  // Summer Pass: SP26, SP27, STSP (legacy San Tan Summer Pass)
+  if (/^SP\d+$|^STSP$/i.test(r)) return { key: 'SP', ...PASS_TYPES.SP };
+
+  // Annual Pass: STAP / CLAP / PBAP / UHAP (no year) or STAP27 / CLAP27 / PBAP27 / UHAP27
+  const apMatch = r.match(/^(ST|CL|PB|UH)AP(\d*)$/i);
+  if (apMatch) {
+    const cc = apMatch[1].toUpperCase();
+    return { key: 'AP', ...PASS_TYPES.AP, abbr: `${cc}AP`, label: `Annual Passholder (${cc})` };
   }
+
+  // Briarwood Premier: BWP26, BWP27…
+  if (/^BWP\d+$/i.test(r)) return { key: 'BWP', ...PASS_TYPES.BWP };
+
+  // Briarwood Champion: BWC26, BWC27…
+  if (/^BWC\d+$/i.test(r)) return { key: 'BWC', ...PASS_TYPES.BWC };
+
+  // Unclassified member-looking code: 2–5 uppercase letters + 2-digit year (e.g. CL26, UH26, PM25)
+  if (/^[A-Z]{2,5}\d{2}$/i.test(r)) {
+    return {
+      key: 'UNKNOWN', abbr: r.toUpperCase(),
+      label: `Member (${r.toUpperCase()})`,
+      color: '#374151', bg: '#f3f4f6', border: '#d1d5db',
+      note:  'Unclassified membership type — check with management.',
+      window: false,
+    };
+  }
+
   return null;
 }
+
+// ─── Membership history lookup ────────────────────────────────────
+// Returns all distinct membership types a player has ever used, deduplicated by abbr.
+// Results are cached for the session to avoid repeated fetches.
+const _membershipCache = new Map();
+async function getPlayerMemberships(name) {
+  if (!name || name.length < 2) return [];
+  const key = name.toLowerCase();
+  if (_membershipCache.has(key)) return _membershipCache.get(key);
+  try {
+    const rows = await fetch(
+      `${SB_URL}/rest/v1/booking_players?name=ilike.${encodeURIComponent(name)}&select=rate_type&limit=300`,
+      { headers: SB_H }
+    ).then(r => r.json());
+    const seen = new Map(); // abbr → pt
+    for (const { rate_type } of rows) {
+      if (!rate_type) continue;
+      const pt = getPassType(rate_type);
+      if (pt && !seen.has(pt.abbr)) seen.set(pt.abbr, pt);
+    }
+    const result = [...seen.values()];
+    _membershipCache.set(key, result);
+    return result;
+  } catch { return []; }
+}
+
+let _tooltipVersion = 0; // bump on each new tooltip to cancel stale async updates
 
 function openCustomerDrawer() {
   document.getElementById('custDrawer').classList.add('open');
@@ -3630,21 +3711,23 @@ async function custSearch(query) {
     for (const c of customers) {
       const sorted    = c.bookings.sort((a, b) => b.date.localeCompare(a.date));
       const last      = sorted[0];
-      // Identify which pass types this customer has used
-      const passKeys  = new Set();
-      [...c.rates].forEach(r => { const pt = getPassType(r); if (pt) passKeys.add(pt.key); });
+      // Identify which pass types this customer has used (keyed by abbr to preserve course-specific AP labels)
+      const passBadgeMap = new Map(); // abbr → pt
+      [...c.rates].forEach(r => {
+        const pt = getPassType(r);
+        if (pt && !passBadgeMap.has(pt.abbr)) passBadgeMap.set(pt.abbr, pt);
+      });
 
       const div = document.createElement('div');
       div.className = 'cust-result';
-      const passBadges = [...passKeys].map(k => {
-        const t = PASS_TYPES[k];
-        return `<span class="cust-badge" style="background:${t.bg};color:${t.color};border:1px solid ${t.border}">${t.abbr}</span>`;
-      }).join('');
+      const passBadges = [...passBadgeMap.values()].map(pt =>
+        `<span class="cust-badge" style="background:${pt.bg};color:${pt.color};border:1px solid ${pt.border}">${pt.abbr}</span>`
+      ).join('');
       div.innerHTML =
         `<div class="cust-result-name">${c.name}</div>` +
         `<div class="cust-result-meta">` +
           passBadges +
-          (!passKeys.size ? `<span class="cust-badge cust-badge-rate">Public</span>` : '') +
+          (!passBadgeMap.size ? `<span class="cust-badge cust-badge-rate">Public</span>` : '') +
           `<span style="margin-left:2px">· ${c.bookings.length} booking${c.bookings.length !== 1 ? 's' : ''}` +
           (last ? ` · Last: ${custFmtDate(last.date)}` : '') +
           `</span></div>`;
@@ -3693,7 +3776,7 @@ async function custShowProfile(name) {
     const rateCounts = {};
     history.forEach(h => { rateCounts[h.rate_type] = (rateCounts[h.rate_type] || 0) + 1; });
     const detectedTypes = new Set();
-    Object.keys(rateCounts).forEach(r => { const pt = getPassType(r); if (pt) detectedTypes.add(pt.key); });
+    Object.keys(rateCounts).forEach(r => { const pt = getPassType(r); if (pt && pt.key !== 'UNKNOWN') detectedTypes.add(pt.key); });
 
     const now        = new Date();
     const expiryDate = new Date(now.getFullYear(), 8, 30); // Sept 30 of current year
@@ -3713,19 +3796,18 @@ async function custShowProfile(name) {
           ? ` · <b style="color:var(--rose-700)">EXPIRED</b> (Sept 30, ${now.getFullYear()})`
           : (key !== 'AP' ? ` · Active through Sept 30, ${now.getFullYear()}` : '');
 
-        // For AP: collect unique home courses from AP-rate bookings and build APCL/APUH etc.
+        // For AP: collect unique course-specific abbrs from AP-rate bookings (e.g. STAP, CLAP)
         let abbrHtml = '';
         if (key === 'AP') {
-          const apCourses = [...new Set(
+          const apAbbrs = [...new Set(
             history
               .filter(h => getPassType(h.rate_type)?.key === 'AP')
-              .map(h => h.courseSlug)
+              .map(h => getPassType(h.rate_type)?.abbr)
               .filter(Boolean)
           )];
-          const apLabels = apCourses.map(slug => {
-            const sfx = AP_COURSE_ABBR[slug] || slug.toUpperCase().slice(0,2);
-            return `<span style="font-size:10px;font-weight:700;background:${t.color};color:#fff;padding:1px 5px;border-radius:3px;margin-left:4px">AP${sfx}</span>`;
-          }).join('');
+          const apLabels = apAbbrs.map(abbr =>
+            `<span style="font-size:10px;font-weight:700;background:${t.color};color:#fff;padding:1px 5px;border-radius:3px;margin-left:4px">${abbr}</span>`
+          ).join('');
           abbrHtml = apLabels || `<span style="font-size:10px;font-weight:700;background:${t.color};color:#fff;padding:1px 5px;border-radius:3px;margin-left:4px">AP</span>`;
         } else {
           abbrHtml = `<span style="font-size:10px;font-weight:700;background:${t.color};color:#fff;padding:1px 5px;border-radius:3px;margin-left:4px">${t.abbr}</span>`;
@@ -3791,24 +3873,20 @@ async function custShowProfile(name) {
         let windowEl = '';
         if (h.daysOut !== null) {
           if (pt?.window) {
-            // SFC: booking window check
-            if (h.daysOut <= SFC_WINDOW_DAYS) {
+            // SF: booking window check (must book within 7 days for SF rate)
+            if (h.daysOut <= SF_WINDOW_DAYS) {
               windowEl = `<div class="cust-window-ok">✓ ${h.daysOut}d out — eligible</div>`;
             } else {
-              windowEl = `<div class="cust-window-warn">⚠ ${h.daysOut}d out — outside ${SFC_WINDOW_DAYS}d window</div>`;
+              windowEl = `<div class="cust-window-warn">⚠ ${h.daysOut}d out — outside ${SF_WINDOW_DAYS}d window</div>`;
             }
           } else {
             windowEl = `<div class="cust-window-na">${h.daysOut}d advance</div>`;
           }
         }
         const rateColor = pt ? pt.color : 'var(--ink-muted)';
-        // For AP bookings, show course-specific abbreviation (e.g. APCL, APUH)
         let histBadge = '';
         if (pt) {
-          const abbr = (pt.key === 'AP')
-            ? 'AP' + (AP_COURSE_ABBR[h.courseSlug] || h.courseSlug.toUpperCase().slice(0,2) || 'AP')
-            : pt.abbr;
-          histBadge = ` <span style="font-size:9px;background:${pt.bg};color:${pt.color};padding:1px 4px;border-radius:3px;font-weight:700;border:1px solid ${pt.border}">${abbr}</span>`;
+          histBadge = ` <span style="font-size:9px;background:${pt.bg};color:${pt.color};padding:1px 4px;border-radius:3px;font-weight:700;border:1px solid ${pt.border}">${pt.abbr}</span>`;
         }
         const div = document.createElement('div');
         div.className = 'cust-booking-row';
