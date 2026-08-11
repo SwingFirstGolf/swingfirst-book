@@ -249,7 +249,9 @@
   /* Cell content — two-row layout: name on top, price centered below */
   .player-cell { flex-direction: column; align-items: flex-start; justify-content: center; gap: 1px; }
   .cell-top  { width: 100%; display: flex; align-items: center; min-width: 0; }
-  .cell-bot  { width: 100%; display: flex; justify-content: center; align-items: center; }
+  .cell-bot  { width: 100%; display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 1px; }
+  .rate-chips { display: flex; gap: 2px; flex-wrap: wrap; justify-content: center; }
+  .rate-chip  { font-size: 7px; font-weight: 800; padding: 0px 3px; border-radius: 2px; border: 1px solid; line-height: 1.5; letter-spacing: .01em; }
   .player-name  { font-size: 11px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; color: var(--ink); line-height: 1; }
   .player-rate  { display: none; }
   .player-price { font-size: 10px; font-weight: 700; color: var(--ink-muted); white-space: nowrap; }
@@ -1234,7 +1236,7 @@ async function loadSheetFromSupabase() {
     if (!courseId) throw new Error('Course not found: ' + slug);
     currentCourseId = courseId;
 
-    const url = `${SB_URL}/rest/v1/tee_times?select=id,hour,minute,rack_cents,status,bookings(id,lead_name,booking_ref,booking_notes,status,dia,q18_resv_id,booking_players(id,name,rate_type,price_cents,status,is_lead,q18_color,checked_in))&course_id=eq.${courseId}&date=eq.${date}&order=hour.asc,minute.asc`;
+    const url = `${SB_URL}/rest/v1/tee_times?select=id,hour,minute,rack_cents,status,bookings(id,lead_name,booking_ref,booking_notes,status,dia,q18_resv_id,price_schedule,booking_players(id,name,rate_type,price_cents,status,is_lead,q18_color,checked_in))&course_id=eq.${courseId}&date=eq.${date}&order=hour.asc,minute.asc`;
     const r = await fetch(url, { headers: SB_H });
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const tees = await r.json();
@@ -1273,13 +1275,16 @@ async function loadSheetFromSupabase() {
             const st = bp.status === 'paid' ? 'paid' : bp.status === 'checked_in' ? 'checked_in' : 'pending';
             // Per-reservation player count: use q18_color group if available, else whole booking
             const resvCount = bp.q18_color ? (_colorCount[bp.q18_color] || 1) : bps.length;
+            const _nr = parseNameAndRate(bp.name, bp.rate_type);
             slot.players[activePi] = {
               id:         _nextPid++,
               bpId:       bp.id,
-              name:       bp.name,
+              name:       _nr.cleanName,    // clean display name (no trailing rate code)
+              rawName:    bp.name,          // original Q18 string (for membership lookup)
               leadName:   booking.lead_name || bp.name, // authoritative name from the booking record
               status:     st,
               rateType:   bp.rate_type || 'Public',
+              rateCode:   _nr.rateCode,     // e.g. "SF26", "SP26", or null
               priceCents: bp.price_cents,
               groupLeader:        (activeBookings.length > 1 || bps.length > 1),
               bookingRef:         booking.booking_ref,
@@ -1288,10 +1293,11 @@ async function loadSheetFromSupabase() {
               consolidationDir:   booking.booking_notes === '__moved_up__'   ? 'up'   :
                                   booking.booking_notes === '__moved_down__'  ? 'down' : null,
               // Q18 sync fields
-              q18Color:    bp.q18_color   || null,
-              checkedIn:   bp.checked_in  !== null && bp.checked_in !== undefined ? bp.checked_in : null,
-              dia:         booking.dia    !== null && booking.dia    !== undefined ? booking.dia   : null,
-              q18ResvId:   bp.q18_resv_id || booking.q18_resv_id    || null,
+              q18Color:       bp.q18_color   || null,
+              checkedIn:      bp.checked_in  !== null && bp.checked_in !== undefined ? bp.checked_in : null,
+              dia:            booking.dia    !== null && booking.dia    !== undefined ? booking.dia   : null,
+              q18ResvId:      bp.q18_resv_id || booking.q18_resv_id    || null,
+              priceSchedule:  booking.price_schedule || null,
             };
             activePi++;
           });
@@ -1304,6 +1310,7 @@ async function loadSheetFromSupabase() {
 
     renderRows();
     updateTrashBadge();
+    batchLoadMemberships(); // async: pre-warm cache then re-render with membership chips
 
   } catch(e) {
     console.error('loadSheetFromSupabase:', e);
@@ -1958,6 +1965,22 @@ function renderRows() {
           const _triHtml = player.q18Color
             ? `<div class="rate-triangle" style="--tri-color:${player.q18Color}"></div>`
             : '';
+          // Rate chips: current booking code + any historical memberships from cache
+          const _cellChips = (() => {
+            const { cleanName } = parseNameAndRate(player.rawName || player.name, null);
+            const cacheKey = cleanName.toLowerCase();
+            const cached = _membershipCache.get(cacheKey) || [];
+            // Always show current booking's rateCode chip first if present
+            const currentPt = player.rateCode ? getPassType(player.rateCode) : null;
+            const chipsMap = new Map();
+            if (currentPt) chipsMap.set(currentPt.abbr, currentPt);
+            for (const pt of cached) { if (!chipsMap.has(pt.abbr)) chipsMap.set(pt.abbr, pt); }
+            if (!chipsMap.size) return '';
+            const html = [...chipsMap.values()].map(pt =>
+              `<span class="rate-chip" style="background:${pt.bg};color:${pt.color};border-color:${pt.border}">${pt.abbr}</span>`
+            ).join('');
+            return `<div class="rate-chips">${html}</div>`;
+          })();
           cell.innerHTML = `
             ${notesDot}
             <div class="cell-top">
@@ -1965,8 +1988,7 @@ function renderRows() {
             </div>
             ${_arrowBadge}
             <div class="cell-bot">
-              <div class="player-rate">${player.rateType}</div>
-              <div class="player-price">${priceEach}</div>
+              ${_cellChips || `<div class="player-price">${priceEach}</div>`}
             </div>
             ${_triHtml}
             ${isSelected && sel.indices.size>1 ? `<div class="drag-count-badge">${sel.indices.size}</div>` : ""}
@@ -2772,39 +2794,49 @@ function hideNotesTooltip() { notesTooltipEl.classList.remove("visible"); }
 
 function showPlayerTooltip(e, player, slot) {
   const myVersion = ++_tooltipVersion;
-  const rate      = player.rateType  || 'Public';
   const pc        = player.priceCents ?? null;
   const priceStr  = pc !== null ? money(pc) : '—';
   const wrfStr    = pc !== null ? money(Math.round(pc * 0.04)) : '—';
-  const rateLC    = rate.toLowerCase();
-  const cartStr   = /cart/.test(rateLC)    ? '✓ Included'
-                  : /walk/.test(rateLC)    ? '✗ Walking'
-                  : null;
 
-  // Pass type badge for this booking's rate
-  const pt        = getPassType(rate);
-  const passBadge = pt
-    ? ` <span style="font-size:9px;background:${pt.bg};color:${pt.color};padding:1px 5px;border-radius:3px;font-weight:800">${pt.abbr}</span>`
+  // Effective rate: prefer the membership code embedded in the name (e.g. "SF26"),
+  // then the stored rate_type; fall back to "Public".
+  const effectiveRate = player.rateCode || player.rateType || 'Public';
+  const ratePt = getPassType(effectiveRate);
+  const rateBadge = ratePt
+    ? ` <span style="font-size:9px;background:${ratePt.bg};color:${ratePt.color};padding:1px 5px;border-radius:3px;font-weight:800;border:1px solid ${ratePt.border}">${ratePt.abbr}</span>`
+    : '';
+  const diaTag = (player.dia !== null && player.dia !== undefined)
+    ? ` <span style="opacity:.65;font-weight:400;font-size:11px">DIA:${player.dia}</span>`
     : '';
 
-  const statusMap = { paid:'Paid ✓', checked_in:'Checked In ✓', pending:'Pending', member:'Member', no_show:'No Show' };
-  const statusStr = statusMap[player.status] || player.status || '—';
-  const movNote   = player.consolidationDir === 'up'   ? '↑ Moved earlier'
-                  : player.consolidationDir === 'down'  ? '↓ Moved later'
-                  : null;
+  const rateLC = effectiveRate.toLowerCase();
+  const cartStr = /cart/.test(rateLC) ? '✓ Included' : /walk/.test(rateLC) ? '✗ Walking' : null;
+
+  // Status: use checkedIn field for accuracy (Quick18 marks everything "paid" at booking time)
+  const statusStr = player.checkedIn === true
+    ? 'Checked In ✓'
+    : player.status === 'checked_in'
+      ? 'Checked In ✓'
+      : player.status === 'pending'
+        ? 'Pending'
+        : player.status === 'no_show'
+          ? 'No Show'
+          : 'Paid';
+
+  const movNote = player.consolidationDir === 'up'   ? '↑ Moved earlier'
+                : player.consolidationDir === 'down'  ? '↓ Moved later'
+                : null;
 
   let rows = `
-    <span class="ntt-k">Rate</span><span class="ntt-v">${rate}${passBadge}</span>
+    <span class="ntt-k">Rate</span><span class="ntt-v">${effectiveRate}${rateBadge}${diaTag}</span>
     <span class="ntt-k">Price</span><span class="ntt-v">${priceStr}</span>
     <span class="ntt-k">WRF 4%</span><span class="ntt-v">${wrfStr}</span>
   `;
-  if (cartStr)  rows += `<span class="ntt-k">Cart</span><span class="ntt-v">${cartStr}</span>`;
+  if (cartStr) rows += `<span class="ntt-k">Cart</span><span class="ntt-v">${cartStr}</span>`;
+  if (player.priceSchedule) rows += `<span class="ntt-k">Schedule</span><span class="ntt-v">${player.priceSchedule}</span>`;
   rows += `<div class="ntt-sep"></div>`;
-  if (player.dia !== null && player.dia !== undefined) {
-    rows += `<span class="ntt-k">DIA</span><span class="ntt-v">DIA:${player.dia} &nbsp;<span style="opacity:.7;font-weight:400">(booked ${player.dia} day${player.dia===1?'':'s'} out)</span></span>`;
-  }
   rows += `<span class="ntt-k">Status</span><span class="ntt-v">${statusStr}</span>`;
-  if (movNote)  rows += `<span class="ntt-k">Note</span><span class="ntt-v">${movNote}</span>`;
+  if (movNote) rows += `<span class="ntt-k">Note</span><span class="ntt-v">${movNote}</span>`;
   // Placeholder for async membership enrichment
   rows += `<span class="ntt-k ntt-cards-k" style="display:none">Cards</span><span class="ntt-v ntt-cards-v" style="display:none"></span>`;
 
@@ -2815,9 +2847,9 @@ function showPlayerTooltip(e, player, slot) {
   moveNotesTooltip(e);
 
   // Async: show all membership cards on file (not just the one used for this booking)
-  getPlayerMemberships(player.name).then(allPts => {
+  getPlayerMemberships(player.rawName || player.name, player.rateCode).then(allPts => {
     if (_tooltipVersion !== myVersion) return; // tooltip has moved on
-    const currentAbbr = pt?.abbr;
+    const currentAbbr = ratePt?.abbr;
     const extra = allPts.filter(p => p.abbr !== currentAbbr);
     if (!extra.length) return;
     const kEl = notesTooltipEl.querySelector('.ntt-cards-k');
@@ -3618,29 +3650,110 @@ function getPassType(rateType) {
   return null;
 }
 
+// ─── Name / rate parsing ──────────────────────────────────────────
+// Quick18 embeds membership codes in the player name: "Kevin Treece SF26"
+// This helper extracts the clean display name and the rate code.
+function parseNameAndRate(rawName, storedRateType) {
+  if (!rawName) return { cleanName: '', rateCode: null };
+  // If stored rate_type is itself a membership code, use it; name is already clean
+  if (storedRateType && storedRateType !== 'Public') {
+    const stored = getPassType(storedRateType);
+    if (stored) return { cleanName: rawName.trim(), rateCode: storedRateType };
+  }
+  // Otherwise check if the last word looks like a membership code
+  const parts = rawName.trim().split(/\s+/);
+  if (parts.length >= 2) {
+    const last = parts[parts.length - 1];
+    if (getPassType(last)) {
+      return { cleanName: parts.slice(0, -1).join(' '), rateCode: last };
+    }
+  }
+  return { cleanName: rawName.trim(), rateCode: null };
+}
+
 // ─── Membership history lookup ────────────────────────────────────
 // Returns all distinct membership types a player has ever used, deduplicated by abbr.
-// Results are cached for the session to avoid repeated fetches.
+// Searches by clean name (strips trailing rate code) with ILIKE prefix match.
+// Also picks up any code embedded in the current booking's name suffix.
 const _membershipCache = new Map();
-async function getPlayerMemberships(name) {
-  if (!name || name.length < 2) return [];
-  const key = name.toLowerCase();
-  if (_membershipCache.has(key)) return _membershipCache.get(key);
+async function getPlayerMemberships(rawName, rateCode) {
+  // Derive clean name from rawName (may have "SF26" suffix)
+  const { cleanName } = parseNameAndRate(rawName, null);
+  if (!cleanName || cleanName.length < 2) return [];
+  const key = cleanName.toLowerCase();
+  if (_membershipCache.has(key)) {
+    const cached = _membershipCache.get(key);
+    // If current booking has a rateCode not in cache, inject it
+    if (rateCode) {
+      const pt = getPassType(rateCode);
+      if (pt && !cached.find(p => p.abbr === pt.abbr)) {
+        const updated = [...cached, pt];
+        _membershipCache.set(key, updated);
+        return updated;
+      }
+    }
+    return cached;
+  }
   try {
+    // Use ilike prefix search: "Kevin Treece*" catches "Kevin Treece SF26"
+    const encoded = encodeURIComponent(cleanName + '*');
     const rows = await fetch(
-      `${SB_URL}/rest/v1/booking_players?name=ilike.${encodeURIComponent(name)}&select=rate_type&limit=300`,
+      `${SB_URL}/rest/v1/booking_players?name=ilike.${encoded}&select=name,rate_type&limit=500`,
       { headers: SB_H }
     ).then(r => r.json());
     const seen = new Map(); // abbr → pt
-    for (const { rate_type } of rows) {
-      if (!rate_type) continue;
-      const pt = getPassType(rate_type);
+    for (const { name: n, rate_type } of rows) {
+      // Check rate_type field
+      if (rate_type) {
+        const pt = getPassType(rate_type);
+        if (pt && !seen.has(pt.abbr)) seen.set(pt.abbr, pt);
+      }
+      // Also check last word of name for embedded codes
+      if (n) {
+        const lastWord = n.trim().split(/\s+/).pop();
+        if (lastWord) {
+          const pt2 = getPassType(lastWord);
+          if (pt2 && !seen.has(pt2.abbr)) seen.set(pt2.abbr, pt2);
+        }
+      }
+    }
+    // Also include the current booking's rateCode
+    if (rateCode) {
+      const pt = getPassType(rateCode);
       if (pt && !seen.has(pt.abbr)) seen.set(pt.abbr, pt);
     }
     const result = [...seen.values()];
     _membershipCache.set(key, result);
     return result;
   } catch { return []; }
+}
+
+// ─── Batch membership load ────────────────────────────────────────
+// Called after renderRows() to pre-warm membership cache for all visible
+// players, then re-render any cells that gained rate chips.
+let _batchMemberVersion = 0;
+async function batchLoadMemberships() {
+  const myVersion = ++_batchMemberVersion;
+  // Collect unique (rawName, rateCode) combos from current slots
+  const players = [];
+  for (const slot of state.slots) {
+    for (const p of slot.players) {
+      if (!p) continue;
+      const { cleanName } = parseNameAndRate(p.rawName || p.name, null);
+      if (cleanName && cleanName.length >= 2) {
+        const key = cleanName.toLowerCase();
+        if (!_membershipCache.has(key)) {
+          players.push({ rawName: p.rawName || p.name, rateCode: p.rateCode });
+        }
+      }
+    }
+  }
+  if (!players.length) return;
+  // Fetch all in parallel (each call sets the cache)
+  await Promise.all(players.map(({ rawName, rateCode }) => getPlayerMemberships(rawName, rateCode)));
+  if (_batchMemberVersion !== myVersion) return; // superseded
+  // Re-render so cells pick up the newly-loaded chips
+  renderRows();
 }
 
 let _tooltipVersion = 0; // bump on each new tooltip to cancel stale async updates
