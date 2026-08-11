@@ -5,6 +5,45 @@
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>SwingFirst Operator Guide</title>
 <style>
+  /* ── Edit mode ── */
+  .edit-bar {
+    position: fixed; bottom: 24px; right: 24px; z-index: 999;
+    display: flex; gap: 8px; align-items: center;
+  }
+  .edit-btn {
+    font: 600 13px/1 -apple-system, sans-serif;
+    padding: 9px 16px; border-radius: 8px; border: none; cursor: pointer;
+    transition: background .15s, opacity .15s;
+  }
+  .edit-btn-toggle {
+    background: var(--green-700); color: #fff;
+  }
+  .edit-btn-toggle:hover { background: var(--green-600); }
+  .edit-btn-toggle.active { background: #1d4ed8; }
+  .edit-btn-save {
+    background: var(--ink); color: #fff; display: none;
+  }
+  .edit-btn-save:hover { background: var(--ink-soft); }
+  .edit-mode-banner {
+    display: none; position: fixed; top: 0; left: 0; right: 0; z-index: 998;
+    background: #1d4ed8; color: #fff;
+    font: 600 13px/1 -apple-system, sans-serif;
+    padding: 10px 20px; text-align: center; letter-spacing: .01em;
+  }
+  body.editing .edit-mode-banner { display: block; }
+  body.editing .main { padding-top: 80px; }
+  body.editing [contenteditable] {
+    outline: 2px dashed rgba(29,78,216,.35);
+    outline-offset: 2px;
+    border-radius: 4px;
+    min-height: 1em;
+  }
+  body.editing [contenteditable]:focus {
+    outline-color: #1d4ed8;
+    background: rgba(219,234,254,.15);
+  }
+</style>
+<style>
   /* ── Base ── */
   :root {
     --ink:       #0d1f17;
@@ -559,6 +598,55 @@
 
   </main>
 </div>
+
+<!-- ── Edit mode banner ── -->
+<div class="edit-mode-banner">✏️ Edit mode — click any text to edit it. Click Download when done.</div>
+
+<!-- ── Edit mode controls ── -->
+<div class="edit-bar">
+  <button class="edit-btn edit-btn-save" id="btnSave" onclick="saveGuide()">⬇ Download</button>
+  <button class="edit-btn edit-btn-toggle" id="btnEdit" onclick="toggleEdit()">Edit guide</button>
+</div>
+
+<script>
+  // ── Editable regions: all headings, paragraphs, table cells, list items ──
+  const EDITABLE = 'h2, h3, p, td, li, .guide-title, .guide-sub, .guide-footer';
+
+  function toggleEdit() {
+    const isEditing = document.body.classList.toggle('editing');
+    const btn = document.getElementById('btnEdit');
+    const saveBtn = document.getElementById('btnSave');
+    btn.textContent = isEditing ? 'Done editing' : 'Edit guide';
+    btn.classList.toggle('active', isEditing);
+    saveBtn.style.display = isEditing ? '' : 'none';
+    document.querySelectorAll(EDITABLE).forEach(el => {
+      el.contentEditable = isEditing ? 'true' : 'false';
+    });
+    if (!isEditing) {
+      // Remove empty contenteditable attrs on exit
+      document.querySelectorAll('[contenteditable="false"]').forEach(el => el.removeAttribute('contenteditable'));
+    }
+  }
+
+  function saveGuide() {
+    // Snapshot current HTML (with edits applied), then strip edit-mode artifacts
+    const clone = document.documentElement.cloneNode(true);
+    // Remove contenteditable attributes from clone
+    clone.querySelectorAll('[contenteditable]').forEach(el => el.removeAttribute('contenteditable'));
+    // Remove edit bar and banner from clone
+    clone.querySelector('.edit-bar')?.remove();
+    clone.querySelector('.edit-mode-banner')?.remove();
+    // Remove editing class
+    clone.querySelector('body')?.classList.remove('editing');
+    const html = '<!doctype html>\n<html lang="en">\n' + clone.querySelector('html')?.innerHTML;
+    const blob = new Blob([document.documentElement.outerHTML], { type: 'text/html' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'swingfirst-guide.html';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+</script>
 
 </body>
 </html>
