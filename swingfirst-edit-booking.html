@@ -394,6 +394,24 @@
     .col-heads > *:nth-child(n+4),
     .player-row > *:nth-child(n+4) { display: none; }
   }
+
+  /* ── Name autocomplete ── */
+  .name-wrap { position: relative; }
+  .ac-dropdown {
+    position: absolute; top: calc(100% + 3px); left: 0; right: 0; z-index: 900;
+    background: #fff; border: 1px solid #c8d5ce; border-radius: 8px;
+    box-shadow: 0 4px 14px rgba(0,0,0,.12); overflow: hidden; max-height: 220px; overflow-y: auto;
+  }
+  .ac-item {
+    padding: 7px 11px; cursor: pointer; display: flex; align-items: center; gap: 7px;
+    font-size: 13px; border-bottom: 1px solid #f0f4f1;
+  }
+  .ac-item:last-child { border-bottom: none; }
+  .ac-item:hover, .ac-item.active { background: var(--green-50); }
+  .ac-name { font-weight: 600; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ac-badges { display: flex; gap: 3px; flex-shrink: 0; }
+  .ac-badge { font-size: 9px; font-weight: 700; padding: 1px 4px; border-radius: 3px; border: 1px solid; }
+  .ac-empty { padding: 10px 11px; color: var(--ink-muted); font-size: 12px; font-style: italic; }
 </style>
 </head>
 <body>
@@ -443,6 +461,123 @@ function esc(s) {
 }
 function todayLabel() {
   return new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+}
+
+// ── Supabase connection (for name autocomplete) ───────────────────────────────
+var SB_URL = 'https://ojgxfeaesnaohskxdvam.supabase.co';
+var SB_KEY = 'sb_publishable_4UVFMXQWGOt4XNgHVNzWoQ_Id6TBqcu';
+var SB_H   = { apikey: SB_KEY, 'Authorization': 'Bearer ' + SB_KEY };
+
+// Lightweight copy of getPassType for badge colours in autocomplete
+function _editGetPassType(r) {
+  if (!r) return null;
+  r = r.trim();
+  if (/^SF\d+$/i.test(r))        return { key:'SF',  abbr:'SF',  color:'#5b21b6', bg:'#ede9fe', border:'#c4b5fd' };
+  if (/^SP\d+$|^STSP$/i.test(r)) return { key:'SP',  abbr:'SP',  color:'#0f766e', bg:'#ccfbf1', border:'#5eead4' };
+  var ap = r.match(/^(ST|CL|PB|UH)AP(\d*)$/i);
+  if (ap) { var cc=ap[1].toUpperCase(); return { key:'AP', abbr:cc+'AP', color:'#1d4ed8', bg:'#dbeafe', border:'#93c5fd' }; }
+  if (/^BWP\d+$/i.test(r)) return { key:'BWP', abbr:'BWP', color:'#92400e', bg:'#fef3c7', border:'#fcd34d' };
+  if (/^BWC\d+$/i.test(r)) return { key:'BWC', abbr:'BWC', color:'#78350f', bg:'#fef9c3', border:'#fde68a' };
+  if (/^[A-Z]{2,5}\d{2}$/i.test(r)) return { key:'UNKNOWN', abbr:r.toUpperCase(), color:'#374151', bg:'#f3f4f6', border:'#d1d5db' };
+  return null;
+}
+
+// ── Name autocomplete ─────────────────────────────────────────────────────────
+var _acCache = {}; // query → [{name, pts}]
+var _acTimer = null;
+var _acActive = null; // currently open dropdown { el, input }
+
+function _acSearch(query, callback) {
+  if (_acCache[query]) { callback(_acCache[query]); return; }
+  fetch(
+    SB_URL + '/rest/v1/booking_players?name=ilike.' + encodeURIComponent(query) + '%25&select=name,rate_type&limit=200&order=name.asc',
+    { headers: SB_H }
+  ).then(function(r) { return r.json(); }).then(function(rows) {
+    var byName = {};
+    rows.forEach(function(row) {
+      if (!row.name) return;
+      if (!byName[row.name]) byName[row.name] = new Set();
+      if (row.rate_type) byName[row.name].add(row.rate_type);
+    });
+    var results = Object.entries(byName).map(function(entry) {
+      var name = entry[0];
+      var rates = entry[1];
+      var seen = new Map();
+      rates.forEach(function(r) {
+        var pt = _editGetPassType(r);
+        if (pt && !seen.has(pt.abbr)) seen.set(pt.abbr, pt);
+      });
+      return { name: name, pts: [...seen.values()] };
+    }).slice(0, 10);
+    _acCache[query] = results;
+    callback(results);
+  }).catch(function() { callback([]); });
+}
+
+function _acClose() {
+  if (_acActive && _acActive.el && _acActive.el.parentNode) {
+    _acActive.el.parentNode.removeChild(_acActive.el);
+  }
+  _acActive = null;
+}
+
+function _acOpen(input, results) {
+  _acClose();
+  if (!results.length) return;
+  var wrap = input.closest('.name-wrap');
+  if (!wrap) return;
+  var dd = document.createElement('div');
+  dd.className = 'ac-dropdown';
+  results.forEach(function(item, idx) {
+    var div = document.createElement('div');
+    div.className = 'ac-item';
+    var badges = item.pts.map(function(pt) {
+      return '<span class="ac-badge" style="background:' + pt.bg + ';color:' + pt.color + ';border-color:' + pt.border + '">' + pt.abbr + '</span>';
+    }).join('');
+    div.innerHTML = '<span class="ac-name">' + item.name.replace(/</g,'&lt;') + '</span>' +
+                    (badges ? '<span class="ac-badges">' + badges + '</span>' : '');
+    div.addEventListener('mousedown', function(e) {
+      e.preventDefault(); // don't blur the input
+      input.value = item.name;
+      var pi = parseInt(input.dataset.pi);
+      if (workPlayers && workPlayers[pi]) workPlayers[pi].name = item.name;
+      _acClose();
+    });
+    dd.appendChild(div);
+  });
+  wrap.appendChild(dd);
+  _acActive = { el: dd, input: input };
+}
+
+document.addEventListener('mousedown', function(e) {
+  if (_acActive && !_acActive.el.contains(e.target) && e.target !== _acActive.input) _acClose();
+});
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') _acClose();
+});
+
+// Attach autocomplete to a single .p-name input
+function _acAttach(input) {
+  // Wrap in .name-wrap if not already
+  if (!input.closest('.name-wrap')) {
+    var wrap = document.createElement('div');
+    wrap.className = 'name-wrap';
+    input.parentNode.insertBefore(wrap, input);
+    wrap.appendChild(input);
+  }
+  input.addEventListener('input', function() {
+    var q = this.value.trim();
+    clearTimeout(_acTimer);
+    if (q.length < 2) { _acClose(); return; }
+    var el = this;
+    _acTimer = setTimeout(function() {
+      _acSearch(q, function(results) { _acOpen(el, results); });
+    }, 220);
+  });
+  input.addEventListener('blur', function() {
+    // Small delay so mousedown on item fires first
+    setTimeout(_acClose, 150);
+  });
 }
 
 // ── Load or demo data ────────────────────────────────────────────────────────
@@ -609,12 +744,13 @@ function renderPlayerRows() {
   });
   wrap.innerHTML = html;
 
-  // Attach change listeners
+  // Attach change listeners + autocomplete
   wrap.querySelectorAll(".p-name").forEach(function(el) {
     el.addEventListener("input", function() {
       var i = parseInt(this.dataset.pi);
       if (workPlayers[i]) workPlayers[i].name = this.value;
     });
+    _acAttach(el);
   });
   wrap.querySelectorAll(".p-rate").forEach(function(el) {
     el.addEventListener("change", function() {
