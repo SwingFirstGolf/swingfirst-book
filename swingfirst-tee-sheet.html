@@ -3818,59 +3818,38 @@ document.getElementById('custSearchInput').addEventListener('input', e => {
 
 async function custSearch(query) {
   try {
-    const enc = encodeURIComponent(query);
-    // Fetch booking_players rows matching name, with nested booking + tee_time + course
-    const url = `${SB_URL}/rest/v1/booking_players?name=ilike.*${enc}*` +
-      `&select=name,rate_type,status,price_cents,bookings(created_at,tee_times(date,courses(name)))` +
-      `&order=name.asc&limit=500`;
+    const pat = encodeURIComponent(`*${query}*`);
+    const url = `${SB_URL}/rest/v1/q18_customers` +
+      `?select=q18_id,first_name,last_name,email,phone,reservation_count` +
+      `&or=(last_name.ilike.${pat},first_name.ilike.${pat},email.ilike.${pat},phone.ilike.${pat})` +
+      `&reservation_count=gte.1` +
+      `&order=reservation_count.desc&limit=50`;
     const resp = await fetch(url, { headers: SB_H });
     const rows = await resp.json();
 
     if (!Array.isArray(rows) || !rows.length) {
-      document.getElementById('custBody').innerHTML = `<div class="cust-empty">No customers found matching "<b>${query}</b>".<br><span style="font-size:12px">Only players with past bookings appear here.</span></div>`;
+      document.getElementById('custBody').innerHTML =
+        `<div class="cust-empty">No players found matching "<b>${_escCust(query)}</b>".</div>`;
       return;
     }
 
-    // Deduplicate by normalised name
-    const byName = {};
-    for (const row of rows) {
-      const key = (row.name || '').trim().toLowerCase();
-      if (!key) continue;
-      if (!byName[key]) byName[key] = { name: row.name.trim(), bookings: [], rates: new Set() };
-      const rateType = row.rate_type || 'Public';
-      byName[key].rates.add(rateType);
-      const date = row.bookings?.tee_times?.date;
-      if (date) byName[key].bookings.push({ date, rate_type: rateType, course: row.bookings?.tee_times?.courses?.name, created_at: row.bookings?.created_at });
-    }
-
-    const customers = Object.values(byName).sort((a, b) => a.name.localeCompare(b.name));
     const body = document.getElementById('custBody');
-    body.innerHTML = `<div style="padding:8px 14px 6px;font-size:11px;color:var(--ink-muted)">${customers.length} customer${customers.length !== 1 ? 's' : ''} found</div>`;
+    body.innerHTML = `<div style="padding:8px 14px 6px;font-size:11px;color:var(--ink-muted)">${rows.length} player${rows.length !== 1 ? 's' : ''} found${rows.length === 50 ? ' (showing top 50)' : ''}</div>`;
 
-    for (const c of customers) {
-      const sorted    = c.bookings.sort((a, b) => b.date.localeCompare(a.date));
-      const last      = sorted[0];
-      // Identify which pass types this customer has used (keyed by abbr to preserve course-specific AP labels)
-      const passBadgeMap = new Map(); // abbr → pt
-      [...c.rates].forEach(r => {
-        const pt = getPassType(r);
-        if (pt && !passBadgeMap.has(pt.abbr)) passBadgeMap.set(pt.abbr, pt);
-      });
-
+    for (const c of rows) {
+      const lastName  = (c.last_name  || '').trim();
+      const firstName = (c.first_name || '').trim();
+      const fullName  = firstName ? `${lastName}, ${firstName}` : lastName;
+      const plays     = c.reservation_count || 0;
       const div = document.createElement('div');
       div.className = 'cust-result';
-      const passBadges = [...passBadgeMap.values()].map(pt =>
-        `<span class="cust-badge" style="background:${pt.bg};color:${pt.color};border:1px solid ${pt.border}">${pt.abbr}</span>`
-      ).join('');
       div.innerHTML =
-        `<div class="cust-result-name">${c.name}</div>` +
+        `<div class="cust-result-name">${_escCust(fullName)}</div>` +
         `<div class="cust-result-meta">` +
-          passBadges +
-          (!passBadgeMap.size ? `<span class="cust-badge cust-badge-rate">Public</span>` : '') +
-          `<span style="margin-left:2px">· ${c.bookings.length} booking${c.bookings.length !== 1 ? 's' : ''}` +
-          (last ? ` · Last: ${custFmtDate(last.date)}` : '') +
-          `</span></div>`;
-      div.addEventListener('click', () => custShowProfile(c.name));
+          `<span style="margin-right:6px;color:var(--ink-muted);font-size:11px">${_escCust(c.email || '')}${c.email && c.phone ? ' · ' : ''}${_escCust(c.phone || '')}</span>` +
+          `<span class="cust-badge cust-badge-rate">${plays} play${plays !== 1 ? 's' : ''}</span>` +
+        `</div>`;
+      div.addEventListener('click', () => custShowProfile(firstName ? `${firstName} ${lastName}` : lastName, c));
       body.appendChild(div);
     }
   } catch(err) {
@@ -3879,11 +3858,15 @@ async function custSearch(query) {
   }
 }
 
-async function custShowProfile(name) {
+function _escCust(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+async function custShowProfile(name, q18 = null) {
   document.getElementById('custBody').innerHTML = '<div class="cust-empty">Loading profile…</div>';
   try {
     const enc = encodeURIComponent(name);
-    const url = `${SB_URL}/rest/v1/booking_players?name=eq.${enc}` +
+    const url = `${SB_URL}/rest/v1/booking_players?name=ilike.${encodeURIComponent(name)}` +
       `&select=name,rate_type,status,price_cents,bookings(created_at,status,tee_times(date,hour,minute,courses(name,slug)))` +
       `&limit=200`;
     const resp = await fetch(url, { headers: SB_H });
@@ -3963,7 +3946,12 @@ async function custShowProfile(name) {
     body.innerHTML = `
       <div class="cust-profile">
         <button class="cust-back" id="custBackBtn">← Back to results</button>
-        <div class="cust-profile-name">${name}</div>
+        <div class="cust-profile-name">${_escCust(q18 ? ((q18.last_name||'') + (q18.first_name ? ', '+q18.first_name : '')) : name)}</div>
+        ${q18 ? `<div style="font-size:12px;color:var(--ink-muted);margin:-6px 0 10px;display:flex;flex-wrap:wrap;gap:6px 14px">
+          ${q18.email ? `<span>${_escCust(q18.email)}</span>` : ''}
+          ${q18.phone ? `<span>${_escCust(q18.phone)}</span>` : ''}
+          <span>${q18.reservation_count||0} Q18 plays total</span>
+        </div>` : ''}
 
         <div class="cust-stat-row">
           <div class="cust-stat-card">
