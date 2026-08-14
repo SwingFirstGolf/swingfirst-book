@@ -157,10 +157,43 @@
     user-select: none;
     cursor: pointer;
     position: relative;
+    transition: color .12s, background .12s;
   }
-  thead th:hover { color: var(--ink); }
-  thead th.sort-asc::after  { content: ' ↑'; color: var(--accent); }
-  thead th.sort-desc::after { content: ' ↓'; color: var(--accent); }
+  thead th:hover { color: var(--ink); background: #252a3a; }
+  thead th.sort-asc,
+  thead th.sort-desc { color: var(--ink); }
+
+  /* Sort arrow widget inside each th */
+  .sort-arrows {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 1px;
+    margin-left: 6px;
+    vertical-align: middle;
+    line-height: 1;
+    position: relative;
+    top: -1px;
+  }
+  .sort-arrows .arr-up,
+  .sort-arrows .arr-dn {
+    display: block;
+    width: 0; height: 0;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    opacity: .25;
+    transition: opacity .12s, border-color .12s;
+  }
+  .sort-arrows .arr-up { border-bottom: 5px solid var(--ink-muted); }
+  .sort-arrows .arr-dn { border-top:    5px solid var(--ink-muted); }
+
+  /* Highlight the active arrow */
+  thead th.sort-asc  .arr-up { opacity: 1; border-bottom-color: var(--accent); }
+  thead th.sort-desc .arr-dn { opacity: 1; border-top-color:    var(--accent); }
+  thead th.sort-asc  .arr-dn,
+  thead th.sort-desc .arr-up { opacity: .15; }
+
+  thead th:hover .arr-up,
+  thead th:hover .arr-dn { opacity: .45; }
 
   tbody tr {
     border-bottom: 1px solid var(--line);
@@ -177,6 +210,7 @@
   td.name { font-weight: 500; }
   td.email { color: var(--ink-muted); font-size: 12px; }
   td.phone { color: var(--ink-muted); font-size: 12px; }
+  th.col-plays { text-align: right; }
   td.plays {
     font-weight: 600;
     font-size: 13px;
@@ -310,13 +344,13 @@
     <table id="custTable">
       <thead>
         <tr>
-          <th class="col-id"   data-col="q18_id"            data-dir="asc">ID</th>
-          <th class="col-last" data-col="last_name"          data-dir="asc">Last Name</th>
-          <th class="col-first"data-col="first_name"         data-dir="asc">First Name</th>
-          <th class="col-email"data-col="email"              data-dir="asc">Email</th>
-          <th class="col-phone"data-col="phone"              data-dir="asc">Phone</th>
-          <th class="col-plays"data-col="reservation_count"  data-dir="desc" id="defaultSortCol">Plays</th>
-          <th class="col-date" data-col="q18_created_at"     data-dir="asc">Member Since</th>
+          <th class="col-id"   data-col="q18_id"           data-dir="asc">ID<span class="sort-arrows"><span class="arr-up"></span><span class="arr-dn"></span></span></th>
+          <th class="col-last" data-col="last_name"         data-dir="asc">Last Name<span class="sort-arrows"><span class="arr-up"></span><span class="arr-dn"></span></span></th>
+          <th class="col-first"data-col="first_name"        data-dir="asc">First Name<span class="sort-arrows"><span class="arr-up"></span><span class="arr-dn"></span></span></th>
+          <th class="col-email"data-col="email"             data-dir="asc">Email<span class="sort-arrows"><span class="arr-up"></span><span class="arr-dn"></span></span></th>
+          <th class="col-phone"data-col="phone"             data-dir="asc">Phone<span class="sort-arrows"><span class="arr-up"></span><span class="arr-dn"></span></span></th>
+          <th class="col-plays"data-col="reservation_count" data-dir="desc">Plays<span class="sort-arrows"><span class="arr-up"></span><span class="arr-dn"></span></span></th>
+          <th class="col-date" data-col="q18_created_at"    data-dir="asc">Member Since<span class="sort-arrows"><span class="arr-up"></span><span class="arr-dn"></span></span></th>
         </tr>
       </thead>
       <tbody id="custBody">
