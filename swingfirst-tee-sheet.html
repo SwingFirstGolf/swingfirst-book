@@ -2528,6 +2528,10 @@ function renderAddNames() {
   }
 }
 
+function _escAc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
 function attachAutocomplete(input) {
   let _acTimer = null;
   let _acList  = null;
@@ -2544,13 +2548,15 @@ function attachAutocomplete(input) {
     items.forEach(item => {
       const div = document.createElement('div');
       div.className = 'ac-item';
-      // Convert stored "First Last" → "Last, First" for the input field
-      const parts = (item.lead_name || '').trim().split(/\s+/);
-      const lastName  = parts.length > 1 ? parts[parts.length - 1] : parts[0];
-      const firstName = parts.length > 1 ? parts.slice(0, -1).join(' ') : '';
+      const lastName   = (item.last_name  || '').trim();
+      const firstName  = (item.first_name || '').trim();
       const displayName = firstName ? `${lastName}, ${firstName}` : lastName;
-      div.innerHTML = `<div class="ac-item-name">${displayName}</div>` +
-        (item.lead_phone ? `<div class="ac-item-sub">${item.lead_phone}</div>` : '');
+      const emailStr  = item.email || '';
+      const phoneStr  = item.phone || '';
+      const plays     = item.reservation_count || 0;
+      const sub = [emailStr, phoneStr, plays ? `${plays} plays` : ''].filter(Boolean).join(' · ');
+      div.innerHTML = `<div class="ac-item-name">${_escAc(displayName)}</div>` +
+        `<div class="ac-item-sub">${_escAc(sub)}</div>`;
       div.addEventListener('mousedown', e => {
         e.preventDefault();
         input.value = displayName;
@@ -2567,19 +2573,16 @@ function attachAutocomplete(input) {
     if (q.length < 2) { removeList(); return; }
     _acTimer = setTimeout(async () => {
       try {
-        const enc = encodeURIComponent(`%${q}%`);
+        const pat = encodeURIComponent(`*${q}*`);
         const rows = await fetch(
-          `${SB_URL}/rest/v1/bookings?or=(lead_name.ilike.${enc},lead_email.ilike.${enc},lead_phone.ilike.${enc})` +
-          `&select=lead_name,lead_phone&order=created_at.desc&limit=20`,
+          `${SB_URL}/rest/v1/q18_customers` +
+          `?select=q18_id,first_name,last_name,email,phone,reservation_count` +
+          `&or=(last_name.ilike.${pat},first_name.ilike.${pat},email.ilike.${pat},phone.ilike.${pat})` +
+          `&reservation_count=gte.1` +
+          `&order=reservation_count.desc&limit=12`,
           { headers: SB_H }
         ).then(r => r.json());
-        // Deduplicate by lead_name
-        const seen = new Set();
-        const unique = (rows || []).filter(r => {
-          if (!r.lead_name || seen.has(r.lead_name)) return false;
-          seen.add(r.lead_name); return true;
-        }).slice(0, 8);
-        showList(unique);
+        showList(rows || []);
       } catch(e) { console.warn('Autocomplete error:', e); }
     }, 280);
   });
