@@ -555,6 +555,11 @@
   .cust-search-wrap { padding: 12px 14px; border-bottom: 1px solid var(--line); flex-shrink: 0; }
   .cust-search-input { width: 100%; box-sizing: border-box; padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px; font-size: 13px; background: var(--surface); color: var(--ink); outline: none; }
   .cust-search-input:focus { border-color: var(--green-600); box-shadow: 0 0 0 2px rgba(22,163,74,.15); }
+  .cust-sort-bar { display: flex; gap: 4px; padding: 6px 10px; border-bottom: 1px solid var(--line); background: var(--surface); flex-shrink: 0; }
+  .cust-sort-btn { background: none; border: 1px solid transparent; border-radius: 6px; padding: 3px 10px; font-size: 11px; font-weight: 600; color: var(--ink-muted); cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all .12s; letter-spacing: .3px; }
+  .cust-sort-btn:hover { background: var(--surface2); color: var(--ink); }
+  .cust-sort-btn.active { background: var(--surface2); border-color: var(--line); color: var(--ink); }
+  .cust-sort-arrow { font-size: 10px; opacity: .7; }
   .cust-body { flex: 1; overflow-y: auto; }
   .cust-empty { padding: 36px 20px; text-align: center; color: var(--ink-muted); font-size: 13px; line-height: 1.6; }
   /* Results */
@@ -694,6 +699,12 @@
 
     <!-- Week-strip with tabs/search inline -->
     <div class="week-strip" id="weekStrip" style="margin-bottom:12px;">
+      <div class="live-search" style="flex-shrink:0;max-width:220px;">
+        <span style="font-size:14px;color:var(--ink-muted);">🔍</span>
+        <input type="text" id="opSearch" placeholder="Search player…" autocomplete="off"/>
+        <button class="ls-clear" id="opSearchClear" title="Clear">✕</button>
+      </div>
+      <div class="ws-sep"></div>
       <button class="ws-btn" id="prevDay">‹ Prev</button>
       <div class="ws-days" id="wsDays"></div>
       <button class="ws-btn" id="nextDay">Next ›</button>
@@ -701,11 +712,6 @@
       <div class="mode-tabs" style="flex-shrink:0;">
         <button class="mode-tab active" id="opTab18" onclick="setSheetMode('18')">⛳ 18 Holes</button>
         <button class="mode-tab tab-b9"  id="opTab9"  onclick="setSheetMode('9')">☀️ 9 Holes</button>
-      </div>
-      <div class="live-search" style="flex:1;max-width:260px;">
-        <span style="font-size:14px;color:var(--ink-muted);">🔍</span>
-        <input type="text" id="opSearch" placeholder="Search player…" autocomplete="off"/>
-        <button class="ls-clear" id="opSearchClear" title="Clear">✕</button>
       </div>
     </div>
 
@@ -787,6 +793,14 @@
   </div>
   <div class="cust-search-wrap">
     <input type="text" class="cust-search-input" id="custSearchInput" placeholder="Search by name…" autocomplete="off" spellcheck="false"/>
+  </div>
+  <div class="cust-sort-bar" id="custSortBar" style="display:none">
+    <button class="cust-sort-btn active" id="custSortName" title="Sort by name">
+      Name <span class="cust-sort-arrow" id="custSortNameArrow">↑</span>
+    </button>
+    <button class="cust-sort-btn" id="custSortPlays" title="Sort by plays">
+      Plays <span class="cust-sort-arrow" id="custSortPlaysArrow">↓</span>
+    </button>
   </div>
   <div class="cust-body" id="custBody">
     <div class="cust-empty">Type a name to look up a customer.<br><span style="font-size:12px">Shows booking history across all SwingFirst courses.</span></div>
@@ -3927,6 +3941,30 @@ document.querySelectorAll('.nav-item').forEach(link => {
   }
 });
 
+// ─── Drawer sort state ───────────────────────────────────────────
+let _custSortCol = 'name';  // 'name' | 'plays'
+let _custSortDir = 'asc';   // 'asc' | 'desc'
+
+function _setCustSort(col) {
+  if (_custSortCol === col) {
+    _custSortDir = _custSortDir === 'asc' ? 'desc' : 'asc';
+  } else {
+    _custSortCol = col;
+    _custSortDir = col === 'plays' ? 'desc' : 'asc';
+  }
+  // Update button styles and arrows
+  document.getElementById('custSortName').classList.toggle('active', _custSortCol === 'name');
+  document.getElementById('custSortPlays').classList.toggle('active', _custSortCol === 'plays');
+  document.getElementById('custSortNameArrow').textContent  = _custSortCol === 'name'  ? (_custSortDir === 'asc' ? '↑' : '↓') : '↕';
+  document.getElementById('custSortPlaysArrow').textContent = _custSortCol === 'plays' ? (_custSortDir === 'asc' ? '↑' : '↓') : '↕';
+  // Re-run search
+  const q = document.getElementById('custSearchInput').value.trim();
+  if (q.length >= 2) custSearch(q);
+}
+
+document.getElementById('custSortName').addEventListener('click',  () => _setCustSort('name'));
+document.getElementById('custSortPlays').addEventListener('click', () => _setCustSort('plays'));
+
 // Search (debounced 300ms)
 let _custSearchTimer = null;
 let _custLastQuery   = '';
@@ -3934,6 +3972,7 @@ document.getElementById('custSearchInput').addEventListener('input', e => {
   clearTimeout(_custSearchTimer);
   const q = e.target.value.trim();
   if (q.length < 2) {
+    document.getElementById('custSortBar').style.display = 'none';
     document.getElementById('custBody').innerHTML = '<div class="cust-empty">Type at least 2 characters to search.</div>';
     return;
   }
@@ -3986,18 +4025,19 @@ async function custSearch(query) {
     const lPat = encodeURIComponent(`*${last}*`);
     let filterStr;
     if (first) {
-      // Two-part: filter both columns
       const fPat = encodeURIComponent(`*${first}*`);
       filterStr = `&last_name=ilike.${lPat}&first_name=ilike.${fPat}`;
     } else {
-      // Single term: search last name OR email OR phone
       filterStr = `&or=(last_name.ilike.${lPat},email.ilike.${lPat},phone.ilike.${lPat})`;
     }
+    const orderStr = _custSortCol === 'plays'
+      ? `reservation_count.${_custSortDir}`
+      : `last_name.${_custSortDir},first_name.${_custSortDir}`;
     const url = `${SB_URL}/rest/v1/q18_customers` +
       `?select=q18_id,first_name,last_name,email,phone,reservation_count` +
       filterStr +
       `&reservation_count=gte.1` +
-      `&order=reservation_count.desc&limit=50`;
+      `&order=${orderStr}&limit=50`;
     const countHeaders = Object.assign({}, SB_H, { 'Prefer': 'count=exact' });
     const resp = await fetch(url, { headers: countHeaders });
 
@@ -4017,10 +4057,14 @@ async function custSearch(query) {
     // Fetch badges in parallel with rendering setup
     const badgeMap = await _fetchBadgesForQ18(rows);
 
+    // Show sort bar
+    document.getElementById('custSortBar').style.display = 'flex';
+
     const shown    = rows.length;
     const total    = totalCount ?? shown;
+    const sortLabel = _custSortCol === 'plays' ? 'by play count' : 'alphabetically';
     const countMsg = total > shown
-      ? `${total.toLocaleString()} players found — showing top ${shown} by play count`
+      ? `${total.toLocaleString()} players found — showing top ${shown} ${sortLabel}`
       : `${total.toLocaleString()} player${total !== 1 ? 's' : ''} found`;
 
     const body = document.getElementById('custBody');
