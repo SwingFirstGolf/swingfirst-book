@@ -221,6 +221,12 @@
   td.plays.low  { color: var(--ink-muted); }
   td.date { color: var(--ink-muted); font-size: 12px; }
   td.id   { color: var(--ink-muted); font-size: 11px; }
+  td.del-col, th.col-del { width: 60px; text-align: center; }
+  .del-btn { background: none; border: none; color: var(--ink-muted); font-size: 13px; cursor: pointer; padding: 2px 6px; border-radius: 4px; opacity: .5; transition: opacity .12s, color .12s; }
+  .del-btn:hover { opacity: 1; color: var(--red); }
+  .del-confirm-btn { background: var(--red); color: #fff; border: none; border-radius: 4px; font-size: 11px; font-weight: 700; padding: 2px 8px; cursor: pointer; white-space: nowrap; }
+  .del-cancel-btn  { background: none; border: 1px solid var(--line); border-radius: 4px; font-size: 11px; padding: 2px 6px; cursor: pointer; color: var(--ink-muted); margin-left: 3px; }
+  tr.deleted-row { opacity: .35; pointer-events: none; }
 
   /* ── Pagination ───────────────────────────────────────────────── */
   .pagination {
@@ -351,10 +357,11 @@
           <th class="col-phone"data-col="phone"             data-dir="asc">Phone<span class="sort-arrows"><span class="arr-up"></span><span class="arr-dn"></span></span></th>
           <th class="col-plays"data-col="reservation_count" data-dir="desc">Plays<span class="sort-arrows"><span class="arr-up"></span><span class="arr-dn"></span></span></th>
           <th class="col-date" data-col="q18_created_at"    data-dir="asc">Member Since<span class="sort-arrows"><span class="arr-up"></span><span class="arr-dn"></span></span></th>
+          <th class="col-del"></th>
         </tr>
       </thead>
       <tbody id="custBody">
-        <tr class="state-row"><td colspan="7"><span class="spinner"></span>Loading customers…</td></tr>
+        <tr class="state-row"><td colspan="8"><span class="spinner"></span>Loading customers…</td></tr>
       </tbody>
     </table>
   </div>
@@ -440,7 +447,7 @@ async function fetchCustomers() {
 function renderTable(rows) {
   const body = document.getElementById('custBody');
   if (!rows.length) {
-    body.innerHTML = `<tr class="state-row"><td colspan="7">No customers found.</td></tr>`;
+    body.innerHTML = `<tr class="state-row"><td colspan="8">No customers found.</td></tr>`;
     return;
   }
 
@@ -455,7 +462,7 @@ function renderTable(rows) {
     const lastName  = escHtml(r.last_name  || '');
     const firstName = escHtml(r.first_name || '');
 
-    return `<tr>
+    return `<tr data-q18id="${r.q18_id}">
       <td class="id">${r.q18_id}</td>
       <td class="name">${lastName}</td>
       <td class="name">${firstName}</td>
@@ -463,6 +470,7 @@ function renderTable(rows) {
       <td class="phone">${escHtml(phone)}</td>
       <td class="plays ${playsClass}">${plays.toLocaleString()}</td>
       <td class="date">${memberSince}</td>
+      <td class="del-col"><button class="del-btn" title="Delete record" onclick="initDelete(this, ${r.q18_id}, '${escHtml(lastName)}, ${escHtml(firstName)}')">🗑</button></td>
     </tr>`;
   }).join('');
 }
@@ -554,6 +562,40 @@ function goPage(n) {
 // ─── Init ──────────────────────────────────────────────────────────
 updateSortHeaders();
 fetchCustomers();
+
+// ─── Delete ────────────────────────────────────────────────────────
+function initDelete(btn, q18Id, displayName) {
+  // Replace the 🗑 button with inline "Sure? / ×" confirmation
+  const cell = btn.parentElement;
+  cell.innerHTML =
+    `<button class="del-confirm-btn" onclick="doDelete(this, ${q18Id})">Sure?</button>` +
+    `<button class="del-cancel-btn"  onclick="cancelDelete(this)">×</button>`;
+}
+
+function cancelDelete(btn) {
+  const cell = btn.parentElement;
+  const q18Id = cell.closest('tr').dataset.q18id;
+  cell.innerHTML = `<button class="del-btn" title="Delete record" onclick="initDelete(this, ${q18Id}, '')">🗑</button>`;
+}
+
+async function doDelete(btn, q18Id) {
+  btn.textContent = '…';
+  btn.disabled = true;
+  try {
+    const resp = await fetch(`${SB_URL}/rest/v1/q18_customers?q18_id=eq.${q18Id}`, {
+      method: 'DELETE',
+      headers: SB_H
+    });
+    if (!resp.ok) throw new Error(await resp.text());
+    const row = btn.closest('tr');
+    row.classList.add('deleted-row');
+    setTimeout(() => row.remove(), 600);
+  } catch(e) {
+    btn.textContent = 'Sure?';
+    btn.disabled = false;
+    alert('Delete failed: ' + e.message);
+  }
+}
 </script>
 </body>
 </html>
