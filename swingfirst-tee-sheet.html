@@ -4425,11 +4425,15 @@ async function custShowProfile(name, q18 = null) {
           headers: SB_H
         });
         if (!resp.ok) throw new Error(await resp.text());
-        // Return to empty state with a brief confirmation
-        document.getElementById('custSearchInput').value = '';
-        document.getElementById('custSortBar').style.display = 'none';
-        document.getElementById('custBody').innerHTML =
-          `<div class="cust-empty" style="color:var(--green-700)">✓ Record deleted.</div>`;
+        // Go back to search results for the same query
+        const q = document.getElementById('custSearchInput').value.trim();
+        if (q.length >= 2) {
+          custSearch(q);
+        } else {
+          document.getElementById('custSortBar').style.display = 'none';
+          document.getElementById('custBody').innerHTML =
+            `<div class="cust-empty" style="color:var(--green-700)">✓ Record deleted.</div>`;
+        }
       } catch(e) {
         btn.textContent = 'Delete';
         btn.disabled = false;
