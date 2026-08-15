@@ -256,6 +256,29 @@
   .f-price::-webkit-outer-spin-button,
   .f-price::-webkit-inner-spin-button { -webkit-appearance: none; }
 
+  /* ── Player contact row (email + phone) ── */
+  .player-contact {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 0 18px 12px 56px; /* 56 = 28px num + 10px gap + 18px left padding */
+    border-bottom: 1px solid var(--line);
+  }
+  .player-row { border-bottom: none; }
+  .player-contact:last-child { border-bottom: none; }
+  .player-contact.empty-slot { display: none; }
+  /* ── Validation banner ── */
+  .val-error {
+    display: none;
+    background: var(--rose-50);
+    border: 1px solid var(--rose-100);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: var(--rose-700);
+    margin-bottom: 12px;
+  }
+  .val-error.show { display: block; }
   /* ── Notes ── */
   .notes-card {
     background: var(--card);
@@ -589,7 +612,7 @@ function _acAttach(input) {
 }
 
 // ── Load or demo data ────────────────────────────────────────────────────────
-var RATE_TYPES = ["Public", "Member", "Senior", "Junior", "Twilight", "Guest", "VIP", "Complimentary"];
+var RATE_TYPES = ["Public", "Member", "Senior", "Junior", "Twilight", "Guest", "VIP", "Complimentary", "Walk In"];
 var STATUSES   = [
   { v: "paid",       l: "Paid" },
   { v: "checked_in", l: "Checked In" },
@@ -650,7 +673,7 @@ if (!editData) {
 }
 
 // ── State ────────────────────────────────────────────────────────────────────
-var workPlayers = editData.players.map(function(p) { return p ? Object.assign({}, p) : null; });
+var workPlayers = editData.players.map(function(p) { return p ? Object.assign({ email: '', phone: '' }, p) : null; });
 var notesVal    = stripAttribution(editData.bookingNotes || "");
 
 // ── Render ───────────────────────────────────────────────────────────────────
@@ -680,6 +703,7 @@ function buildPage() {
     '</div>' +
 
     '<div class="sec-head">Players</div>' +
+    '<div id="valError" class="val-error"></div>' +
     '<div class="players-card">' +
       '<div class="col-heads">' +
         '<span></span>' +
@@ -741,6 +765,8 @@ function renderPlayerRows() {
       return '<option value="' + s.v + '"' + sel + '>' + s.l + '</option>';
     }).join("");
 
+    var emailVal = player && player.email ? esc(player.email) : '';
+    var phoneVal = player && player.phone ? esc(player.phone) : '';
     html +=
       '<div class="' + rowCls + '" data-pi="' + pi + '">' +
         '<div class="' + numCls + '">' + (pi + 1) + '</div>' +
@@ -748,6 +774,10 @@ function renderPlayerRows() {
         '<div><select class="f-select p-rate" data-pi="' + pi + '"' + (isEmpty ? ' disabled' : '') + '>' + rateOpts + '</select></div>' +
         '<div><select class="f-select p-status" data-pi="' + pi + '"' + (isEmpty ? ' disabled' : '') + '>' + statOpts + '</select></div>' +
         '<div class="price-wrap"><input class="f-price p-price" type="number" min="0" step="1" placeholder="rack" value="' + price + '" data-pi="' + pi + '"' + (isEmpty ? ' disabled' : '') + '/></div>' +
+      '</div>' +
+      '<div class="player-contact' + (isEmpty ? ' empty-slot' : '') + '">' +
+        '<input class="f-input p-email" type="email" placeholder="Email" value="' + emailVal + '" data-pi="' + pi + '"' + (isEmpty ? ' disabled' : '') + '/>' +
+        '<input class="f-input p-phone" type="tel"   placeholder="Phone" value="' + phoneVal + '" data-pi="' + pi + '"' + (isEmpty ? ' disabled' : '') + '/>' +
       '</div>';
   });
   wrap.innerHTML = html;
@@ -779,6 +809,18 @@ function renderPlayerRows() {
         var v = parseFloat(this.value);
         workPlayers[i].priceCents = isNaN(v) ? undefined : Math.round(v * 100);
       }
+    });
+  });
+  wrap.querySelectorAll(".p-email").forEach(function(el) {
+    el.addEventListener("input", function() {
+      var i = parseInt(this.dataset.pi);
+      if (workPlayers[i]) workPlayers[i].email = this.value.trim();
+    });
+  });
+  wrap.querySelectorAll(".p-phone").forEach(function(el) {
+    el.addEventListener("input", function() {
+      var i = parseInt(this.dataset.pi);
+      if (workPlayers[i]) workPlayers[i].phone = this.value.trim();
     });
   });
 }
@@ -813,8 +855,34 @@ function renderHistory() {
 }
 
 // ── Save / Discard ────────────────────────────────────────────────────────────
+function _bookingHoursAway() {
+  // Returns hours until tee time, or null if date unknown
+  if (!editData.date) return null;
+  var teeDate = new Date(editData.date + 'T' + String(editData.hour).padStart(2,'0') + ':' + String(editData.minute).padStart(2,'0') + ':00');
+  return (teeDate - new Date()) / 3600000;
+}
+
 function doSave() {
+  // ── Booking validation: >24h out + not Walk In → email + phone required ──
   if (!isDemo) {
+    var hours = _bookingHoursAway();
+    if (hours !== null && hours > 24) {
+      var valErr = document.getElementById("valError");
+      var missing = [];
+      workPlayers.forEach(function(p) {
+        if (!p) return;
+        if (p.rateType === 'Walk In') return; // Walk In bypasses requirement
+        if (!p.email || !p.phone) missing.push(p.name || 'Player');
+      });
+      if (missing.length) {
+        valErr.textContent = '⚠️ Bookings more than 24 hours out require an email and phone for each player. Missing: ' + missing.join(', ');
+        valErr.classList.add('show');
+        valErr.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        return;
+      }
+      valErr.classList.remove('show');
+    }
+
     var result = {
       slotId:  editData.slotId,
       players: workPlayers,
@@ -851,6 +919,50 @@ document.addEventListener("keydown", function(e) {
 
 // ── Boot ─────────────────────────────────────────────────────────────────────
 buildPage();
+
+// ── Pre-fill email + phone from q18_customers (async, after render) ──────────
+(function prefillContactInfo() {
+  var active = workPlayers.filter(Boolean);
+  if (!active.length) return;
+  // Build OR filter: last_name.eq.X&first_name.eq.Y for each player
+  var orParts = active.map(function(p) {
+    var parts = (p.name || '').trim().split(/\s+/);
+    var lastName  = parts.length > 1 ? parts[parts.length - 1] : parts[0];
+    var firstName = parts.length > 1 ? parts.slice(0, -1).join(' ') : '';
+    if (!lastName) return null;
+    return 'and(last_name.eq.' + encodeURIComponent(lastName) + (firstName ? ',first_name.eq.' + encodeURIComponent(firstName) : '') + ')';
+  }).filter(Boolean);
+  if (!orParts.length) return;
+  var url = SB_URL + '/rest/v1/q18_customers?select=first_name,last_name,email,phone&or=(' + orParts.join(',') + ')&reservation_count=gte.0&limit=20';
+  fetch(url, { headers: SB_H }).then(function(r) { return r.json(); }).then(function(rows) {
+    if (!Array.isArray(rows)) return;
+    // Build lookup by "first last" → {email, phone}
+    var byName = {};
+    rows.forEach(function(r) {
+      if (!r.email && !r.phone) return;
+      var key = ((r.first_name || '') + ' ' + (r.last_name || '')).trim().toLowerCase();
+      if (!byName[key]) byName[key] = { email: r.email || '', phone: r.phone || '' };
+    });
+    workPlayers.forEach(function(p, pi) {
+      if (!p) return;
+      var key = (p.name || '').trim().toLowerCase();
+      var found = byName[key];
+      if (found && (!p.email || !p.phone)) {
+        if (!p.email && found.email) workPlayers[pi].email = found.email;
+        if (!p.phone && found.phone) workPlayers[pi].phone = found.phone;
+      }
+    });
+    // Refresh the contact inputs with prefilled values
+    document.querySelectorAll('.p-email').forEach(function(el) {
+      var pi = parseInt(el.dataset.pi);
+      if (workPlayers[pi] && workPlayers[pi].email && !el.value) el.value = workPlayers[pi].email;
+    });
+    document.querySelectorAll('.p-phone').forEach(function(el) {
+      var pi = parseInt(el.dataset.pi);
+      if (workPlayers[pi] && workPlayers[pi].phone && !el.value) el.value = workPlayers[pi].phone;
+    });
+  }).catch(function() { /* silent — prefill is best-effort */ });
+})();
 </script>
 </body>
 </html>
