@@ -3997,7 +3997,14 @@ async function custSearch(query) {
       filterStr +
       `&reservation_count=gte.1` +
       `&order=reservation_count.desc&limit=50`;
-    const resp = await fetch(url, { headers: SB_H });
+    const countHeaders = Object.assign({}, SB_H, { 'Prefer': 'count=exact' });
+    const resp = await fetch(url, { headers: countHeaders });
+
+    // Parse true total from Content-Range: 0-49/247
+    let totalCount = null;
+    const cr = resp.headers.get('Content-Range');
+    if (cr) { const m = cr.match(/\/(\d+)/); if (m) totalCount = parseInt(m[1], 10); }
+
     const rows = await resp.json();
 
     if (!Array.isArray(rows) || !rows.length) {
@@ -4009,8 +4016,14 @@ async function custSearch(query) {
     // Fetch badges in parallel with rendering setup
     const badgeMap = await _fetchBadgesForQ18(rows);
 
+    const shown    = rows.length;
+    const total    = totalCount ?? shown;
+    const countMsg = total > shown
+      ? `${total.toLocaleString()} players found — showing top ${shown} by play count`
+      : `${total.toLocaleString()} player${total !== 1 ? 's' : ''} found`;
+
     const body = document.getElementById('custBody');
-    body.innerHTML = `<div style="padding:8px 14px 6px;font-size:11px;color:var(--ink-muted)">${rows.length} player${rows.length !== 1 ? 's' : ''} found${rows.length === 50 ? ' (showing top 50)' : ''}</div>`;
+    body.innerHTML = `<div style="padding:8px 14px 6px;font-size:11px;color:var(--ink-muted)">${countMsg}</div>`;
 
     for (const c of rows) {
       const lastName  = (c.last_name  || '').trim();
