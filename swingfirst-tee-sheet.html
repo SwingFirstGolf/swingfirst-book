@@ -2548,15 +2548,11 @@ function attachAutocomplete(input) {
     items.forEach(item => {
       const div = document.createElement('div');
       div.className = 'ac-item';
-      const lastName   = (item.last_name  || '').trim();
-      const firstName  = (item.first_name || '').trim();
+      const lastName  = (item.last_name  || '').trim();
+      const firstName = (item.first_name || '').trim();
       const displayName = firstName ? `${lastName}, ${firstName}` : lastName;
-      const emailStr  = item.email || '';
-      const phoneStr  = item.phone || '';
-      const plays     = item.reservation_count || 0;
-      const sub = [emailStr, phoneStr, plays ? `${plays} plays` : ''].filter(Boolean).join(' · ');
-      div.innerHTML = `<div class="ac-item-name">${_escAc(displayName)}</div>` +
-        `<div class="ac-item-sub">${_escAc(sub)}</div>`;
+      const { line1, line2 } = _custLines(item, null);
+      div.innerHTML = line1 + line2;
       div.addEventListener('mousedown', e => {
         e.preventDefault();
         input.value = displayName;
@@ -3294,34 +3290,67 @@ document.getElementById('opSearchClear').addEventListener('click', function() {
   closeCustomerDrawer();
 });
 
-// Show tee-sheet matched players in the customer drawer
-function showTeeSheetMatches(matched, query) {
+// Show tee-sheet matched players in the customer drawer, enriched with Q18 data
+async function showTeeSheetMatches(matched, query) {
   const body = document.getElementById('custBody');
   const plural = matched.length !== 1;
   body.innerHTML = `<div style="padding:8px 14px 6px;font-size:11px;color:var(--ink-muted)">
     <span style="background:#1a3a1a;color:#34c97e;padding:2px 7px;border-radius:4px;font-weight:600;font-size:10px;letter-spacing:.5px;margin-right:6px">ON TODAY'S SHEET</span>
     ${matched.length} player${plural ? 's' : ''} matching "<b>${_escCust(query)}</b>"
-  </div>`;
+  </div><div id="teeMatchList"></div>`;
 
-  matched.forEach(({ p, slot }) => {
+  // Enrich each player with Q18 data in parallel
+  const enriched = await Promise.all(matched.map(async ({ p, slot }) => {
+    const parts    = (p.name || '').trim().split(/\s+/);
+    const lastName  = parts.length > 1 ? parts[parts.length - 1] : parts[0];
+    const firstName = parts.length > 1 ? parts.slice(0, -1).join(' ') : '';
+    const lPat = encodeURIComponent(`*${lastName}*`);
+    const fPat = encodeURIComponent(`*${firstName}*`);
+    let q18 = null;
+    try {
+      const url = `${SB_URL}/rest/v1/q18_customers?select=q18_id,first_name,last_name,email,phone,reservation_count` +
+        `&last_name=ilike.${lPat}` +
+        (firstName ? `&first_name=ilike.${fPat}` : '') +
+        `&order=reservation_count.desc&limit=1`;
+      const rows = await fetch(url, { headers: SB_H }).then(r => r.json());
+      q18 = rows && rows[0] ? rows[0] : null;
+    } catch(_) {}
+    return { p, slot, q18 };
+  }));
+
+  const listEl = document.getElementById('teeMatchList');
+  if (!listEl) return; // drawer closed while loading
+
+  enriched.forEach(({ p, slot, q18 }) => {
+    // Build a display object merging tee-sheet name with Q18 data
+    const parts     = (p.name || '').trim().split(/\s+/);
+    const lastName  = q18?.last_name  || (parts.length > 1 ? parts[parts.length - 1] : parts[0]);
+    const firstName = q18?.first_name || (parts.length > 1 ? parts.slice(0, -1).join(' ') : '');
+    const displayObj = {
+      last_name:         lastName,
+      first_name:        firstName,
+      email:             q18?.email  || null,
+      phone:             q18?.phone  || null,
+      reservation_count: q18?.reservation_count ?? null,
+    };
+
+    const timeStr = typeof fmt12 === 'function' ? fmt12(slot.hour, slot.minute) : '';
+    const pt      = typeof getPassType === 'function' ? getPassType(p.rateType || 'Public') : null;
+    const badges  = pt && pt.key !== 'UNKNOWN' ? [pt] : [];
+
+    const { line1, line2 } = _custLines(displayObj, badges);
     const div = document.createElement('div');
     div.className = 'cust-result';
-    const timeStr = typeof fmt12 === 'function' ? fmt12(slot.hour, slot.minute) : `${slot.hour}:${String(slot.minute||0).padStart(2,'0')}`;
-    const pt = typeof getPassType === 'function' ? getPassType(p.rateType || 'Public') : null;
-    const badge = pt
-      ? `<span class="cust-badge" style="background:${pt.bg};color:${pt.color};border:1px solid ${pt.border}">${pt.abbr}</span>`
-      : `<span class="cust-badge cust-badge-rate">${p.rateType || 'Public'}</span>`;
-    div.innerHTML =
-      `<div class="cust-result-name">${_escCust(p.name)}</div>` +
-      `<div class="cust-result-meta">${badge} <span style="color:var(--ink-muted)">· ${timeStr}</span></div>`;
-    div.addEventListener('click', () => custShowProfileByTeeSheetName(p.name));
-    body.appendChild(div);
+    div.innerHTML = line1 + line2 +
+      (timeStr ? `<div style="font-size:10px;color:var(--accent);margin-top:2px">⛳ ${timeStr} today</div>` : '');
+    div.addEventListener('click', () => custShowProfile(p.name, q18));
+    listEl.appendChild(div);
   });
 
-  // Also offer a Q18-wide search link
+  // Q18-wide search fallback
   const footer = document.createElement('div');
   footer.style.cssText = 'padding:10px 14px;border-top:1px solid var(--line);margin-top:4px';
-  footer.innerHTML = `<button style="background:none;border:none;color:var(--accent);font-size:12px;cursor:pointer;padding:0" id="q18SearchBtn">Search all 77K Q18 players for "${_escCust(query)}" →</button>`;
+  footer.innerHTML = `<button style="background:none;border:none;color:var(--accent);font-size:12px;cursor:pointer;padding:0" id="q18SearchBtn">Search all Q18 players for "${_escCust(query)}" →</button>`;
   body.appendChild(footer);
   document.getElementById('q18SearchBtn').addEventListener('click', () => custSearch(query));
 }
@@ -3957,16 +3986,10 @@ async function custSearch(query) {
     for (const c of rows) {
       const lastName  = (c.last_name  || '').trim();
       const firstName = (c.first_name || '').trim();
-      const fullName  = firstName ? `${lastName}, ${firstName}` : lastName;
-      const plays     = c.reservation_count || 0;
       const div = document.createElement('div');
       div.className = 'cust-result';
-      div.innerHTML =
-        `<div class="cust-result-name">${_escCust(fullName)}</div>` +
-        `<div class="cust-result-meta">` +
-          `<span style="margin-right:6px;color:var(--ink-muted);font-size:11px">${_escCust(c.email || '')}${c.email && c.phone ? ' · ' : ''}${_escCust(c.phone || '')}</span>` +
-          `<span class="cust-badge cust-badge-rate">${plays} play${plays !== 1 ? 's' : ''}</span>` +
-        `</div>`;
+      const { line1, line2 } = _custLines(c, null);
+      div.innerHTML = line1 + line2;
       div.addEventListener('click', () => custShowProfile(firstName ? `${firstName} ${lastName}` : lastName, c));
       body.appendChild(div);
     }
@@ -3978,6 +4001,54 @@ async function custSearch(query) {
 
 function _escCust(s) {
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ─── Shared customer display helpers ─────────────────────────────
+function _fmtPhone(raw) {
+  if (!raw) return null;
+  const digits = String(raw).replace(/\D/g, '');
+  if (digits.length === 10) {
+    return `+1 ${digits.slice(0,3)}-${digits.slice(3,6)}-${digits.slice(6)}`;
+  }
+  if (digits.length === 11 && digits[0] === '1') {
+    return `+1 ${digits.slice(1,4)}-${digits.slice(4,7)}-${digits.slice(7)}`;
+  }
+  if (digits.length > 6) {
+    // International — show raw with + prefix
+    return `+${digits}`;
+  }
+  return raw; // too short / garbage — return as-is
+}
+
+// Render the two standard lines for a customer entry.
+// Returns { line1: string (HTML), line2: string (HTML) }
+function _custLines(c, badges) {
+  const lastName  = _escCust((c.last_name  || '').trim());
+  const firstName = _escCust((c.first_name || '').trim());
+  const nameStr   = firstName ? `${lastName}, ${firstName}` : lastName;
+
+  const badgeHtml = (badges && badges.length)
+    ? ' ' + badges.map(b =>
+        `<span class="cust-badge" style="background:${b.bg};color:${b.color};border:1px solid ${b.border}">${b.abbr}</span>`
+      ).join(' ')
+    : '';
+
+  const emailStr = c.email
+    ? `<span>${_escCust(c.email)}</span>`
+    : `<span style="color:var(--rose-500,#f87171);font-style:italic">need email</span>`;
+
+  const phone    = _fmtPhone(c.phone);
+  const phoneStr = phone
+    ? `<span>${_escCust(phone)}</span>`
+    : `<span style="color:var(--rose-500,#f87171);font-style:italic">need phone</span>`;
+
+  const plays    = typeof c.reservation_count === 'number' ? c.reservation_count : (c.plays || 0);
+  const playsStr = `<span>${plays.toLocaleString()} play${plays !== 1 ? 's' : ''}</span>`;
+
+  return {
+    line1: `<div class="cust-result-name">${nameStr}${badgeHtml}</div>`,
+    line2: `<div class="cust-result-meta">${emailStr} <span style="opacity:.4">·</span> ${phoneStr} <span style="opacity:.4">·</span> ${playsStr}</div>`,
+  };
 }
 
 async function custShowProfile(name, q18 = null) {
@@ -4066,9 +4137,11 @@ async function custShowProfile(name, q18 = null) {
         <button class="cust-back" id="custBackBtn">← Back to results</button>
         <div class="cust-profile-name">${_escCust(q18 ? ((q18.last_name||'') + (q18.first_name ? ', '+q18.first_name : '')) : name)}</div>
         ${q18 ? `<div style="font-size:12px;color:var(--ink-muted);margin:-6px 0 10px;display:flex;flex-wrap:wrap;gap:6px 14px">
-          ${q18.email ? `<span>${_escCust(q18.email)}</span>` : ''}
-          ${q18.phone ? `<span>${_escCust(q18.phone)}</span>` : ''}
-          <span>${q18.reservation_count||0} Q18 plays total</span>
+          ${q18.email ? `<span>${_escCust(q18.email)}</span>` : `<span style="color:#f87171;font-style:italic">need email</span>`}
+          <span style="opacity:.4">·</span>
+          ${q18.phone ? `<span>${_escCust(_fmtPhone(q18.phone))}</span>` : `<span style="color:#f87171;font-style:italic">need phone</span>`}
+          <span style="opacity:.4">·</span>
+          <span>${(q18.reservation_count||0).toLocaleString()} Q18 plays total</span>
         </div>` : ''}
 
         <div class="cust-stat-row">
