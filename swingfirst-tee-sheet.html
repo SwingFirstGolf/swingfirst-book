@@ -3247,17 +3247,106 @@ document.getElementById('nextDay').onclick = () => jumpToOffset(state.dayOffset 
 
 // ─── Search ──────────────────────────────────────────────────────
 let opSearchQuery = '';
+let _opDrawerTimer = null;
+
 document.getElementById('opSearch').addEventListener('input', function() {
   opSearchQuery = this.value.trim();
   document.getElementById('opSearchClear').classList.toggle('show', !!opSearchQuery);
   renderRows();
+
+  clearTimeout(_opDrawerTimer);
+  if (opSearchQuery.length < 2) {
+    closeCustomerDrawer();
+    return;
+  }
+  _opDrawerTimer = setTimeout(() => {
+    // Collect players on today's tee sheet that match the query
+    const q = opSearchQuery.toLowerCase();
+    const matched = [];
+    const seenNames = new Set();
+    (state.slots || []).forEach(slot => {
+      (slot.players || []).forEach((p, pi) => {
+        if (!p || !p.name) return;
+        if (p.name.toLowerCase().includes(q) && !seenNames.has(p.name)) {
+          seenNames.add(p.name);
+          matched.push({ p, slot });
+        }
+      });
+    });
+
+    openCustomerDrawer();
+    // Sync the drawer's own search input so the back button works
+    document.getElementById('custSearchInput').value = opSearchQuery;
+
+    if (matched.length > 0) {
+      showTeeSheetMatches(matched, opSearchQuery);
+    } else {
+      custSearch(opSearchQuery);
+    }
+  }, 350);
 });
+
 document.getElementById('opSearchClear').addEventListener('click', function() {
   opSearchQuery = '';
   document.getElementById('opSearch').value = '';
   this.classList.remove('show');
   renderRows();
+  closeCustomerDrawer();
 });
+
+// Show tee-sheet matched players in the customer drawer
+function showTeeSheetMatches(matched, query) {
+  const body = document.getElementById('custBody');
+  const plural = matched.length !== 1;
+  body.innerHTML = `<div style="padding:8px 14px 6px;font-size:11px;color:var(--ink-muted)">
+    <span style="background:#1a3a1a;color:#34c97e;padding:2px 7px;border-radius:4px;font-weight:600;font-size:10px;letter-spacing:.5px;margin-right:6px">ON TODAY'S SHEET</span>
+    ${matched.length} player${plural ? 's' : ''} matching "<b>${_escCust(query)}</b>"
+  </div>`;
+
+  matched.forEach(({ p, slot }) => {
+    const div = document.createElement('div');
+    div.className = 'cust-result';
+    const timeStr = typeof fmt12 === 'function' ? fmt12(slot.hour, slot.minute) : `${slot.hour}:${String(slot.minute||0).padStart(2,'0')}`;
+    const pt = typeof getPassType === 'function' ? getPassType(p.rateType || 'Public') : null;
+    const badge = pt
+      ? `<span class="cust-badge" style="background:${pt.bg};color:${pt.color};border:1px solid ${pt.border}">${pt.abbr}</span>`
+      : `<span class="cust-badge cust-badge-rate">${p.rateType || 'Public'}</span>`;
+    div.innerHTML =
+      `<div class="cust-result-name">${_escCust(p.name)}</div>` +
+      `<div class="cust-result-meta">${badge} <span style="color:var(--ink-muted)">· ${timeStr}</span></div>`;
+    div.addEventListener('click', () => custShowProfileByTeeSheetName(p.name));
+    body.appendChild(div);
+  });
+
+  // Also offer a Q18-wide search link
+  const footer = document.createElement('div');
+  footer.style.cssText = 'padding:10px 14px;border-top:1px solid var(--line);margin-top:4px';
+  footer.innerHTML = `<button style="background:none;border:none;color:var(--accent);font-size:12px;cursor:pointer;padding:0" id="q18SearchBtn">Search all 77K Q18 players for "${_escCust(query)}" →</button>`;
+  body.appendChild(footer);
+  document.getElementById('q18SearchBtn').addEventListener('click', () => custSearch(query));
+}
+
+// Look up a tee-sheet player name ("First Last") in q18_customers then show profile
+async function custShowProfileByTeeSheetName(fullName) {
+  document.getElementById('custBody').innerHTML = '<div class="cust-empty">Loading…</div>';
+  try {
+    // Split "First Last" → search last_name + first_name
+    const parts = fullName.trim().split(/\s+/);
+    const lastName  = parts.length > 1 ? parts[parts.length - 1] : parts[0];
+    const firstName = parts.length > 1 ? parts.slice(0, -1).join(' ') : '';
+    const lPat = encodeURIComponent(`*${lastName}*`);
+    const fPat = encodeURIComponent(`*${firstName}*`);
+    const url  = `${SB_URL}/rest/v1/q18_customers?select=q18_id,first_name,last_name,email,phone,reservation_count` +
+      `&last_name=ilike.${lPat}` +
+      (firstName ? `&first_name=ilike.${fPat}` : '') +
+      `&order=reservation_count.desc&limit=1`;
+    const rows = await fetch(url, { headers: SB_H }).then(r => r.json());
+    const q18  = rows && rows[0] ? rows[0] : null;
+    custShowProfile(fullName, q18);
+  } catch(e) {
+    custShowProfile(fullName, null);
+  }
+}
 
 // ─── Clock ───────────────────────────────────────────────────────
 function tickClock() {
@@ -3797,7 +3886,10 @@ document.getElementById('custDrawerClose').addEventListener('click', closeCustom
 document.querySelector('.nav-item[href="#"]')?.closest('.nav-group');
 document.querySelectorAll('.nav-item').forEach(link => {
   if (link.textContent.trim().includes('Customers')) {
-    link.addEventListener('click', e => { e.preventDefault(); openCustomerDrawer(); });
+    link.addEventListener('click', e => {
+      e.preventDefault();
+      window.open('swingfirst-customers.html', '_blank');
+    });
   }
 });
 
@@ -3816,12 +3908,38 @@ document.getElementById('custSearchInput').addEventListener('input', e => {
   _custSearchTimer = setTimeout(() => custSearch(q), 300);
 });
 
+// Parse search query into last/first components
+function _parseCustQuery(query) {
+  const q = query.trim();
+  if (q.includes(',')) {
+    // "Smith, John" format
+    const [last, ...rest] = q.split(',').map(s => s.trim());
+    return { last, first: rest.join(' ').trim() || null };
+  }
+  const parts = q.split(/\s+/);
+  if (parts.length >= 2) {
+    // "Smith John" → last=Smith, first=John
+    return { last: parts[0], first: parts.slice(1).join(' ') };
+  }
+  return { last: parts[0], first: null };
+}
+
 async function custSearch(query) {
   try {
-    const pat = encodeURIComponent(`*${query}*`);
+    const { last, first } = _parseCustQuery(query);
+    const lPat = encodeURIComponent(`*${last}*`);
+    let filterStr;
+    if (first) {
+      // Two-part: filter both columns
+      const fPat = encodeURIComponent(`*${first}*`);
+      filterStr = `&last_name=ilike.${lPat}&first_name=ilike.${fPat}`;
+    } else {
+      // Single term: search last name OR email OR phone
+      filterStr = `&or=(last_name.ilike.${lPat},email.ilike.${lPat},phone.ilike.${lPat})`;
+    }
     const url = `${SB_URL}/rest/v1/q18_customers` +
       `?select=q18_id,first_name,last_name,email,phone,reservation_count` +
-      `&or=(last_name.ilike.${pat},first_name.ilike.${pat},email.ilike.${pat},phone.ilike.${pat})` +
+      filterStr +
       `&reservation_count=gte.1` +
       `&order=reservation_count.desc&limit=50`;
     const resp = await fetch(url, { headers: SB_H });
