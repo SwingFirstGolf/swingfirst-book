@@ -2621,7 +2621,7 @@ function attachAutocomplete(input) {
           `${SB_URL}/rest/v1/q18_customers` +
           `?select=q18_id,first_name,last_name,email,phone,reservation_count` +
           acFilter +
-          `&reservation_count=gte.1` +
+          `&reservation_count=gte.0` +
           `&order=reservation_count.desc&limit=12`,
           { headers: SB_H }
         ).then(r => r.json());
@@ -4126,7 +4126,7 @@ async function custSearch(query) {
     const url = `${SB_URL}/rest/v1/q18_customers` +
       `?select=q18_id,first_name,last_name,email,phone,reservation_count` +
       filterStr +
-      `&reservation_count=gte.1` +
+      `&reservation_count=gte.0` +
       `&order=${orderStr}&limit=50`;
     const countHeaders = Object.assign({}, SB_H, { 'Prefer': 'count=exact' });
     const resp = await fetch(url, { headers: countHeaders });
