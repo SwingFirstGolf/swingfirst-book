@@ -4153,7 +4153,12 @@ async function custSearch(query) {
           `</div>` +
         `</div>`;
       document.getElementById('ccfSave').addEventListener('click', submitCreatePlayer);
-      document.getElementById('ccfCancel').addEventListener('click', () => custSearch(_lastCustQuery));
+      document.getElementById('ccfCancel').addEventListener('click', () => {
+        document.getElementById('custSearchInput').value = '';
+        document.getElementById('custSortBar').style.display = 'none';
+        document.getElementById('custBody').innerHTML =
+          '<div class="cust-empty">Type a name to look up a customer.<br><span style="font-size:12px">Shows booking history across all SwingFirst courses.</span></div>';
+      });
       document.getElementById('ccfFirst').focus();
       return;
     }
