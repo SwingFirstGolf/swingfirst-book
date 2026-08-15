@@ -575,6 +575,18 @@
   .cust-badge { display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; }
   .cust-badge-sf   { background: #ede9fe; color: #5b21b6; border: 1px solid #ddd6fe; }
   .cust-badge-rate { background: var(--green-50); color: var(--green-900); border: 1px solid var(--green-200); }
+  /* Create New Player form */
+  .cust-create-form { padding: 14px 14px 18px; border-top: 1px solid var(--line); }
+  .ccf-title { font-size: 13px; font-weight: 700; color: var(--ink); margin-bottom: 11px; }
+  .ccf-row { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-bottom: 7px; }
+  .ccf-input { width: 100%; padding: 7px 10px; border: 1px solid var(--line); border-radius: 6px; font-size: 12px; background: var(--paper); color: var(--ink); outline: none; font-family: inherit; }
+  .ccf-input:focus { border-color: var(--green-600); box-shadow: 0 0 0 2px rgba(42,138,106,.12); }
+  .ccf-input.ccf-err { border-color: #ef4444; }
+  .ccf-error { display: none; color: #ef4444; font-size: 11px; margin: 4px 0 8px; }
+  .ccf-actions { display: flex; gap: 8px; margin-top: 12px; }
+  .ccf-btn-save { flex: 1; padding: 8px; background: var(--green-700); color: #fff; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .ccf-btn-save:hover { background: var(--green-600); }
+  .ccf-btn-cancel { padding: 8px 14px; background: transparent; color: var(--ink-muted); border: 1px solid var(--line); border-radius: 6px; font-size: 13px; cursor: pointer; }
   /* Profile */
   .cust-profile { padding: 14px 16px; }
   .cust-back { background: none; border: none; color: var(--green-700); font-size: 12px; font-weight: 600; cursor: pointer; padding: 0; margin-bottom: 14px; display: flex; align-items: center; gap: 4px; }
@@ -3183,6 +3195,7 @@ function editBooking(slot, pi) {
     : [pi];
   const editData = {
     slotId: slot.id,
+    date: state.date,   // "YYYY-MM-DD" — used for booking validation
     hour: slot.hour,
     minute: slot.minute,
     rateCents: slot.rateCents,
@@ -3953,6 +3966,63 @@ document.querySelectorAll('.nav-item').forEach(link => {
 // ─── Drawer sort state ───────────────────────────────────────────
 let _custSortCol = 'plays';  // 'name' | 'plays'
 let _custSortDir = 'desc';   // 'asc' | 'desc'
+let _lastCustQuery = '';
+
+// ─── Create new player ────────────────────────────────────────────
+async function submitCreatePlayer() {
+  const first = (document.getElementById('ccfFirst')?.value || '').trim();
+  const last  = (document.getElementById('ccfLast')?.value  || '').trim();
+  const phone = (document.getElementById('ccfPhone')?.value || '').trim();
+  const email = (document.getElementById('ccfEmail')?.value || '').trim();
+  const errEl = document.getElementById('ccfError');
+  const saveBtn = document.getElementById('ccfSave');
+
+  // Clear previous errors
+  errEl.style.display = 'none';
+  ['ccfFirst','ccfLast','ccfPhone','ccfEmail'].forEach(id => document.getElementById(id)?.classList.remove('ccf-err'));
+
+  const missing = [];
+  if (!first) { missing.push('ccfFirst'); }
+  if (!last)  { missing.push('ccfLast'); }
+  if (!phone) { missing.push('ccfPhone'); }
+  if (!email) { missing.push('ccfEmail'); }
+  if (missing.length) {
+    missing.forEach(id => document.getElementById(id)?.classList.add('ccf-err'));
+    errEl.textContent = 'All fields are required.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  saveBtn.textContent = 'Saving…';
+  saveBtn.disabled = true;
+
+  // Use a negative unix-seconds value as synthetic q18_id (won't collide with real Q18 IDs which are positive)
+  const syntheticId = -(Math.floor(Date.now() / 1000));
+
+  try {
+    const resp = await fetch(`${SB_URL}/rest/v1/q18_customers`, {
+      method: 'POST',
+      headers: Object.assign({}, SB_H, { 'Content-Type': 'application/json', 'Prefer': 'return=representation' }),
+      body: JSON.stringify({ q18_id: syntheticId, first_name: first, last_name: last, phone, email, reservation_count: 0 })
+    });
+    if (!resp.ok) {
+      const txt = await resp.text();
+      errEl.textContent = 'Save failed: ' + txt;
+      errEl.style.display = 'block';
+      saveBtn.textContent = 'Save Player';
+      saveBtn.disabled = false;
+      return;
+    }
+    const created = await resp.json();
+    const newCust = Array.isArray(created) ? created[0] : created;
+    custShowProfile(`${first} ${last}`, newCust || { first_name: first, last_name: last, phone, email, reservation_count: 0 });
+  } catch(e) {
+    errEl.textContent = 'Network error. Please try again.';
+    errEl.style.display = 'block';
+    saveBtn.textContent = 'Save Player';
+    saveBtn.disabled = false;
+  }
+}
 
 function _setCustSort(col) {
   if (_custSortCol === col) {
@@ -4062,8 +4132,29 @@ async function custSearch(query) {
     const rows = await resp.json();
 
     if (!Array.isArray(rows) || !rows.length) {
+      _lastCustQuery = query;
+      const parsed = _parseCustQuery(query);
       document.getElementById('custBody').innerHTML =
-        `<div class="cust-empty">No players found matching "<b>${_escCust(query)}</b>".</div>`;
+        `<div class="cust-empty">No players found for "<b>${_escCust(query)}</b>".</div>` +
+        `<div class="cust-create-form">` +
+          `<div class="ccf-title">+ Create New Player</div>` +
+          `<div class="ccf-row">` +
+            `<input class="ccf-input" id="ccfFirst" placeholder="First Name *" autocomplete="off" value="${_escCust(parsed.first || '')}"/>` +
+            `<input class="ccf-input" id="ccfLast"  placeholder="Last Name *"  autocomplete="off" value="${_escCust(parsed.last  || '')}"/>` +
+          `</div>` +
+          `<div class="ccf-row">` +
+            `<input class="ccf-input" id="ccfPhone" placeholder="Phone *" type="tel"   autocomplete="off"/>` +
+            `<input class="ccf-input" id="ccfEmail" placeholder="Email *" type="email" autocomplete="off"/>` +
+          `</div>` +
+          `<div class="ccf-error" id="ccfError"></div>` +
+          `<div class="ccf-actions">` +
+            `<button class="ccf-btn-save" id="ccfSave">Save Player</button>` +
+            `<button class="ccf-btn-cancel" id="ccfCancel">Cancel</button>` +
+          `</div>` +
+        `</div>`;
+      document.getElementById('ccfSave').addEventListener('click', submitCreatePlayer);
+      document.getElementById('ccfCancel').addEventListener('click', () => custSearch(_lastCustQuery));
+      document.getElementById('ccfFirst').focus();
       return;
     }
 
