@@ -561,7 +561,11 @@
   .cust-result { padding: 10px 14px; border-bottom: 1px solid var(--line); cursor: pointer; }
   .cust-result:hover { background: var(--green-50); }
   .cust-result-name { font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 3px; }
-  .cust-result-meta { font-size: 11px; color: var(--ink-muted); display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+  .cust-result-meta { font-size: 11px; color: var(--ink-muted); display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+  .cust-meta-left { display: flex; align-items: center; gap: 5px; flex: 1; min-width: 0; overflow: hidden; }
+  .cust-meta-left span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cust-dot { opacity: .4; flex-shrink: 0; }
+  .cust-plays-badge { flex-shrink: 0; padding: 1px 7px; border-radius: 10px; font-size: 10px; font-weight: 700; background: var(--surface2); color: var(--ink-muted); border: 1px solid var(--line); white-space: nowrap; }
   .cust-badge { display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; }
   .cust-badge-sf   { background: #ede9fe; color: #5b21b6; border: 1px solid #ddd6fe; }
   .cust-badge-rate { background: var(--green-50); color: var(--green-900); border: 1px solid var(--green-200); }
@@ -3937,6 +3941,28 @@ document.getElementById('custSearchInput').addEventListener('input', e => {
   _custSearchTimer = setTimeout(() => custSearch(q), 300);
 });
 
+// Batch-fetch pass-type badges from booking_players for a list of Q18 customers.
+// Returns a map: "first last" (lowercase) → [passType, ...]
+async function _fetchBadgesForQ18(customers) {
+  if (!customers.length) return {};
+  // Build OR filter: name.eq.First Last, ...
+  const orParts = customers.map(c => {
+    const name = [c.first_name, c.last_name].filter(Boolean).join(' ');
+    return `name.eq.${encodeURIComponent(name)}`;
+  }).join(',');
+  try {
+    const url = `${SB_URL}/rest/v1/booking_players?select=name,rate_type&or=(${orParts})&limit=1000`;
+    const rows = await fetch(url, { headers: SB_H }).then(r => r.json());
+    const byName = {};
+    for (const row of (rows || [])) {
+      const key = (row.name || '').trim().toLowerCase();
+      if (!byName[key]) byName[key] = new Set();
+      if (row.rate_type) byName[key].add(row.rate_type);
+    }
+    return byName;
+  } catch(e) { return {}; }
+}
+
 // Parse search query into last/first components
 function _parseCustQuery(query) {
   const q = query.trim();
@@ -3980,15 +4006,27 @@ async function custSearch(query) {
       return;
     }
 
+    // Fetch badges in parallel with rendering setup
+    const badgeMap = await _fetchBadgesForQ18(rows);
+
     const body = document.getElementById('custBody');
     body.innerHTML = `<div style="padding:8px 14px 6px;font-size:11px;color:var(--ink-muted)">${rows.length} player${rows.length !== 1 ? 's' : ''} found${rows.length === 50 ? ' (showing top 50)' : ''}</div>`;
 
     for (const c of rows) {
       const lastName  = (c.last_name  || '').trim();
       const firstName = (c.first_name || '').trim();
+      const fullKey   = `${firstName} ${lastName}`.trim().toLowerCase();
+      const rateTypes = [...(badgeMap[fullKey] || new Set())];
+      const badgeSet  = new Map();
+      rateTypes.forEach(r => {
+        const pt = typeof getPassType === 'function' ? getPassType(r) : null;
+        if (pt && pt.key !== 'UNKNOWN' && !badgeSet.has(pt.abbr)) badgeSet.set(pt.abbr, pt);
+      });
+      const badges = [...badgeSet.values()];
+
       const div = document.createElement('div');
       div.className = 'cust-result';
-      const { line1, line2 } = _custLines(c, null);
+      const { line1, line2 } = _custLines(c, badges);
       div.innerHTML = line1 + line2;
       div.addEventListener('click', () => custShowProfile(firstName ? `${firstName} ${lastName}` : lastName, c));
       body.appendChild(div);
@@ -4043,11 +4081,13 @@ function _custLines(c, badges) {
     : `<span style="color:var(--rose-500,#f87171);font-style:italic">need phone</span>`;
 
   const plays    = typeof c.reservation_count === 'number' ? c.reservation_count : (c.plays || 0);
-  const playsStr = `<span>${plays.toLocaleString()} play${plays !== 1 ? 's' : ''}</span>`;
+  const playsLabel = plays > 0
+    ? `<span class="cust-plays-badge">${plays.toLocaleString()} play${plays !== 1 ? 's' : ''}</span>`
+    : '';
 
   return {
     line1: `<div class="cust-result-name">${nameStr}${badgeHtml}</div>`,
-    line2: `<div class="cust-result-meta">${emailStr} <span style="opacity:.4">·</span> ${phoneStr} <span style="opacity:.4">·</span> ${playsStr}</div>`,
+    line2: `<div class="cust-result-meta"><span class="cust-meta-left">${emailStr} <span class="cust-dot">·</span> ${phoneStr}</span>${playsLabel}</div>`,
   };
 }
 
