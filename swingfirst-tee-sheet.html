@@ -2588,11 +2588,20 @@ function attachAutocomplete(input) {
     if (q.length < 2) { removeList(); return; }
     _acTimer = setTimeout(async () => {
       try {
-        const pat = encodeURIComponent(`*${q}*`);
+        let acFilter;
+        if (q.includes('@')) {
+          acFilter = `&email=ilike.${encodeURIComponent(`*${q}*`)}`;
+        } else {
+          const { last: acLast, first: acFirst } = _parseCustQuery(q);
+          const acLPat = encodeURIComponent(`${acLast}*`);
+          acFilter = acFirst
+            ? `&last_name=ilike.${acLPat}&first_name=ilike.${encodeURIComponent(`${acFirst}*`)}`
+            : `&last_name=ilike.${acLPat}`;
+        }
         const rows = await fetch(
           `${SB_URL}/rest/v1/q18_customers` +
           `?select=q18_id,first_name,last_name,email,phone,reservation_count` +
-          `&or=(last_name.ilike.${pat},first_name.ilike.${pat},email.ilike.${pat},phone.ilike.${pat})` +
+          acFilter +
           `&reservation_count=gte.1` +
           `&order=reservation_count.desc&limit=12`,
           { headers: SB_H }
@@ -4022,13 +4031,17 @@ function _parseCustQuery(query) {
 async function custSearch(query) {
   try {
     const { last, first } = _parseCustQuery(query);
-    const lPat = encodeURIComponent(`*${last}*`);
     let filterStr;
-    if (first) {
-      const fPat = encodeURIComponent(`*${first}*`);
-      filterStr = `&last_name=ilike.${lPat}&first_name=ilike.${fPat}`;
+    if (query.trim().includes('@')) {
+      // Email search: contains match
+      filterStr = `&email=ilike.${encodeURIComponent(`*${query.trim()}*`)}`;
     } else {
-      filterStr = `&or=(last_name.ilike.${lPat},email.ilike.${lPat},phone.ilike.${lPat})`;
+      const lPat = encodeURIComponent(`${last}*`);  // starts-with — no Goldsmith noise
+      if (first) {
+        filterStr = `&last_name=ilike.${lPat}&first_name=ilike.${encodeURIComponent(`${first}*`)}`;
+      } else {
+        filterStr = `&last_name=ilike.${lPat}`;
+      }
     }
     const orderStr = _custSortCol === 'plays'
       ? `reservation_count.${_custSortDir}`
