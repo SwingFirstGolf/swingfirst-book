@@ -561,11 +561,12 @@
   .cust-result { padding: 10px 14px; border-bottom: 1px solid var(--line); cursor: pointer; }
   .cust-result:hover { background: var(--green-50); }
   .cust-result-name { font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 3px; }
-  .cust-result-meta { font-size: 11px; color: var(--ink-muted); display: flex; align-items: center; justify-content: space-between; gap: 6px; }
-  .cust-meta-left { display: flex; align-items: center; gap: 5px; flex: 1; min-width: 0; overflow: hidden; }
-  .cust-meta-left span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .cust-dot { opacity: .4; flex-shrink: 0; }
-  .cust-plays-badge { flex-shrink: 0; padding: 1px 7px; border-radius: 10px; font-size: 10px; font-weight: 700; background: var(--surface2); color: var(--ink-muted); border: 1px solid var(--line); white-space: nowrap; }
+  .cust-result-meta { font-size: 11px; color: var(--ink-muted); display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr) auto; align-items: center; gap: 4px 8px; }
+  .cust-meta-email { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cust-meta-phone { text-align: center; white-space: nowrap; }
+  .cust-meta-email a, .cust-meta-phone a { color: inherit; text-decoration: none; }
+  .cust-meta-email a:hover, .cust-meta-phone a:hover { color: var(--accent); text-decoration: underline; }
+  .cust-plays-badge { padding: 1px 7px; border-radius: 10px; font-size: 10px; font-weight: 700; background: var(--surface2); color: var(--ink-muted); border: 1px solid var(--line); white-space: nowrap; justify-self: end; }
   .cust-badge { display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; }
   .cust-badge-sf   { background: #ede9fe; color: #5b21b6; border: 1px solid #ddd6fe; }
   .cust-badge-rate { background: var(--green-50); color: var(--green-900); border: 1px solid var(--green-200); }
@@ -4084,23 +4085,24 @@ function _custLines(c, badges) {
       ).join(' ')
     : '';
 
-  const emailStr = c.email
-    ? `<span>${_escCust(c.email)}</span>`
-    : `<span style="color:var(--rose-500,#f87171);font-style:italic">need email</span>`;
+  const emailCol = c.email
+    ? `<span class="cust-meta-email"><a href="mailto:${_escCust(c.email)}" onclick="event.stopPropagation()">${_escCust(c.email)}</a></span>`
+    : `<span class="cust-meta-email" style="color:#f87171;font-style:italic">need email</span>`;
 
   const phone    = _fmtPhone(c.phone);
-  const phoneStr = phone
-    ? `<span>${_escCust(phone)}</span>`
-    : `<span style="color:var(--rose-500,#f87171);font-style:italic">need phone</span>`;
+  const rawPhone = phone ? phone.replace(/\s/g, '') : null; // e.g. +14807972525
+  const phoneCol = phone
+    ? `<span class="cust-meta-phone"><a href="tel:${_escCust(rawPhone)}" onclick="event.stopPropagation()">${_escCust(phone)}</a></span>`
+    : `<span class="cust-meta-phone" style="color:#f87171;font-style:italic">need phone</span>`;
 
   const plays    = typeof c.reservation_count === 'number' ? c.reservation_count : (c.plays || 0);
   const playsLabel = plays > 0
     ? `<span class="cust-plays-badge">${plays.toLocaleString()} play${plays !== 1 ? 's' : ''}</span>`
-    : '';
+    : `<span></span>`;
 
   return {
     line1: `<div class="cust-result-name">${nameStr}${badgeHtml}</div>`,
-    line2: `<div class="cust-result-meta"><span class="cust-meta-left">${emailStr} <span class="cust-dot">·</span> ${phoneStr}</span>${playsLabel}</div>`,
+    line2: `<div class="cust-result-meta">${emailCol}${phoneCol}${playsLabel}</div>`,
   };
 }
 
@@ -4190,9 +4192,9 @@ async function custShowProfile(name, q18 = null) {
         <button class="cust-back" id="custBackBtn">← Back to results</button>
         <div class="cust-profile-name">${_escCust(q18 ? ((q18.last_name||'') + (q18.first_name ? ', '+q18.first_name : '')) : name)}</div>
         ${q18 ? `<div style="font-size:12px;color:var(--ink-muted);margin:-6px 0 10px;display:flex;flex-wrap:wrap;gap:6px 14px">
-          ${q18.email ? `<span>${_escCust(q18.email)}</span>` : `<span style="color:#f87171;font-style:italic">need email</span>`}
+          ${q18.email ? `<a href="mailto:${_escCust(q18.email)}" style="color:inherit;text-decoration:none" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${_escCust(q18.email)}</a>` : `<span style="color:#f87171;font-style:italic">need email</span>`}
           <span style="opacity:.4">·</span>
-          ${q18.phone ? `<span>${_escCust(_fmtPhone(q18.phone))}</span>` : `<span style="color:#f87171;font-style:italic">need phone</span>`}
+          ${q18.phone ? `<a href="tel:${_escCust((_fmtPhone(q18.phone)||'').replace(/\s/g,''))}" style="color:inherit;text-decoration:none" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${_escCust(_fmtPhone(q18.phone))}</a>` : `<span style="color:#f87171;font-style:italic">need phone</span>`}
           <span style="opacity:.4">·</span>
           <span>${(q18.reservation_count||0).toLocaleString()} Q18 plays total</span>
         </div>` : ''}
