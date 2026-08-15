@@ -795,10 +795,10 @@
     <input type="text" class="cust-search-input" id="custSearchInput" placeholder="Search by name…" autocomplete="off" spellcheck="false"/>
   </div>
   <div class="cust-sort-bar" id="custSortBar" style="display:none">
-    <button class="cust-sort-btn active" id="custSortName" title="Sort by name">
-      Name <span class="cust-sort-arrow" id="custSortNameArrow">↑</span>
+    <button class="cust-sort-btn" id="custSortName" title="Sort by name">
+      Name <span class="cust-sort-arrow" id="custSortNameArrow">↕</span>
     </button>
-    <button class="cust-sort-btn" id="custSortPlays" title="Sort by plays">
+    <button class="cust-sort-btn active" id="custSortPlays" title="Sort by plays">
       Plays <span class="cust-sort-arrow" id="custSortPlaysArrow">↓</span>
     </button>
   </div>
@@ -3951,8 +3951,8 @@ document.querySelectorAll('.nav-item').forEach(link => {
 });
 
 // ─── Drawer sort state ───────────────────────────────────────────
-let _custSortCol = 'name';  // 'name' | 'plays'
-let _custSortDir = 'asc';   // 'asc' | 'desc'
+let _custSortCol = 'plays';  // 'name' | 'plays'
+let _custSortDir = 'desc';   // 'asc' | 'desc'
 
 function _setCustSort(col) {
   if (_custSortCol === col) {
