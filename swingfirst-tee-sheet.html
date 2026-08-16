@@ -817,7 +817,7 @@
   <div class="cust-search-wrap">
     <input type="text" class="cust-search-input" id="custSearchInput" placeholder="Search by name…" autocomplete="off" spellcheck="false"/>
   </div>
-  <div class="cust-sort-bar" id="custSortBar" style="display:none">
+  <div class="cust-sort-bar" id="custSortBar">
     <button class="cust-sort-btn" id="custSortName" title="Sort by name">
       Name <span class="cust-sort-arrow" id="custSortNameArrow">↕</span>
     </button>
@@ -4052,7 +4052,7 @@ function _setCustSort(col) {
   document.getElementById('custSortPlaysArrow').textContent = _custSortCol === 'plays' ? (_custSortDir === 'asc' ? '↑' : '↓') : '↕';
   // Re-run search
   const q = document.getElementById('custSearchInput').value.trim();
-  if (q.length >= 2) custSearch(q);
+  if (q.length >= 2 || _custGnOnly) custSearch(q);
 }
 
 document.getElementById('custSortName').addEventListener('click',  () => _setCustSort('name'));
@@ -4060,9 +4060,14 @@ document.getElementById('custSortPlays').addEventListener('click', () => _setCus
 document.getElementById('custGnToggle').addEventListener('click', () => {
   _custGnOnly = !_custGnOnly;
   document.getElementById('custGnToggle').classList.toggle('active', _custGnOnly);
-  // If GN toggled on with no search query, still run a fetch to show all GN bookers
   const q = document.getElementById('custSearchInput').value.trim();
-  if (q.length >= 2 || _custGnOnly) custSearch(q);
+  if (q.length >= 2 || _custGnOnly) {
+    custSearch(q);
+  } else {
+    // GN turned off with no query — reset to empty state
+    document.getElementById('custBody').innerHTML =
+      '<div class="cust-empty">Type a name to look up a customer.<br><span style="font-size:12px">Shows booking history across all SwingFirst courses.</span></div>';
+  }
 });
 
 // Search (debounced 300ms)
@@ -4426,8 +4431,8 @@ async function custShowProfile(name, q18 = null) {
 
     document.getElementById('custBackBtn').addEventListener('click', () => {
       const q = document.getElementById('custSearchInput').value.trim();
-      if (q.length >= 2) custSearch(q);
-      else document.getElementById('custBody').innerHTML = '<div class="cust-empty">Type a name to look up a customer.</div>';
+      if (q.length >= 2 || _custGnOnly) custSearch(q);
+      else document.getElementById('custBody').innerHTML = '<div class="cust-empty">Type a name to look up a customer.<br><span style="font-size:12px">Shows booking history across all SwingFirst courses.</span></div>';
     });
 
     // Delete record
@@ -4451,10 +4456,9 @@ async function custShowProfile(name, q18 = null) {
         if (!resp.ok) throw new Error(await resp.text());
         // Go back to search results for the same query
         const q = document.getElementById('custSearchInput').value.trim();
-        if (q.length >= 2) {
+        if (q.length >= 2 || _custGnOnly) {
           custSearch(q);
         } else {
-          document.getElementById('custSortBar').style.display = 'none';
           document.getElementById('custBody').innerHTML =
             `<div class="cust-empty" style="color:var(--green-700)">✓ Record deleted.</div>`;
         }
