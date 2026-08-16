@@ -555,7 +555,11 @@
   .cust-search-wrap { padding: 12px 14px; border-bottom: 1px solid var(--line); flex-shrink: 0; }
   .cust-search-input { width: 100%; box-sizing: border-box; padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px; font-size: 13px; background: var(--surface); color: var(--ink); outline: none; }
   .cust-search-input:focus { border-color: var(--green-600); box-shadow: 0 0 0 2px rgba(22,163,74,.15); }
-  .cust-sort-bar { display: flex; gap: 4px; padding: 6px 10px; border-bottom: 1px solid var(--line); background: var(--surface); flex-shrink: 0; }
+  .cust-sort-bar { display: flex; gap: 4px; padding: 6px 10px; border-bottom: 1px solid var(--line); background: var(--surface); flex-shrink: 0; align-items: center; }
+  .cust-sort-spacer { flex: 1; }
+  .cust-gn-toggle { background: none; border: 1px solid #fcd34d; border-radius: 6px; padding: 3px 9px; font-size: 11px; font-weight: 700; color: #92400e; cursor: pointer; letter-spacing: .3px; opacity: .65; transition: all .12s; }
+  .cust-gn-toggle:hover { opacity: 1; }
+  .cust-gn-toggle.active { background: #fef3c7; opacity: 1; }
   .cust-sort-btn { background: none; border: 1px solid transparent; border-radius: 6px; padding: 3px 10px; font-size: 11px; font-weight: 600; color: var(--ink-muted); cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all .12s; letter-spacing: .3px; }
   .cust-sort-btn:hover { background: var(--surface2); color: var(--ink); }
   .cust-sort-btn.active { background: var(--surface2); border-color: var(--line); color: var(--ink); }
@@ -820,6 +824,8 @@
     <button class="cust-sort-btn active" id="custSortPlays" title="Sort by plays">
       Plays <span class="cust-sort-arrow" id="custSortPlaysArrow">↓</span>
     </button>
+    <div class="cust-sort-spacer"></div>
+    <button class="cust-gn-toggle" id="custGnToggle" title="Show GolfNow bookers only">GN</button>
   </div>
   <div class="cust-body" id="custBody">
     <div class="cust-empty">Type a name to look up a customer.<br><span style="font-size:12px">Shows booking history across all SwingFirst courses.</span></div>
@@ -3973,6 +3979,7 @@ document.querySelectorAll('.nav-item').forEach(link => {
 // ─── Drawer sort state ───────────────────────────────────────────
 let _custSortCol = 'plays';  // 'name' | 'plays'
 let _custSortDir = 'desc';   // 'asc' | 'desc'
+let _custGnOnly  = false;    // GolfNow filter toggle
 let _lastCustQuery = '';
 
 // ─── Create new player ────────────────────────────────────────────
@@ -4050,6 +4057,13 @@ function _setCustSort(col) {
 
 document.getElementById('custSortName').addEventListener('click',  () => _setCustSort('name'));
 document.getElementById('custSortPlays').addEventListener('click', () => _setCustSort('plays'));
+document.getElementById('custGnToggle').addEventListener('click', () => {
+  _custGnOnly = !_custGnOnly;
+  document.getElementById('custGnToggle').classList.toggle('active', _custGnOnly);
+  // If GN toggled on with no search query, still run a fetch to show all GN bookers
+  const q = document.getElementById('custSearchInput').value.trim();
+  if (q.length >= 2 || _custGnOnly) custSearch(q);
+});
 
 // Search (debounced 300ms)
 let _custSearchTimer = null;
@@ -4057,7 +4071,7 @@ let _custLastQuery   = '';
 document.getElementById('custSearchInput').addEventListener('input', e => {
   clearTimeout(_custSearchTimer);
   const q = e.target.value.trim();
-  if (q.length < 2) {
+  if (q.length < 2 && !_custGnOnly) {
     document.getElementById('custSortBar').style.display = 'none';
     document.getElementById('custBody').innerHTML = '<div class="cust-empty">Type at least 2 characters to search.</div>';
     return;
@@ -4107,19 +4121,19 @@ function _parseCustQuery(query) {
 
 async function custSearch(query) {
   try {
-    const { last, first } = _parseCustQuery(query);
-    let filterStr;
-    if (query.trim().includes('@')) {
-      // Email search: contains match
-      filterStr = `&email=ilike.${encodeURIComponent(`*${query.trim()}*`)}`;
-    } else {
-      const lPat = encodeURIComponent(`${last}*`);  // starts-with — no Goldsmith noise
-      if (first) {
-        filterStr = `&last_name=ilike.${lPat}&first_name=ilike.${encodeURIComponent(`${first}*`)}`;
-      } else {
-        filterStr = `&last_name=ilike.${lPat}`;
-      }
+    const q = (query || '').trim();
+    let filterStr = '';
+    if (q.includes('@')) {
+      filterStr = `&email=ilike.${encodeURIComponent(`*${q}*`)}`;
+    } else if (q.length >= 2) {
+      const { last, first } = _parseCustQuery(q);
+      const lPat = encodeURIComponent(`${last}*`);
+      filterStr = first
+        ? `&last_name=ilike.${lPat}&first_name=ilike.${encodeURIComponent(`${first}*`)}`
+        : `&last_name=ilike.${lPat}`;
     }
+    // GolfNow filter
+    if (_custGnOnly) filterStr += `&email=ilike.${encodeURIComponent('*@noreply-golfnow.com')}`;
     const orderStr = _custSortCol === 'plays'
       ? `reservation_count.${_custSortDir}`
       : `last_name.${_custSortDir},first_name.${_custSortDir}`;
