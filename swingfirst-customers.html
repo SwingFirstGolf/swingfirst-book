@@ -582,7 +582,10 @@ function renderTable(rows) {
     const firstName = escHtml(r.first_name || '');
 
     const emailEsc = escHtml(r.email || '');
-    const phoneEsc = escHtml(r.phone || '');
+    const phoneRaw = r.phone || '';
+    const phoneFmt = _fmtPhone(phoneRaw) || '';
+    const phoneEsc = escHtml(phoneRaw);   // raw for modal input
+    const phoneDsp = escHtml(phoneFmt);   // formatted for display
     const firstEsc = escHtml(r.first_name || '');
     const lastEsc  = escHtml(r.last_name  || '');
     return `<tr data-q18id="${r.q18_id}" onclick="openEditModal(${r.q18_id}, '${firstEsc}', '${lastEsc}', '${emailEsc}', '${phoneEsc}')">
@@ -590,12 +593,23 @@ function renderTable(rows) {
       <td class="name">${lastEsc}</td>
       <td class="name">${firstEsc}</td>
       <td class="email">${emailEsc || '<span style="color:var(--red);font-style:italic;opacity:.7">—</span>'}</td>
-      <td class="phone">${phoneEsc || '<span style="color:var(--red);font-style:italic;opacity:.7">—</span>'}</td>
+      <td class="phone">${phoneDsp || '<span style="color:var(--red);font-style:italic;opacity:.7">—</span>'}</td>
       <td class="plays ${playsClass}">${plays.toLocaleString()}</td>
       <td class="date">${memberSince}</td>
       <td class="del-col" onclick="event.stopPropagation()"><button class="del-btn" title="Delete record" onclick="initDelete(this, ${r.q18_id}, '${lastEsc}, ${firstEsc}')">🗑</button></td>
     </tr>`;
   }).join('');
+}
+
+function _fmtPhone(raw) {
+  if (!raw) return null;
+  const digits = String(raw).replace(/\D/g, '');
+  if (digits.length === 10)
+    return `+1 (${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`;
+  if (digits.length === 11 && digits[0] === '1')
+    return `+1 (${digits.slice(1,4)}) ${digits.slice(4,7)}-${digits.slice(7)}`;
+  if (digits.length > 6) return `+${digits}`;
+  return raw;
 }
 
 function escHtml(s) {
@@ -733,9 +747,10 @@ async function saveEdit() {
     if (row) {
       row.cells[1].textContent = last;
       row.cells[2].textContent = first;
-      row.cells[3].innerHTML = email || '<span style="color:var(--red);font-style:italic;opacity:.7">—</span>';
-      row.cells[4].innerHTML = phone || '<span style="color:var(--red);font-style:italic;opacity:.7">—</span>';
-      // Update onclick with new values
+      row.cells[3].innerHTML = escHtml(email) || '<span style="color:var(--red);font-style:italic;opacity:.7">—</span>';
+      const phoneFmtSave = escHtml(_fmtPhone(phone) || phone);
+      row.cells[4].innerHTML = phoneFmtSave || '<span style="color:var(--red);font-style:italic;opacity:.7">—</span>';
+      // Update onclick with raw phone so modal input gets plain digits
       const esc = s => s.replace(/'/g, "\\'");
       row.setAttribute('onclick', `openEditModal(${_editQ18Id}, '${esc(first)}', '${esc(last)}', '${esc(email)}', '${esc(phone)}')`);
     }
