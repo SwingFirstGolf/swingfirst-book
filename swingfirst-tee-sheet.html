@@ -4239,6 +4239,11 @@ function _custLines(c, badges) {
   const firstName = _escCust((c.first_name || '').trim());
   const nameStr   = firstName ? `${lastName}, ${firstName}` : lastName;
 
+  const isGolfNow = (c.email || '').toLowerCase().endsWith('@noreply-golfnow.com');
+  const gnBadge   = isGolfNow
+    ? ' <span class="cust-badge" style="background:#fef3c7;color:#92400e;border:1px solid #fcd34d" title="GolfNow booker — encourage direct booking">GN</span>'
+    : '';
+
   const badgeHtml = (badges && badges.length)
     ? ' ' + badges.map(b =>
         `<span class="cust-badge" style="background:${b.bg};color:${b.color};border:1px solid ${b.border}">${b.abbr}</span>`
@@ -4261,7 +4266,7 @@ function _custLines(c, badges) {
     : `<span></span>`;
 
   return {
-    line1: `<div class="cust-result-name">${nameStr}${badgeHtml}</div>`,
+    line1: `<div class="cust-result-name">${nameStr}${gnBadge}${badgeHtml}</div>`,
     line2: `<div class="cust-result-meta">${emailCol}${phoneCol}${playsLabel}</div>`,
   };
 }
@@ -4381,6 +4386,11 @@ async function custShowProfile(name, q18 = null) {
           </div>
         </div>
 
+        ${q18 && (q18.email||'').toLowerCase().endsWith('@noreply-golfnow.com') ? `
+        <div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#92400e;line-height:1.5">
+          💰 <strong>GolfNow booker</strong> — ${(q18.reservation_count||0)} plays booked via GolfNow.
+          Encourage them to book directly at <strong>swingfirst.co</strong> — no booking fee for them.
+        </div>` : ''}
         <div class="cust-section-head">Membership / Pass</div>
         ${membershipHtml}
 
