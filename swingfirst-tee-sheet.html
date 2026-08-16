@@ -1557,8 +1557,8 @@ function clearBSel() {
 
 function updateBulkBar() {
   const bar = document.getElementById('bulkBar');
-  // During an active drag we open the modal on mouseup instead — don't show bar yet
-  if (_bselDragActive) return;
+  // During an active drag we open the modal on mouseup instead — show highlight but not bar
+  if (_bselDragActive) { renderRows(); return; }
   if (blockSel.size === 0) { bar.classList.remove('visible'); renderRows(); return; }
   bar.classList.add('visible');
   document.getElementById('bulkBarCount').textContent =
