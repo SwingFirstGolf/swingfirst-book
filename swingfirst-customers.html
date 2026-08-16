@@ -343,6 +343,7 @@
         <option value="250">250</option>
       </select>
     </div>
+    <button id="gnFilterBtn" onclick="toggleGnFilter()" style="background:none;border:1px solid #fcd34d;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:700;color:#92400e;cursor:pointer;opacity:.65;transition:all .12s" title="Show GolfNow bookers only">GN bookers</button>
     <div class="count-badge" id="countBadge"></div>
   </div>
 
@@ -394,14 +395,24 @@ let perPage    = 50;
 let sortCol    = 'reservation_count';
 let sortDir    = 'desc';
 let searchVal  = '';
+let gnOnly     = false;
 let totalRows  = 0;
 let totalPages = 1;
 let debTimer   = null;
 
+function toggleGnFilter() {
+  gnOnly = !gnOnly;
+  const btn = document.getElementById('gnFilterBtn');
+  btn.style.opacity    = gnOnly ? '1'        : '.65';
+  btn.style.background = gnOnly ? '#fef3c7'  : 'none';
+  curPage = 1;
+  fetchCustomers();
+}
+
 // ─── Fetch ─────────────────────────────────────────────────────────
 async function fetchCustomers() {
   const body  = document.getElementById('custBody');
-  body.innerHTML = `<tr class="state-row"><td colspan="7"><span class="spinner"></span>Loading…</td></tr>`;
+  body.innerHTML = `<tr class="state-row"><td colspan="8"><span class="spinner"></span>Loading…</td></tr>`;
 
   const offset = (curPage - 1) * perPage;
   const order  = `${sortCol}.${sortDir}`;
@@ -410,13 +421,15 @@ async function fetchCustomers() {
           + `&order=${encodeURIComponent(order)}`
           + `&limit=${perPage}&offset=${offset}`;
 
-  // Only show players with at least 1 reservation
-  url += `&reservation_count=gte.1`;
+  // Only show players with at least 1 reservation (unless GN filter active — GN bookers can have 0)
+  url += `&reservation_count=gte.${gnOnly ? 4 : 1}`;
+
+  // GolfNow filter
+  if (gnOnly) url += `&email=ilike.${encodeURIComponent('*@noreply-golfnow.com')}`;
 
   // Search filter
   const q = searchVal.trim();
   if (q) {
-    // ilike search across name, email, phone
     const safe = q.replace(/[%_]/g, '\\$&');
     const pat  = `*${safe}*`;
     url += `&or=(last_name.ilike.${encodeURIComponent(pat)},first_name.ilike.${encodeURIComponent(pat)},email.ilike.${encodeURIComponent(pat)},phone.ilike.${encodeURIComponent(pat)})`;
@@ -439,7 +452,7 @@ async function fetchCustomers() {
     renderPagination();
     renderCountBadge();
   } catch (e) {
-    body.innerHTML = `<tr class="state-row"><td colspan="7">Error loading data: ${e.message}</td></tr>`;
+    body.innerHTML = `<tr class="state-row"><td colspan="8">Error loading data: ${e.message}</td></tr>`;
   }
 }
 
