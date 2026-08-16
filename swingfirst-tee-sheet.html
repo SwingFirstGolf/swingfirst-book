@@ -560,6 +560,10 @@
   .cust-gn-toggle { background: none; border: 1px solid #fcd34d; border-radius: 6px; padding: 3px 9px; font-size: 11px; font-weight: 700; color: #92400e; cursor: pointer; letter-spacing: .3px; opacity: .65; transition: all .12s; }
   .cust-gn-toggle:hover { opacity: 1; }
   .cust-gn-toggle.active { background: #fef3c7; opacity: 1; }
+  .cust-plays-filter { display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; color: var(--ink-muted); }
+  .cust-plays-filter input { width: 44px; padding: 2px 5px; border: 1px solid var(--line); border-radius: 5px; font-size: 12px; font-weight: 700; color: var(--ink); background: var(--card); text-align: center; }
+  .cust-plays-filter input:focus { outline: none; border-color: var(--green-600); }
+  .cust-plays-filter input.active { border-color: var(--green-600); background: var(--green-50); color: var(--green-900); }
   .cust-sort-btn { background: none; border: 1px solid transparent; border-radius: 6px; padding: 3px 10px; font-size: 11px; font-weight: 600; color: var(--ink-muted); cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all .12s; letter-spacing: .3px; }
   .cust-sort-btn:hover { background: var(--surface2); color: var(--ink); }
   .cust-sort-btn.active { background: var(--surface2); border-color: var(--line); color: var(--ink); }
@@ -833,6 +837,10 @@
       Plays <span class="cust-sort-arrow" id="custSortPlaysArrow">↓</span>
     </button>
     <div class="cust-sort-spacer"></div>
+    <div class="cust-plays-filter" title="Filter by minimum play count">
+      <span>Plays&nbsp;≥</span>
+      <input type="number" id="custMinPlays" min="0" placeholder="—" title="Minimum plays">
+    </div>
     <button class="cust-gn-toggle" id="custGnToggle" title="Show GolfNow bookers only">GN</button>
   </div>
   <div class="cust-body" id="custBody">
@@ -4540,14 +4548,28 @@ function _setCustSort(col) {
 
 document.getElementById('custSortName').addEventListener('click',  () => _setCustSort('name'));
 document.getElementById('custSortPlays').addEventListener('click', () => _setCustSort('plays'));
+// Min-plays filter — debounced, triggers search, highlights when active
+let _minPlaysTimer = null;
+document.getElementById('custMinPlays').addEventListener('input', function() {
+  const active = this.value.trim() !== '' && parseInt(this.value, 10) > 0;
+  this.classList.toggle('active', active);
+  clearTimeout(_minPlaysTimer);
+  _minPlaysTimer = setTimeout(() => {
+    const q = document.getElementById('custSearchInput').value.trim();
+    if (q.length >= 2 || _custGnOnly || active) custSearch(q);
+    else custSearch('');
+  }, 400);
+});
+
 document.getElementById('custGnToggle').addEventListener('click', () => {
   _custGnOnly = !_custGnOnly;
   document.getElementById('custGnToggle').classList.toggle('active', _custGnOnly);
   const q = document.getElementById('custSearchInput').value.trim();
-  if (q.length >= 2 || _custGnOnly) {
+  const _mpv = parseInt(document.getElementById('custMinPlays')?.value || '', 10);
+  const _mpActive = !isNaN(_mpv) && _mpv > 0;
+  if (q.length >= 2 || _custGnOnly || _mpActive) {
     custSearch(q);
   } else {
-    // GN turned off with no query — reset to empty state
     document.getElementById('custBody').innerHTML =
       '<div class="cust-empty">Type a name to look up a customer.<br><span style="font-size:12px">Shows booking history across all SwingFirst courses.</span></div>';
   }
@@ -4622,13 +4644,16 @@ async function custSearch(query) {
     }
     // GolfNow filter
     if (_custGnOnly) filterStr += `&email=ilike.${encodeURIComponent('*@noreply-golfnow.com')}`;
+    // Min plays filter
+    const minPlaysVal = parseInt(document.getElementById('custMinPlays')?.value || '', 10);
+    const minPlays = !isNaN(minPlaysVal) && minPlaysVal > 0 ? minPlaysVal : 0;
     const orderStr = _custSortCol === 'plays'
       ? `reservation_count.${_custSortDir}`
       : `last_name.${_custSortDir},first_name.${_custSortDir}`;
     const url = `${SB_URL}/rest/v1/q18_customers` +
       `?select=q18_id,first_name,last_name,email,phone,reservation_count` +
       filterStr +
-      `&reservation_count=gte.0` +
+      `&reservation_count=gte.${minPlays}` +
       `&order=${orderStr}&limit=50`;
     const countHeaders = Object.assign({}, SB_H, { 'Prefer': 'count=exact' });
     const resp = await fetch(url, { headers: countHeaders });
