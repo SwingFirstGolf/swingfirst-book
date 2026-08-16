@@ -1027,6 +1027,49 @@
   </div>
 </div>
 
+<!-- ─── Group Edit Modal ─────────────────────────────────────── -->
+<div class="modal-overlay" id="grpEditModal">
+  <div class="modal-card" style="max-width:460px">
+    <div class="modal-head">
+      <div style="min-width:0">
+        <div id="grpEditTitle" style="font-size:15px;font-weight:700;line-height:1.3"></div>
+        <div id="grpEditMeta" style="font-size:12px;color:var(--ink-muted);margin-top:2px"></div>
+      </div>
+      <button class="modal-close" onclick="closeGrpEditModal()">✕</button>
+    </div>
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:14px">
+      <div>
+        <label style="font-size:11px;font-weight:600;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px">Group name or label</label>
+        <input id="grpEditName" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:14px;background:var(--card);color:var(--ink)" placeholder="e.g. Smith Group, Ladies League, Blocked">
+      </div>
+      <div style="display:flex;gap:10px">
+        <div style="flex:1">
+          <label style="font-size:11px;font-weight:600;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px">Status</label>
+          <select id="grpEditStatus" style="width:100%;padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:14px;background:var(--card);color:var(--ink)">
+            <option value="paid">Paid</option>
+            <option value="booked">Booked</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+        <div style="flex:1">
+          <label style="font-size:11px;font-weight:600;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px">Rate type</label>
+          <select id="grpEditRateType" style="width:100%;padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:14px;background:var(--card);color:var(--ink)">
+            <option>Public</option><option>Member</option><option>Twilight</option>
+            <option>Junior</option><option>Senior</option><option>GolfNow</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between">
+      <button class="btn-cancel" id="grpEditDelete" style="color:#c0392b;border-color:#e8b4b0">Delete Group</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn-cancel" onclick="closeGrpEditModal()">Cancel</button>
+        <button class="btn-save" id="grpEditSave">Save Group</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -3410,16 +3453,29 @@ document.getElementById("undoBarBtn").addEventListener("click", () => {
 
 // ─── Edit booking (navigate to edit page) ────────────────────────
 function editBooking(slot, pi) {
-  // Find which player indices belong to the same "booking group"
   const player = slot.players[pi];
   if (!player) return;
-  // Group = players sharing same name (groupLeader) OR just this one player
+
+  // ── Detect group slot: all filled positions share the same name ──
+  const filled = slot.players.filter(Boolean);
+  if (filled.length >= 1 && filled.every(p => p.name === player.name)) {
+    // Gather all slots on this sheet where every filled position has the same name
+    const grpName = player.name;
+    const grpSlots = state.slots.filter(s => {
+      const f = s.players.filter(Boolean);
+      return f.length > 0 && f.every(p => p.name === grpName);
+    }).sort((a,b) => (a.hour*60+a.minute)-(b.hour*60+b.minute));
+    openGrpEditModal(grpName, grpSlots);
+    return;
+  }
+
+  // Regular single-booking edit path
   const groupIndices = player.groupLeader
     ? slot.players.map((p,i) => (p && p.groupLeader && p.name === player.name) ? i : -1).filter(i=>i>=0)
     : [pi];
   const editData = {
     slotId: slot.id,
-    date: state.date,   // "YYYY-MM-DD" — used for booking validation
+    date: state.date,
     hour: slot.hour,
     minute: slot.minute,
     rateCents: slot.rateCents,
@@ -3431,6 +3487,123 @@ function editBooking(slot, pi) {
   localStorage.setItem("sf_edit_data", JSON.stringify(editData));
   window.open("swingfirst-edit-booking.html", "_blank");
 }
+
+// ─── Group Edit Modal ────────────────────────────────────────────
+let _grpEditSlots = [];
+
+function openGrpEditModal(grpName, slots) {
+  _grpEditSlots = slots;
+  const totalPlayers = slots.reduce((n, s) => n + s.players.filter(Boolean).length, 0);
+  const first = slots[0], last = slots[slots.length - 1];
+  const rangeStr = slots.length > 1
+    ? `${fmt12(first.hour, first.minute)} – ${fmt12(last.hour, last.minute)}`
+    : fmt12(first.hour, first.minute);
+
+  document.getElementById('grpEditTitle').textContent = grpName;
+  document.getElementById('grpEditMeta').textContent =
+    `${slots.length} tee time${slots.length !== 1 ? 's' : ''} · ${totalPlayers} player${totalPlayers !== 1 ? 's' : ''} · ${rangeStr}`;
+  document.getElementById('grpEditName').value = grpName;
+
+  // Pre-fill status/rateType from first player found
+  const sample = slots[0]?.players.find(Boolean);
+  document.getElementById('grpEditStatus').value = sample?.status || 'paid';
+  document.getElementById('grpEditRateType').value = sample?.rateType || 'Public';
+
+  document.getElementById('grpEditModal').classList.add('open');
+  setTimeout(() => document.getElementById('grpEditName').focus(), 100);
+}
+
+function closeGrpEditModal() {
+  document.getElementById('grpEditModal').classList.remove('open');
+  _grpEditSlots = [];
+}
+
+document.getElementById('grpEditSave').addEventListener('click', async () => {
+  const newName     = document.getElementById('grpEditName').value.trim();
+  const newStatus   = document.getElementById('grpEditStatus').value;
+  const newRateType = document.getElementById('grpEditRateType').value;
+  if (!newName) { document.getElementById('grpEditName').focus(); return; }
+
+  const oldName = document.getElementById('grpEditTitle').textContent;
+  pushUndo(`Edit group "${oldName}" → "${newName}"`);
+
+  _grpEditSlots.forEach(slot => {
+    slot.players.forEach((p, i) => {
+      if (p && p.name === oldName) {
+        slot.players[i] = { ...p, name: newName, status: newStatus, rateType: newRateType };
+      }
+    });
+  });
+
+  const totalPlayers = _grpEditSlots.reduce((n,s) => n + s.players.filter(Boolean).length, 0);
+  toast(`${newName} — ${totalPlayers} players updated`);
+  recordActivity(`Group updated: <b>${newName}</b> — ${totalPlayers} players across ${_grpEditSlots.length} tee times`);
+  closeGrpEditModal();
+  renderRows();
+
+  // Persist to Supabase in background
+  (async () => {
+    _writeInFlight++;
+    try {
+      for (const slot of _grpEditSlots) {
+        const players = slot.players.filter(p => p && p.name === newName);
+        for (const p of players) {
+          if (!p.bpId) continue;
+          await fetch(`${SB_URL}/rest/v1/booking_players?id=eq.${p.bpId}`, {
+            method: 'PATCH',
+            headers: { ...SB_HEADERS, 'Prefer': 'return=minimal' },
+            body: JSON.stringify({ name: newName, status: newStatus, rate_type: newRateType }),
+          });
+        }
+      }
+    } catch(err) {
+      console.error('Group save failed:', err);
+      toast('⚠️ Saved locally but failed to sync: ' + err.message);
+    } finally {
+      _writeInFlight--;
+    }
+  })();
+});
+
+document.getElementById('grpEditDelete').addEventListener('click', async () => {
+  const grpName = document.getElementById('grpEditTitle').textContent;
+  const totalPlayers = _grpEditSlots.reduce((n,s) => n + s.players.filter(Boolean).length, 0);
+  if (!confirm(`Delete "${grpName}" (${totalPlayers} players across ${_grpEditSlots.length} tee times)?`)) return;
+
+  pushUndo(`Delete group "${grpName}"`);
+  const bpIds = [];
+  _grpEditSlots.forEach(slot => {
+    slot.players.forEach((p, i) => {
+      if (p && p.name === grpName) {
+        if (p.bpId) bpIds.push(p.bpId);
+        slot.players[i] = null;
+      }
+    });
+  });
+
+  toast(`${grpName} deleted`);
+  recordActivity(`Group deleted: <b>${grpName}</b> — ${totalPlayers} players`);
+  closeGrpEditModal();
+  renderRows();
+
+  // Delete from Supabase
+  if (bpIds.length) {
+    (async () => {
+      _writeInFlight++;
+      try {
+        await fetch(`${SB_URL}/rest/v1/booking_players?id=in.(${bpIds.join(',')})`, {
+          method: 'DELETE',
+          headers: { ...SB_HEADERS, 'Prefer': 'return=minimal' },
+        });
+      } catch(err) {
+        console.error('Group delete failed:', err);
+        toast('⚠️ Deleted locally but failed to sync: ' + err.message);
+      } finally {
+        _writeInFlight--;
+      }
+    })();
+  }
+});
 
 // ─── Receive saved edits back from edit page ─────────────────────
 window.addEventListener("storage", e => {
