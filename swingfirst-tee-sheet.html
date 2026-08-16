@@ -4877,7 +4877,13 @@ async function custShowProfile(name, q18 = null) {
     const _timeTotal = _morningCt + _afternoonCt || 1;
 
     // Build analytics HTML
-    const _analyticsHtml = history.length === 0 ? '' : (() => {
+    const _analyticsHtml = (() => {
+      if (history.length === 0) return `
+        <div class="cust-section-head">Play Patterns</div>
+        <div style="color:var(--ink-muted);font-size:12px;font-style:italic;margin-bottom:14px;padding:10px 12px;background:var(--surface-2,#1a2218);border-radius:8px;border:1px solid var(--line)">
+          No booking history in current system.<br>
+          <span style="font-size:11px;opacity:.7">This player's ${(q18?.reservation_count||0).toLocaleString()} Q18 plays predate our records — pattern data will accumulate as they continue to play.</span>
+        </div>`;
       const courseRows = _courseSorted.map(c => {
         const pct = Math.round((c.count / history.length) * 100);
         const barW = Math.round((c.count / _courseSorted[0].count) * 100);
