@@ -414,6 +414,10 @@
         <label class="modal-label">Phone</label>
         <input class="modal-input" id="editPhone" type="tel" placeholder="Phone number" autocomplete="off"/>
       </div>
+      <div class="modal-field">
+        <label class="modal-label">Notes</label>
+        <textarea class="modal-input" id="editNotes" placeholder="Allergies, accessibility needs, VIP status…" rows="3" style="resize:vertical;font-family:inherit;font-size:13px;line-height:1.4"></textarea>
+      </div>
     </div>
     <div class="modal-foot">
       <button class="modal-save" id="editSaveBtn" onclick="saveEdit()">Save</button>
@@ -523,7 +527,7 @@ async function fetchCustomers() {
   const offset = (curPage - 1) * perPage;
   const order  = `${sortCol}.${sortDir}`;
 
-  let url = `${SB_URL}/rest/v1/q18_customers?select=q18_id,first_name,last_name,email,phone,reservation_count,q18_created_at`
+  let url = `${SB_URL}/rest/v1/q18_customers?select=q18_id,first_name,last_name,email,phone,reservation_count,q18_created_at,notes`
           + `&order=${encodeURIComponent(order)}`
           + `&limit=${perPage}&offset=${offset}`;
 
@@ -588,7 +592,8 @@ function renderTable(rows) {
     const phoneDsp = escHtml(phoneFmt);   // formatted for display
     const firstEsc = escHtml(r.first_name || '');
     const lastEsc  = escHtml(r.last_name  || '');
-    return `<tr data-q18id="${r.q18_id}" onclick="openEditModal(${r.q18_id}, '${firstEsc}', '${lastEsc}', '${emailEsc}', '${phoneEsc}')">
+    const notesEsc = (r.notes || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    return `<tr data-q18id="${r.q18_id}" onclick="openEditModal(${r.q18_id}, '${firstEsc}', '${lastEsc}', '${emailEsc}', '${phoneEsc}', '${notesEsc}')">
       <td class="id">${r.q18_id}</td>
       <td class="name">${lastEsc}</td>
       <td class="name">${firstEsc}</td>
@@ -699,7 +704,7 @@ function goPage(n) {
 // ─── Edit modal ────────────────────────────────────────────────────
 let _editQ18Id = null;
 
-function openEditModal(q18Id, firstName, lastName, email, phone) {
+function openEditModal(q18Id, firstName, lastName, email, phone, notes) {
   _editQ18Id = q18Id;
   document.getElementById('editModalTitle').textContent = lastName && firstName
     ? `Edit — ${lastName}, ${firstName}`
@@ -708,6 +713,7 @@ function openEditModal(q18Id, firstName, lastName, email, phone) {
   document.getElementById('editLast').value  = lastName  || '';
   document.getElementById('editEmail').value = email     || '';
   document.getElementById('editPhone').value = phone     || '';
+  document.getElementById('editNotes').value = notes     || '';
   document.getElementById('editErr').textContent = '';
   document.getElementById('editSaveBtn').disabled = false;
   document.getElementById('editSaveBtn').textContent = 'Save';
@@ -726,6 +732,7 @@ async function saveEdit() {
   const last  = document.getElementById('editLast').value.trim();
   const email = document.getElementById('editEmail').value.trim();
   const phone = document.getElementById('editPhone').value.trim();
+  const notes = document.getElementById('editNotes').value.trim();
   const errEl = document.getElementById('editErr');
   const btn   = document.getElementById('editSaveBtn');
 
@@ -738,7 +745,7 @@ async function saveEdit() {
     const resp = await fetch(`${SB_URL}/rest/v1/q18_customers?q18_id=eq.${_editQ18Id}`, {
       method: 'PATCH',
       headers: Object.assign({}, SB_H, { 'Content-Type': 'application/json', 'Prefer': 'return=representation' }),
-      body: JSON.stringify({ first_name: first, last_name: last, email: email || null, phone: phone || null })
+      body: JSON.stringify({ first_name: first, last_name: last, email: email || null, phone: phone || null, notes: notes || null })
     });
     if (!resp.ok) throw new Error(await resp.text());
 
@@ -750,9 +757,9 @@ async function saveEdit() {
       row.cells[3].innerHTML = escHtml(email) || '<span style="color:var(--red);font-style:italic;opacity:.7">—</span>';
       const phoneFmtSave = escHtml(_fmtPhone(phone) || phone);
       row.cells[4].innerHTML = phoneFmtSave || '<span style="color:var(--red);font-style:italic;opacity:.7">—</span>';
-      // Update onclick with raw phone so modal input gets plain digits
-      const esc = s => s.replace(/'/g, "\\'");
-      row.setAttribute('onclick', `openEditModal(${_editQ18Id}, '${esc(first)}', '${esc(last)}', '${esc(email)}', '${esc(phone)}')`);
+      // Update onclick with raw values (phone raw, notes raw)
+      const esc = s => s.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+      row.setAttribute('onclick', `openEditModal(${_editQ18Id}, '${esc(first)}', '${esc(last)}', '${esc(email)}', '${esc(phone)}', '${esc(notes)}')`);
     }
     closeEditModal();
   } catch(e) {
