@@ -4783,7 +4783,9 @@ async function custShowProfile(name, q18 = null) {
     const resp = await fetch(url, { headers: SB_H });
     const rows = await resp.json();
 
-    // Build sorted history
+    // Build sorted history — deduplicate by tee time so Q18 group bookings
+    // (where all 4 slots share the same name) count as 1 play, not 4.
+    const _seenTT = new Set();
     const history = rows.map(row => {
       const b       = row.bookings;
       const teeDate = b?.tee_times?.date;
@@ -4803,7 +4805,14 @@ async function custShowProfile(name, q18 = null) {
         daysOut,
         created_at:  created,
       };
-    }).filter(h => h.date).sort((a, b) => b.date.localeCompare(a.date));
+    }).filter(h => {
+      if (!h.date) return false;
+      // Deduplicate: one entry per (date + hour + minute + course) per player
+      const key = `${h.date}|${h.hour}|${h.minute}|${h.courseSlug}`;
+      if (_seenTT.has(key)) return false;
+      _seenTT.add(key);
+      return true;
+    }).sort((a, b) => b.date.localeCompare(a.date));
 
     // Rate type frequency + pass type detection
     const rateCounts = {};
