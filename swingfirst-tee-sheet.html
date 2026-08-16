@@ -4813,7 +4813,7 @@ async function custShowProfile(name, q18 = null) {
     const enc = encodeURIComponent(name);
     const url = `${SB_URL}/rest/v1/booking_players?name=ilike.${encodeURIComponent(name)}` +
       `&select=name,rate_type,status,price_cents,bookings(created_at,status,tee_times(date,hour,minute,courses(name,slug)))` +
-      `&limit=200`;
+      `&limit=500`;
     const resp = await fetch(url, { headers: SB_H });
     const rows = await resp.json();
 
@@ -4847,6 +4847,77 @@ async function custShowProfile(name, q18 = null) {
       _seenTT.add(key);
       return true;
     }).sort((a, b) => b.date.localeCompare(a.date));
+
+    // ── Play analytics (computed from local booking history) ─────────
+    // Per-course counts
+    const _courseMap = {};
+    history.forEach(h => {
+      const k = h.courseSlug || 'unknown';
+      if (!_courseMap[k]) _courseMap[k] = { name: h.course || 'Unknown', count: 0 };
+      _courseMap[k].count++;
+    });
+    const _courseSorted = Object.values(_courseMap).sort((a, b) => b.count - a.count);
+
+    // Day-of-week counts (0=Sun … 6=Sat)
+    const _DOW_LABELS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const _dowCounts = [0,0,0,0,0,0,0];
+    history.forEach(h => {
+      if (h.date) {
+        const dow = new Date(h.date + 'T12:00:00').getDay();
+        _dowCounts[dow]++;
+      }
+    });
+    const _dowMax = Math.max(..._dowCounts, 1);
+
+    // Morning (< 12) vs Afternoon (>= 12)
+    let _morningCt = 0, _afternoonCt = 0;
+    history.forEach(h => {
+      if (h.hour != null) { if (h.hour < 12) _morningCt++; else _afternoonCt++; }
+    });
+    const _timeTotal = _morningCt + _afternoonCt || 1;
+
+    // Build analytics HTML
+    const _analyticsHtml = history.length === 0 ? '' : (() => {
+      const courseRows = _courseSorted.map(c => {
+        const pct = Math.round((c.count / history.length) * 100);
+        const barW = Math.round((c.count / _courseSorted[0].count) * 100);
+        return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+          <div style="width:120px;font-size:11px;color:var(--ink-main);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0">${_escCust(c.name)}</div>
+          <div style="flex:1;background:var(--line);border-radius:3px;height:8px;overflow:hidden">
+            <div style="width:${barW}%;height:100%;background:var(--accent);border-radius:3px"></div>
+          </div>
+          <div style="width:54px;font-size:11px;color:var(--ink-muted);text-align:right;flex-shrink:0">${c.count} (${pct}%)</div>
+        </div>`;
+      }).join('');
+
+      const dowBars = _dowCounts.map((cnt, i) => {
+        const h = Math.max(4, Math.round((cnt / _dowMax) * 40));
+        const isWknd = i === 0 || i === 6;
+        return `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1">
+          <div style="font-size:10px;color:var(--ink-muted)">${cnt||''}</div>
+          <div style="height:${h}px;width:100%;background:${isWknd ? 'var(--accent)' : 'var(--green-200)'};border-radius:2px 2px 0 0"></div>
+          <div style="font-size:10px;color:${isWknd?'var(--accent)':'var(--ink-muted)'};font-weight:${isWknd?'700':'400'}">${_DOW_LABELS[i]}</div>
+        </div>`;
+      }).join('');
+
+      const mPct = Math.round((_morningCt / _timeTotal) * 100);
+      const aPct = 100 - mPct;
+
+      return `<div class="cust-section-head">Play Patterns <span style="font-weight:400;font-size:10px;text-transform:none;letter-spacing:0;color:var(--ink-muted)">(${history.length} bookings on record)</span></div>
+        <div style="margin-bottom:12px">${courseRows}</div>
+        <div style="margin-bottom:12px">
+          <div style="font-size:11px;color:var(--ink-muted);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:.05em">Day of Week</div>
+          <div style="display:flex;gap:4px;align-items:flex-end;height:60px">${dowBars}</div>
+        </div>
+        <div style="margin-bottom:14px">
+          <div style="font-size:11px;color:var(--ink-muted);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:.05em">Tee Time Preference</div>
+          <div style="display:flex;border-radius:6px;overflow:hidden;height:20px;gap:1px">
+            ${mPct > 0 ? `<div style="flex:${mPct};background:var(--accent);display:flex;align-items:center;justify-content:center"><span style="font-size:10px;color:#fff;font-weight:600">☀️ Morning ${mPct}%</span></div>` : ''}
+            ${aPct > 0 ? `<div style="flex:${aPct};background:var(--green-200);display:flex;align-items:center;justify-content:center"><span style="font-size:10px;color:var(--green-900);font-weight:600">🌅 Afternoon ${aPct}%</span></div>` : ''}
+          </div>
+        </div>`;
+    })();
+    // ─────────────────────────────────────────────────────────────────
 
     // Rate type frequency + pass type detection
     const rateCounts = {};
@@ -4930,6 +5001,8 @@ async function custShowProfile(name, q18 = null) {
             <div class="sub">${history[0]?.course || ''}</div>
           </div>
         </div>
+
+        ${_analyticsHtml}
 
         ${q18 && (q18.email||'').toLowerCase().endsWith('@noreply-golfnow.com') ? `
         <div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#92400e;line-height:1.5">
