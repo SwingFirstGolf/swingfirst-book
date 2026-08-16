@@ -244,11 +244,18 @@
     background: var(--surface);
     border: 1px solid var(--line);
     border-radius: 12px;
-    width: 420px;
+    width: 460px;
     max-width: calc(100vw - 32px);
+    max-height: 90vh;
+    overflow-y: auto;
     box-shadow: 0 24px 64px rgba(0,0,0,.5);
-    overflow: hidden;
   }
+  .cust-section-label { font-size: 10px; font-weight: 700; color: var(--ink-muted); text-transform: uppercase; letter-spacing: .07em; margin: 16px 0 8px; }
+  .patterns-bar-row { display:flex;align-items:center;gap:8px;margin-bottom:5px }
+  .patterns-bar-name { width:120px;font-size:11px;color:var(--ink-main,#e2e8f0);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0 }
+  .patterns-bar-track { flex:1;background:var(--line);border-radius:3px;height:8px;overflow:hidden }
+  .patterns-bar-fill { height:100%;background:var(--accent);border-radius:3px }
+  .patterns-bar-label { width:58px;font-size:11px;color:var(--ink-muted);text-align:right;flex-shrink:0 }
   .modal-head {
     display: flex;
     align-items: center;
@@ -417,6 +424,10 @@
       <div class="modal-field">
         <label class="modal-label">Notes</label>
         <textarea class="modal-input" id="editNotes" placeholder="Allergies, accessibility needs, VIP status…" rows="3" style="resize:vertical;font-family:inherit;font-size:13px;line-height:1.4"></textarea>
+      </div>
+      <div id="editPatternsSection" style="display:none">
+        <div class="cust-section-label">Play Patterns</div>
+        <div id="editPatternsContent" style="font-size:12px;color:var(--ink-muted)">Loading…</div>
       </div>
     </div>
     <div class="modal-foot">
@@ -718,11 +729,103 @@ function openEditModal(q18Id, firstName, lastName, email, phone, notes) {
   document.getElementById('editSaveBtn').disabled = false;
   document.getElementById('editSaveBtn').textContent = 'Save';
   document.getElementById('editOverlay').classList.add('open');
+  // Show play patterns section and load data
+  const patternsSection = document.getElementById('editPatternsSection');
+  const patternsContent = document.getElementById('editPatternsContent');
+  patternsSection.style.display = 'block';
+  patternsContent.innerHTML = '<span style="color:var(--ink-muted);font-style:italic">Loading play patterns…</span>';
+  loadPlayPatterns(firstName, lastName);
   setTimeout(() => document.getElementById('editFirst').focus(), 50);
+}
+
+async function loadPlayPatterns(firstName, lastName) {
+  const fullName = `${firstName} ${lastName}`.trim();
+  const patternsContent = document.getElementById('editPatternsContent');
+  try {
+    const url = `${SB_URL}/rest/v1/booking_players?name=ilike.${encodeURIComponent(fullName)}` +
+      `&select=name,bookings(tee_times(date,hour,minute,courses(name,slug)))&limit=500`;
+    const rows = await fetch(url, { headers: SB_H }).then(r => r.json());
+
+    // Deduplicate by date|hour|minute|course (same logic as tee sheet drawer)
+    const seen = new Set();
+    const history = (rows || []).map(row => {
+      const tt = row.bookings?.tee_times;
+      return { date: tt?.date, hour: tt?.hour, minute: tt?.minute,
+               course: tt?.courses?.name || 'Unknown', courseSlug: tt?.courses?.slug || '' };
+    }).filter(h => {
+      if (!h.date) return false;
+      const k = `${h.date}|${h.hour}|${h.minute}|${h.courseSlug}`;
+      if (seen.has(k)) return false;
+      seen.add(k); return true;
+    });
+
+    if (history.length === 0) {
+      patternsContent.innerHTML = '<span style="font-style:italic;color:var(--ink-muted)">No booking history in current system yet — pattern data will accumulate as they continue to play.</span>';
+      return;
+    }
+
+    // Per-course counts
+    const courseMap = {};
+    history.forEach(h => {
+      const k = h.courseSlug || 'other';
+      if (!courseMap[k]) courseMap[k] = { name: h.course, count: 0 };
+      courseMap[k].count++;
+    });
+    const courses = Object.values(courseMap).sort((a, b) => b.count - a.count);
+    const topCount = courses[0].count;
+
+    // Day-of-week counts
+    const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const dowCounts = [0,0,0,0,0,0,0];
+    history.forEach(h => { if (h.date) dowCounts[new Date(h.date + 'T12:00:00').getDay()]++; });
+    const dowMax = Math.max(...dowCounts, 1);
+
+    // Morning / Afternoon
+    let morning = 0, afternoon = 0;
+    history.forEach(h => { if (h.hour != null) { if (h.hour < 12) morning++; else afternoon++; } });
+    const timeTotal = morning + afternoon || 1;
+    const mPct = Math.round((morning / timeTotal) * 100);
+    const aPct = 100 - mPct;
+
+    // Render
+    const courseHtml = courses.map(c => {
+      const pct = Math.round((c.count / history.length) * 100);
+      const barW = Math.round((c.count / topCount) * 100);
+      return `<div class="patterns-bar-row">
+        <div class="patterns-bar-name">${escHtml(c.name)}</div>
+        <div class="patterns-bar-track"><div class="patterns-bar-fill" style="width:${barW}%"></div></div>
+        <div class="patterns-bar-label">${c.count} (${pct}%)</div>
+      </div>`;
+    }).join('');
+
+    const dowHtml = dowCounts.map((cnt, i) => {
+      const h = Math.max(4, Math.round((cnt / dowMax) * 36));
+      const wknd = i === 0 || i === 6;
+      return `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1">
+        <div style="font-size:9px;color:var(--ink-muted)">${cnt || ''}</div>
+        <div style="height:${h}px;width:100%;background:${wknd ? 'var(--accent)' : '#2d5a3a'};border-radius:2px 2px 0 0"></div>
+        <div style="font-size:9px;color:${wknd ? 'var(--accent)' : 'var(--ink-muted)'};font-weight:${wknd ? '700' : '400'}">${DAYS[i]}</div>
+      </div>`;
+    }).join('');
+
+    patternsContent.innerHTML = `
+      <div style="font-size:11px;color:var(--ink-muted);margin-bottom:8px">${history.length} bookings on record</div>
+      ${courseHtml}
+      <div style="margin-top:10px;margin-bottom:4px;font-size:10px;font-weight:600;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.05em">Day of Week</div>
+      <div style="display:flex;gap:3px;align-items:flex-end;height:52px;margin-bottom:10px">${dowHtml}</div>
+      <div style="font-size:10px;font-weight:600;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px">Tee Time Preference</div>
+      <div style="display:flex;border-radius:5px;overflow:hidden;height:18px;gap:1px">
+        ${mPct > 0 ? `<div style="flex:${mPct};background:var(--accent);display:flex;align-items:center;justify-content:center"><span style="font-size:10px;color:#fff;font-weight:600">☀ Morning ${mPct}%</span></div>` : ''}
+        ${aPct > 0 ? `<div style="flex:${aPct};background:#2d5a3a;display:flex;align-items:center;justify-content:center"><span style="font-size:10px;color:#a7f3d0;font-weight:600">🌅 Afternoon ${aPct}%</span></div>` : ''}
+      </div>`;
+  } catch(e) {
+    patternsContent.innerHTML = '<span style="color:var(--ink-muted);font-style:italic">Could not load play patterns.</span>';
+  }
 }
 
 function closeEditModal() {
   document.getElementById('editOverlay').classList.remove('open');
+  document.getElementById('editPatternsSection').style.display = 'none';
   _editQ18Id = null;
 }
 
