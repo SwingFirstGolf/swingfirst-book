@@ -658,6 +658,13 @@
   .ac-item.ac-active { background: var(--green-50); }
   .ac-item-name { font-weight: 700; color: var(--ink); }
   .ac-item-sub  { font-size: 11px; color: var(--ink-muted); }
+
+  /* ─── Group booking count picker ─── */
+  .grp-count-row { display:none; align-items:center; gap:6px; margin-left:4px; }
+  .grp-count-row.visible { display:flex; }
+  .grp-count-btn { border:1px solid var(--line); background:var(--slate-100); color:var(--ink); border-radius:6px; width:26px; height:26px; font-size:17px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; line-height:1; flex-shrink:0; }
+  .grp-count-btn:hover { background:var(--green-100); border-color:var(--green-600); }
+  .grp-count-display { font-size:14px; font-weight:800; min-width:32px; text-align:center; background:var(--green-700); color:#fff; border-radius:8px; padding:3px 10px; }
 </style>
 </head>
 <body>
@@ -984,6 +991,11 @@
           <button class="pc-btn" data-n="2">2</button>
           <button class="pc-btn" data-n="3">3</button>
           <button class="pc-btn" data-n="4">4</button>
+        </div>
+        <div class="grp-count-row" id="grpCountRow">
+          <button class="grp-count-btn" id="grpMinus">−</button>
+          <span class="grp-count-display" id="grpCountDisplay">16</span>
+          <button class="grp-count-btn" id="grpPlus">+</button>
         </div>
       </div>
       <button class="modal-close" id="addClose">✕</button>
@@ -2561,24 +2573,31 @@ document.getElementById("scanBtn").addEventListener("click",function(){
 // ─── Add Player Modal ────────────────────────────────────────────
 let addTarget = null;
 let addCount = 1;
-let _multiBookQueue = [];  // slots queued for sequential group booking
-let _multiBookIdx   = 0;   // current position in queue
+let _multiBookQueue  = [];   // slots for a group booking
+let _multiBookIdx    = 0;    // (unused in group mode, kept for compat)
+let _isGroupMode     = false; // true when booking across multiple tee times at once
+let _grpTotalCount   = 4;    // total player count across all group slots
 
 function renderAddNames() {
   const container = document.getElementById("addNamesContainer");
   container.innerHTML = "";
-  for (let i = 0; i < addCount; i++) {
+  const fieldCount = _isGroupMode ? 1 : addCount;
+  for (let i = 0; i < fieldCount; i++) {
     const g = document.createElement("div");
     g.className = "form-group";
     g.style.marginBottom = "10px";
     const lbl = document.createElement("label");
     lbl.className = "form-label";
-    lbl.textContent = addCount === 1 ? "Name" : `Player ${i + 1} name`;
+    lbl.textContent = _isGroupMode
+      ? "Group name or label"
+      : (addCount === 1 ? "Name" : `Player ${i + 1} name`);
     const inp = document.createElement("input");
     inp.type = "text";
     inp.className = "form-input";
     inp.id = `addName${i}`;
-    inp.placeholder = "Last, First (e.g. Smith, Dave)";
+    inp.placeholder = _isGroupMode
+      ? "e.g. Smith Group, Ladies League, Blocked"
+      : "Last, First (e.g. Smith, Dave)";
     inp.autocomplete = "off";
     inp.addEventListener("keydown", e => { if (e.key === "Enter") document.getElementById("addSave").click(); });
     // Wrap in position:relative container for autocomplete dropdown
@@ -2732,6 +2751,19 @@ document.getElementById("pcPicker").addEventListener("click", e => {
   setTimeout(() => document.getElementById("addName0")?.focus(), 50);
 });
 
+// Group count − / + buttons
+document.getElementById('grpMinus').addEventListener('click', () => {
+  if (_grpTotalCount <= 1) return;
+  _grpTotalCount--;
+  document.getElementById('grpCountDisplay').textContent = _grpTotalCount;
+});
+document.getElementById('grpPlus').addEventListener('click', () => {
+  const maxSlots = _multiBookQueue.reduce((s, sl) => s + sl.players.filter(p => !p).length, 0) || _multiBookQueue.length * 4;
+  if (_grpTotalCount >= maxSlots) return;
+  _grpTotalCount++;
+  document.getElementById('grpCountDisplay').textContent = _grpTotalCount;
+});
+
 function openAddModal(slot, pi, defaultCount) {
   addTarget = { slot, pi };
   addCount = defaultCount || 1;
@@ -2743,29 +2775,64 @@ function openAddModal(slot, pi, defaultCount) {
   document.getElementById("addModal").classList.add("open");
   setTimeout(() => document.getElementById("addName0")?.focus(), 100);
 }
-function closeAddModal() { document.getElementById("addModal").classList.remove("open"); addTarget = null; }
+function closeAddModal() {
+  document.getElementById("addModal").classList.remove("open");
+  addTarget = null;
+  // Restore single-slot mode UI
+  if (_isGroupMode) {
+    _isGroupMode = false;
+    document.getElementById('pcPicker').style.display = '';
+    document.getElementById('grpCountRow').classList.remove('visible');
+    document.getElementById('addSave').textContent = 'Add Player(s)';
+  }
+}
 
 function _cancelMultiBook() { _multiBookQueue = []; _multiBookIdx = 0; closeAddModal(); }
 
-// Open the Add Player modal for a queue of slots (for 12-some, 24-some, etc.)
+// Open the Add Player modal in group mode (2+ tee times dragged)
 function openMultiBookModal(slots) {
   const sorted = [...slots].sort((a, b) => (a.hour * 60 + a.minute) - (b.hour * 60 + b.minute));
   _multiBookQueue = sorted;
   _multiBookIdx   = 0;
-  _openQueueSlot();
+  _isGroupMode    = true;
+  _grpTotalCount  = sorted.length * 4;  // default: fill all slots
+
+  // Compute the total available empty slots
+  const totalEmpty = sorted.reduce((sum, s) => sum + s.players.filter(p => !p).length, 0);
+  _grpTotalCount = Math.min(_grpTotalCount, totalEmpty > 0 ? totalEmpty : sorted.length * 4);
+
+  // Open the Add Player modal in group mode
+  addTarget = { slot: sorted[0], pi: 0 };
+  addCount  = 1;  // only one name field in group mode
+
+  // Switch picker → group count row
+  document.getElementById('pcPicker').style.display = 'none';
+  document.getElementById('grpCountRow').classList.add('visible');
+  document.getElementById('grpCountDisplay').textContent = _grpTotalCount;
+
+  // Slot info: range summary
+  const first = sorted[0], last = sorted[sorted.length - 1];
+  const rangeStr = sorted.length > 1
+    ? `${fmt12(first.hour, first.minute)} – ${fmt12(last.hour, last.minute)}`
+    : fmt12(first.hour, first.minute);
+  document.getElementById('addSlotLabel').textContent =
+    `${sorted.length} tee times · ${rangeStr} · ${money(first.rateCents)}`;
+
+  // Status and rate type defaults
+  document.getElementById('addStatus').value   = 'paid';
+  document.getElementById('addRateType').value = 'Public';
+
+  // Render ONE name field with group-appropriate label/placeholder
+  renderAddNames();
+
+  // Update save button label
+  document.getElementById('addSave').textContent = 'Book Group';
+
+  document.getElementById('addModal').classList.add('open');
+  setTimeout(() => document.getElementById('addName0')?.focus(), 100);
 }
 
-function _openQueueSlot() {
-  const slot  = _multiBookQueue[_multiBookIdx];
-  const total = _multiBookQueue.length;
-  const empty = slot.players.filter(p => !p).length;
-  openAddModal(slot, 0, Math.min(4, empty > 0 ? empty : 4));
-  if (total > 1) {
-    document.getElementById('addSlotLabel').textContent =
-      fmt12(slot.hour, slot.minute) + ' · ' + money(slot.rateCents) +
-      `   (tee ${_multiBookIdx + 1} of ${total})`;
-  }
-}
+function _openQueueSlot() { /* unused in group mode — kept for compat */ }
 
 document.getElementById("addClose").addEventListener("click", _cancelMultiBook);
 document.getElementById("addCancel").addEventListener("click", _cancelMultiBook);
@@ -2787,6 +2854,80 @@ document.getElementById("addSave").addEventListener("click", async () => {
   const { slot, pi } = addTarget;
   const status   = document.getElementById("addStatus").value;
   const rateType = document.getElementById("addRateType").value;
+
+  // ── Group booking mode ──────────────────────────────────────────
+  if (_isGroupMode) {
+    const groupName = (document.getElementById('addName0')?.value || '').trim();
+    if (!groupName) { document.getElementById('addName0')?.focus(); return; }
+
+    const slots = _multiBookQueue;
+    let remaining = _grpTotalCount;
+
+    pushUndo(`Book group "${groupName}" across ${slots.length} tee times`);
+
+    for (const s of slots) {
+      if (remaining <= 0) break;
+      const emptyIdxs = [];
+      for (let idx = 0; idx < 4 && emptyIdxs.length < Math.min(4, remaining); idx++) {
+        if (!s.players[idx]) emptyIdxs.push(idx);
+      }
+      if (!emptyIdxs.length) continue;
+      const existingBid = s.players.find(p => p && p.bookingId)?.bookingId || null;
+      emptyIdxs.forEach(idx => {
+        s.players[idx] = { id: _nextPid++, name: groupName, status, rateType,
+                           bookingId: existingBid, bookingRef: null };
+      });
+      remaining -= emptyIdxs.length;
+    }
+
+    const booked = _grpTotalCount - remaining;
+    toast(`${groupName} — ${booked} player${booked !== 1 ? 's' : ''} across ${slots.length} tee times`);
+    recordActivity(`Group booked: <b>${groupName}</b> — ${booked} players across ${slots.length} tee times`);
+    _multiBookQueue = []; _multiBookIdx = 0;
+    closeAddModal(); renderRows();
+
+    // Persist group bookings to Supabase in background
+    (async () => {
+      _writeInFlight++;
+      try {
+        for (const s of slots) {
+          if (!s._sb_id) continue;
+          const grpPlayers = s.players.filter(p => p && p.name === groupName && !p.bpId);
+          if (!grpPlayers.length) continue;
+          let bookingId = s.players.find(p => p && p.bookingId)?.bookingId || null;
+          let bookingRef = s.players.find(p => p && p.bookingRef)?.bookingRef || null;
+          if (!bookingId) {
+            bookingRef = generateWalkInRef(s);
+            const booking = await sbPost('bookings', {
+              tee_time_id: s._sb_id, course_id: currentCourseId,
+              lead_name: groupName, player_count: grpPlayers.length,
+              total_cents: s.rateCents * grpPlayers.length,
+              status: status === 'paid' ? 'paid' : 'booked',
+              booking_ref: bookingRef, booking_notes: null,
+            });
+            bookingId = booking.id;
+            grpPlayers.forEach(p => { p.bookingId = bookingId; p.bookingRef = bookingRef; });
+          }
+          for (let i = 0; i < grpPlayers.length; i++) {
+            const bp = await sbPost('booking_players', {
+              booking_id: bookingId, tee_time_id: s._sb_id,
+              name: groupName, rate_type: rateType, price_cents: s.rateCents,
+              status, is_lead: i === 0,
+            });
+            if (bp?.id) { grpPlayers[i].bpId = bp.id; grpPlayers[i].bookingId = bookingId; }
+          }
+        }
+      } catch (err) {
+        console.error('Group booking save failed:', err);
+        toast('⚠️ Saved locally but failed to sync: ' + err.message);
+      } finally {
+        _writeInFlight--;
+        loadSheetFromSupabase();
+      }
+    })();
+    return;
+  }
+  // ── End group booking mode ──────────────────────────────────────
 
   // Collect names (Last, First format) — require at least the first
   const names = [];
