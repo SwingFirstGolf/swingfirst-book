@@ -3607,17 +3607,14 @@ document.getElementById('grpPlayersSave').addEventListener('click', async () => 
       _writeInFlight++;
       try {
         for (const { bpId, name } of bpUpdates) {
-          await fetch(`${SB_URL}/rest/v1/booking_players?id=eq.${bpId}`, {
-            method: 'PATCH',
-            headers: { ...SB_HEADERS, 'Prefer': 'return=minimal' },
-            body: JSON.stringify({ name }),
-          });
+          await sbPatch('booking_players', bpId, { name });
         }
       } catch(err) {
         console.error('Player name save failed:', err);
         toast('⚠️ Saved locally but failed to sync: ' + err.message);
       } finally {
         _writeInFlight--;
+        loadSheetFromSupabase();
       }
     })();
   }
@@ -3654,11 +3651,7 @@ document.getElementById('grpEditSave').addEventListener('click', async () => {
         const players = slot.players.filter(p => p && p.name === newName);
         for (const p of players) {
           if (!p.bpId) continue;
-          await fetch(`${SB_URL}/rest/v1/booking_players?id=eq.${p.bpId}`, {
-            method: 'PATCH',
-            headers: { ...SB_HEADERS, 'Prefer': 'return=minimal' },
-            body: JSON.stringify({ name: newName, status: newStatus, rate_type: newRateType }),
-          });
+          await sbPatch('booking_players', p.bpId, { name: newName, status: newStatus, rate_type: newRateType });
         }
       }
     } catch(err) {
@@ -3666,6 +3659,7 @@ document.getElementById('grpEditSave').addEventListener('click', async () => {
       toast('⚠️ Saved locally but failed to sync: ' + err.message);
     } finally {
       _writeInFlight--;
+      loadSheetFromSupabase();
     }
   })();
 });
@@ -3698,7 +3692,7 @@ document.getElementById('grpEditDelete').addEventListener('click', async () => {
       try {
         await fetch(`${SB_URL}/rest/v1/booking_players?id=in.(${bpIds.join(',')})`, {
           method: 'DELETE',
-          headers: { ...SB_HEADERS, 'Prefer': 'return=minimal' },
+          headers: { ...SB_H, 'Prefer': 'return=minimal' },
         });
       } catch(err) {
         console.error('Group delete failed:', err);
