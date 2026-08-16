@@ -643,10 +643,11 @@
   /* ─── Autocomplete dropdown ─── */
   .ac-wrap { position: relative; }
   .ac-list {
-    position: absolute; left: 0; right: 0; top: 100%; z-index: 500;
+    /* position/top/left/width set dynamically via JS to escape modal overflow:hidden */
+    position: fixed; z-index: 9999;
     background: #fff; border: 1.5px solid var(--green-600); border-top: none;
-    border-radius: 0 0 8px 8px; max-height: 200px; overflow-y: auto;
-    box-shadow: 0 4px 12px rgba(0,0,0,.12);
+    border-radius: 0 0 8px 8px; max-height: 320px; overflow-y: auto;
+    box-shadow: 0 4px 16px rgba(0,0,0,.18);
   }
   .ac-item {
     padding: 9px 14px; font-size: 13px; cursor: pointer; border-bottom: 1px solid var(--line);
@@ -749,8 +750,8 @@
       <span>🚫</span>
       <span id="bulkBarCount">0 tee times selected</span>
       <span class="bulk-bar-range" id="bulkBarRange"></span>
-      <span style="color:#7c3aed;font-weight:400;font-size:11px">— Ctrl+click or drag the time column to select</span>
-      <button class="bulk-bar-block" id="bulkBlockBtn">Block Selected</button>
+      <span style="color:#7c3aed;font-weight:400;font-size:11px">— Ctrl+click to select, then book as a group</span>
+      <button class="bulk-bar-block" id="bulkBlockBtn">Book Slots</button>
       <button class="bulk-bar-clear" id="bulkClearBtn">✕ Clear</button>
     </div>
 
@@ -1087,7 +1088,21 @@ let blockSelAnchor  = null;      // slot.id used as range anchor
 let _bselDown       = false;     // mouse is held on time column
 let _bselDragAnchor = null;      // slot.id where drag started
 let _bselDragActive = false;     // at least two cells visited → drag mode
-document.addEventListener("mouseup", () => { _bselDown = false; });
+document.addEventListener("mouseup", () => {
+  if (_bselDragActive && blockSel.size > 0) {
+    // Drag just completed — open booking modal directly, no banner needed
+    _bselDragActive = false;
+    _bselDown = false;
+    const sorted = [...blockSel]
+      .map(id => state.slots.find(s => s.id === id))
+      .filter(Boolean)
+      .sort((a, b) => (a.hour * 60 + a.minute) - (b.hour * 60 + b.minute));
+    clearBSel();
+    openMultiBookModal(sorted);
+    return;
+  }
+  _bselDown = false;
+});
 
 function setSheetMode(mode) {
   sheetMode = mode;
@@ -1542,6 +1557,8 @@ function clearBSel() {
 
 function updateBulkBar() {
   const bar = document.getElementById('bulkBar');
+  // During an active drag we open the modal on mouseup instead — don't show bar yet
+  if (_bselDragActive) return;
   if (blockSel.size === 0) { bar.classList.remove('visible'); renderRows(); return; }
   bar.classList.add('visible');
   document.getElementById('bulkBarCount').textContent =
@@ -1560,7 +1577,8 @@ document.getElementById('bulkClearBtn').addEventListener('click', clearBSel);
 document.getElementById('bulkBlockBtn').addEventListener('click', () => {
   const slots = state.slots.filter(s => blockSel.has(s.id));
   if (!slots.length) return;
-  openBlockModal(slots);
+  clearBSel();
+  openMultiBookModal(slots);
 });
 function updateSelBar() {
   const bar = document.getElementById("selBar");
@@ -2543,6 +2561,8 @@ document.getElementById("scanBtn").addEventListener("click",function(){
 // ─── Add Player Modal ────────────────────────────────────────────
 let addTarget = null;
 let addCount = 1;
+let _multiBookQueue = [];  // slots queued for sequential group booking
+let _multiBookIdx   = 0;   // current position in queue
 
 function renderAddNames() {
   const container = document.getElementById("addNamesContainer");
@@ -2589,6 +2609,23 @@ function attachAutocomplete(input) {
     if (!items.length) return;
     _acList = document.createElement('div');
     _acList.className = 'ac-list';
+    // Position fixed below the input, escaping modal overflow:hidden
+    const rect = input.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom - 8;
+    _acList.style.left  = rect.left  + 'px';
+    _acList.style.width = rect.width + 'px';
+    if (spaceBelow >= 120) {
+      _acList.style.top    = rect.bottom + 'px';
+      _acList.style.maxHeight = Math.min(320, spaceBelow) + 'px';
+    } else {
+      // Flip above input if not enough room below
+      _acList.style.top    = '';
+      _acList.style.bottom = (window.innerHeight - rect.top) + 'px';
+      _acList.style.maxHeight = Math.min(320, rect.top - 8) + 'px';
+      _acList.style.borderRadius = '8px 8px 0 0';
+      _acList.style.borderTop = '1.5px solid var(--green-600)';
+      _acList.style.borderBottom = 'none';
+    }
     items.forEach(item => {
       const div = document.createElement('div');
       div.className = 'ac-item';
@@ -2604,7 +2641,7 @@ function attachAutocomplete(input) {
       });
       _acList.appendChild(div);
     });
-    input.parentElement.appendChild(_acList); // .ac-wrap
+    document.body.appendChild(_acList); // attach to body to escape modal clipping
   }
 
   input.addEventListener('input', () => {
@@ -2707,9 +2744,32 @@ function openAddModal(slot, pi, defaultCount) {
   setTimeout(() => document.getElementById("addName0")?.focus(), 100);
 }
 function closeAddModal() { document.getElementById("addModal").classList.remove("open"); addTarget = null; }
-document.getElementById("addClose").addEventListener("click", closeAddModal);
-document.getElementById("addCancel").addEventListener("click", closeAddModal);
-document.getElementById("addModal").addEventListener("click", e => { if (e.target.id === "addModal") closeAddModal(); });
+
+function _cancelMultiBook() { _multiBookQueue = []; _multiBookIdx = 0; closeAddModal(); }
+
+// Open the Add Player modal for a queue of slots (for 12-some, 24-some, etc.)
+function openMultiBookModal(slots) {
+  const sorted = [...slots].sort((a, b) => (a.hour * 60 + a.minute) - (b.hour * 60 + b.minute));
+  _multiBookQueue = sorted;
+  _multiBookIdx   = 0;
+  _openQueueSlot();
+}
+
+function _openQueueSlot() {
+  const slot  = _multiBookQueue[_multiBookIdx];
+  const total = _multiBookQueue.length;
+  const empty = slot.players.filter(p => !p).length;
+  openAddModal(slot, 0, Math.min(4, empty > 0 ? empty : 4));
+  if (total > 1) {
+    document.getElementById('addSlotLabel').textContent =
+      fmt12(slot.hour, slot.minute) + ' · ' + money(slot.rateCents) +
+      `   (tee ${_multiBookIdx + 1} of ${total})`;
+  }
+}
+
+document.getElementById("addClose").addEventListener("click", _cancelMultiBook);
+document.getElementById("addCancel").addEventListener("click", _cancelMultiBook);
+document.getElementById("addModal").addEventListener("click", e => { if (e.target.id === "addModal") _cancelMultiBook(); });
 
 // ─── Move Confirmation Modal wiring ──────────────────────────────
 document.getElementById("moveConfirmOk").addEventListener("click", executePendingDrop);
@@ -2763,7 +2823,17 @@ document.getElementById("addSave").addEventListener("click", async () => {
   const label = fmt12(slot.hour, slot.minute);
   recordActivity(`${toAdd.length} player${toAdd.length > 1 ? "s" : ""} added: <b>${toAdd.join(", ")}</b> — ${label}`);
   toast(`${toAdd.length > 1 ? toAdd.length + " players" : toAdd[0]} added to ${label}`);
+
+  // Multi-slot queue: capture before closing (closeAddModal clears addTarget)
+  const _queueHasMore = _multiBookQueue.length > 0 && _multiBookIdx < _multiBookQueue.length - 1;
   closeAddModal(); renderRows();
+
+  if (_queueHasMore) {
+    _multiBookIdx++;
+    setTimeout(_openQueueSlot, 180);
+  } else {
+    _multiBookQueue = []; _multiBookIdx = 0;
+  }
 
   // Persist to Supabase in background — guard against auto-refresh overwriting optimistic state
   if (slot._sb_id) {
