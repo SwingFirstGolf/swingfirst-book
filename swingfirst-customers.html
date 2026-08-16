@@ -227,6 +227,77 @@
   .del-confirm-btn { background: var(--red); color: #fff; border: none; border-radius: 4px; font-size: 11px; font-weight: 700; padding: 2px 8px; cursor: pointer; white-space: nowrap; }
   .del-cancel-btn  { background: none; border: 1px solid var(--line); border-radius: 4px; font-size: 11px; padding: 2px 6px; cursor: pointer; color: var(--ink-muted); margin-left: 3px; }
   tr.deleted-row { opacity: .35; pointer-events: none; }
+  tbody tr { cursor: pointer; }
+  td.del-col { cursor: default; }
+
+  /* ── Edit modal ───────────────────────────────────────────────── */
+  .modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.55);
+    z-index: 500;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    width: 420px;
+    max-width: calc(100vw - 32px);
+    box-shadow: 0 24px 64px rgba(0,0,0,.5);
+    overflow: hidden;
+  }
+  .modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--line);
+  }
+  .modal-title { font-size: 15px; font-weight: 700; color: var(--ink); }
+  .modal-close { background: none; border: none; color: var(--ink-muted); font-size: 18px; cursor: pointer; line-height: 1; padding: 0 4px; }
+  .modal-close:hover { color: var(--ink); }
+  .modal-body { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+  .modal-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .modal-field { display: flex; flex-direction: column; gap: 5px; }
+  .modal-field.full { grid-column: 1 / -1; }
+  .modal-label { font-size: 11px; font-weight: 600; color: var(--ink-muted); letter-spacing: .5px; text-transform: uppercase; }
+  .modal-input {
+    background: var(--surface2);
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    color: var(--ink);
+    font-size: 13px;
+    padding: 8px 11px;
+    outline: none;
+    font-family: var(--font);
+    transition: border-color .15s;
+  }
+  .modal-input:focus { border-color: var(--accent); }
+  .modal-input::placeholder { color: var(--ink-muted); opacity: .6; }
+  .modal-foot {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 20px;
+    border-top: 1px solid var(--line);
+    background: var(--surface2);
+  }
+  .modal-save {
+    flex: 1; padding: 9px; background: var(--accent); color: #fff;
+    border: none; border-radius: 7px; font-size: 13px; font-weight: 600; cursor: pointer;
+    transition: background .15s;
+  }
+  .modal-save:hover:not(:disabled) { background: var(--accent-dk); }
+  .modal-save:disabled { opacity: .5; cursor: default; }
+  .modal-cancel {
+    padding: 9px 16px; background: none; border: 1px solid var(--line);
+    border-radius: 7px; color: var(--ink-muted); font-size: 13px; cursor: pointer;
+  }
+  .modal-cancel:hover { color: var(--ink); border-color: var(--ink-muted); }
+  .modal-err { font-size: 12px; color: var(--red); margin-left: auto; }
 
   /* ── Pagination ───────────────────────────────────────────────── */
   .pagination {
@@ -316,6 +387,41 @@
     <a href="swingfirst-guide.html">Guide</a>
   </nav>
 </nav>
+
+<!-- ── Edit modal ───────────────────────────────────────────────── -->
+<div class="modal-overlay" id="editOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="editModalTitle">Edit Customer</div>
+      <button class="modal-close" onclick="closeEditModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-row">
+        <div class="modal-field">
+          <label class="modal-label">First Name</label>
+          <input class="modal-input" id="editFirst" placeholder="First name" autocomplete="off"/>
+        </div>
+        <div class="modal-field">
+          <label class="modal-label">Last Name</label>
+          <input class="modal-input" id="editLast" placeholder="Last name" autocomplete="off"/>
+        </div>
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">Email</label>
+        <input class="modal-input" id="editEmail" type="email" placeholder="Email address" autocomplete="off"/>
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">Phone</label>
+        <input class="modal-input" id="editPhone" type="tel" placeholder="Phone number" autocomplete="off"/>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="modal-save" id="editSaveBtn" onclick="saveEdit()">Save</button>
+      <button class="modal-cancel" onclick="closeEditModal()">Cancel</button>
+      <span class="modal-err" id="editErr"></span>
+    </div>
+  </div>
+</div>
 
 <!-- ── Page ─────────────────────────────────────────────────────── -->
 <div class="page">
@@ -475,15 +581,19 @@ function renderTable(rows) {
     const lastName  = escHtml(r.last_name  || '');
     const firstName = escHtml(r.first_name || '');
 
-    return `<tr data-q18id="${r.q18_id}">
+    const emailEsc = escHtml(r.email || '');
+    const phoneEsc = escHtml(r.phone || '');
+    const firstEsc = escHtml(r.first_name || '');
+    const lastEsc  = escHtml(r.last_name  || '');
+    return `<tr data-q18id="${r.q18_id}" onclick="openEditModal(${r.q18_id}, '${firstEsc}', '${lastEsc}', '${emailEsc}', '${phoneEsc}')">
       <td class="id">${r.q18_id}</td>
-      <td class="name">${lastName}</td>
-      <td class="name">${firstName}</td>
-      <td class="email">${escHtml(email)}</td>
-      <td class="phone">${escHtml(phone)}</td>
+      <td class="name">${lastEsc}</td>
+      <td class="name">${firstEsc}</td>
+      <td class="email">${emailEsc || '<span style="color:var(--red);font-style:italic;opacity:.7">—</span>'}</td>
+      <td class="phone">${phoneEsc || '<span style="color:var(--red);font-style:italic;opacity:.7">—</span>'}</td>
       <td class="plays ${playsClass}">${plays.toLocaleString()}</td>
       <td class="date">${memberSince}</td>
-      <td class="del-col"><button class="del-btn" title="Delete record" onclick="initDelete(this, ${r.q18_id}, '${escHtml(lastName)}, ${escHtml(firstName)}')">🗑</button></td>
+      <td class="del-col" onclick="event.stopPropagation()"><button class="del-btn" title="Delete record" onclick="initDelete(this, ${r.q18_id}, '${lastEsc}, ${firstEsc}')">🗑</button></td>
     </tr>`;
   }).join('');
 }
@@ -571,6 +681,78 @@ function goPage(n) {
   fetchCustomers();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
+
+// ─── Edit modal ────────────────────────────────────────────────────
+let _editQ18Id = null;
+
+function openEditModal(q18Id, firstName, lastName, email, phone) {
+  _editQ18Id = q18Id;
+  document.getElementById('editModalTitle').textContent = lastName && firstName
+    ? `Edit — ${lastName}, ${firstName}`
+    : `Edit Customer`;
+  document.getElementById('editFirst').value = firstName || '';
+  document.getElementById('editLast').value  = lastName  || '';
+  document.getElementById('editEmail').value = email     || '';
+  document.getElementById('editPhone').value = phone     || '';
+  document.getElementById('editErr').textContent = '';
+  document.getElementById('editSaveBtn').disabled = false;
+  document.getElementById('editSaveBtn').textContent = 'Save';
+  document.getElementById('editOverlay').classList.add('open');
+  setTimeout(() => document.getElementById('editFirst').focus(), 50);
+}
+
+function closeEditModal() {
+  document.getElementById('editOverlay').classList.remove('open');
+  _editQ18Id = null;
+}
+
+async function saveEdit() {
+  if (!_editQ18Id) return;
+  const first = document.getElementById('editFirst').value.trim();
+  const last  = document.getElementById('editLast').value.trim();
+  const email = document.getElementById('editEmail').value.trim();
+  const phone = document.getElementById('editPhone').value.trim();
+  const errEl = document.getElementById('editErr');
+  const btn   = document.getElementById('editSaveBtn');
+
+  if (!first || !last) { errEl.textContent = 'First and last name required.'; return; }
+  errEl.textContent = '';
+  btn.textContent = 'Saving…';
+  btn.disabled = true;
+
+  try {
+    const resp = await fetch(`${SB_URL}/rest/v1/q18_customers?q18_id=eq.${_editQ18Id}`, {
+      method: 'PATCH',
+      headers: Object.assign({}, SB_H, { 'Content-Type': 'application/json', 'Prefer': 'return=representation' }),
+      body: JSON.stringify({ first_name: first, last_name: last, email: email || null, phone: phone || null })
+    });
+    if (!resp.ok) throw new Error(await resp.text());
+
+    // Update the row in the table without a full reload
+    const row = document.querySelector(`tr[data-q18id="${_editQ18Id}"]`);
+    if (row) {
+      row.cells[1].textContent = last;
+      row.cells[2].textContent = first;
+      row.cells[3].innerHTML = email || '<span style="color:var(--red);font-style:italic;opacity:.7">—</span>';
+      row.cells[4].innerHTML = phone || '<span style="color:var(--red);font-style:italic;opacity:.7">—</span>';
+      // Update onclick with new values
+      const esc = s => s.replace(/'/g, "\\'");
+      row.setAttribute('onclick', `openEditModal(${_editQ18Id}, '${esc(first)}', '${esc(last)}', '${esc(email)}', '${esc(phone)}')`);
+    }
+    closeEditModal();
+  } catch(e) {
+    errEl.textContent = 'Save failed: ' + e.message;
+    btn.textContent = 'Save';
+    btn.disabled = false;
+  }
+}
+
+// Close modal on overlay click
+document.getElementById('editOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('editOverlay')) closeEditModal();
+});
+// Close on Escape
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeEditModal(); });
 
 // ─── Init ──────────────────────────────────────────────────────────
 updateSortHeaders();
