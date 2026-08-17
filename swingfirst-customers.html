@@ -739,10 +739,15 @@ function openEditModal(q18Id, firstName, lastName, email, phone, notes) {
 }
 
 async function loadPlayPatterns(firstName, lastName) {
-  const fullName = `${firstName} ${lastName}`.trim();
+  const cleanName = `${firstName} ${lastName}`.replace(/\*/g, '').trim();
   const patternsContent = document.getElementById('editPatternsContent');
   try {
-    const url = `${SB_URL}/rest/v1/booking_players?name=ilike.${encodeURIComponent(fullName)}` +
+    // Build fuzzy pattern: "Sharon% Wilson" matches both "Sharon Wilson" and "Sharon* Wilson"
+    const _pp = cleanName.split(/\s+/);
+    const bpPat = _pp.length >= 2
+      ? `${_pp.slice(0, -1).join(' ')}% ${_pp[_pp.length - 1]}`
+      : `%${cleanName}%`;
+    const url = `${SB_URL}/rest/v1/booking_players?name=ilike.${encodeURIComponent(bpPat)}` +
       `&select=name,bookings(tee_times(date,hour,minute,courses(name,slug)))&limit=500`;
     const rows = await fetch(url, { headers: SB_H }).then(r => r.json());
 
