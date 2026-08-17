@@ -545,6 +545,28 @@
   .trash-btn-badge.visible { display: block; }
   .trash-overlay { position: fixed; inset: 0; z-index: 299; display: none; background: rgba(13,31,23,.25); }
   .trash-overlay.open { display: block; }
+  /* ── New Customer inline form ── */
+  .nc-form { background: var(--green-50); border: 1.5px solid var(--green-600); border-radius: 10px; padding: 14px 16px; margin-top: 6px; }
+  .nc-form-title { font-size: 11px; font-weight: 700; color: var(--green-700); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+  .nc-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+  .nc-full { grid-column: 1/-1; }
+  .nc-input { width: 100%; padding: 7px 10px; border: 1.5px solid var(--line); border-radius: 6px; font-size: 13px; font-family: inherit; color: var(--ink); background: var(--card); outline: none; transition: border-color .12s; box-sizing: border-box; }
+  .nc-input:focus { border-color: var(--green-600); }
+  .nc-input.nc-req { border-color: #f59e0b; }
+  .nc-actions { display: flex; align-items: center; gap: 8px; }
+  .nc-btn-create { padding: 7px 14px; border-radius: 6px; border: none; background: var(--green-700); color: #fff; font: 600 13px/1 inherit; cursor: pointer; transition: background .12s; }
+  .nc-btn-create:hover { background: var(--green-600); }
+  .nc-btn-back { background: none; border: none; font: 500 12px/1 inherit; color: var(--ink-muted); cursor: pointer; text-decoration: underline; padding: 0; }
+  /* ── Phone capture banner ── */
+  .phone-cap { background: #fffbeb; border: 1.5px solid #f59e0b; border-radius: 8px; padding: 10px 12px; margin-top: 6px; display: none; }
+  .phone-cap.visible { display: block; }
+  .phone-cap-label { font-size: 11px; font-weight: 700; color: #92400e; margin-bottom: 6px; display: block; }
+  .phone-cap-row { display: flex; gap: 8px; align-items: center; }
+  .phone-cap-input { flex: 1; padding: 7px 10px; border: 1.5px solid #f59e0b; border-radius: 6px; font-size: 13px; font-family: inherit; color: var(--ink); outline: none; }
+  .phone-cap-btn { padding: 7px 12px; border-radius: 6px; border: none; background: var(--green-700); color: #fff; font: 600 12px/1 inherit; cursor: pointer; white-space: nowrap; }
+  /* ── Autocomplete new-customer row ── */
+  .ac-item-new { border-top: 1px solid var(--line); color: var(--green-700); font-weight: 600; font-size: 13px; }
+  .ac-item-new:hover { background: var(--green-50); }
   /* ─── Customer Drawer ─── */
   .cust-drawer { position: fixed; top: 0; right: 0; bottom: 0; width: 400px; background: var(--card); border-left: 1px solid var(--line); box-shadow: -4px 0 28px rgba(13,31,23,.15); z-index: 350; transform: translateX(100%); transition: transform 240ms cubic-bezier(.4,0,.2,1); display: flex; flex-direction: column; }
   .cust-drawer.open { transform: translateX(0); }
@@ -2667,12 +2689,43 @@ function renderAddNames() {
       : "Last, First (e.g. Smith, Dave)";
     inp.autocomplete = "off";
     inp.addEventListener("keydown", e => { if (e.key === "Enter") document.getElementById("addSave").click(); });
-    // Wrap in position:relative container for autocomplete dropdown
     const wrap = document.createElement('div');
     wrap.className = 'ac-wrap';
     wrap.appendChild(inp);
     g.appendChild(lbl);
     g.appendChild(wrap);
+
+    // Phone capture banner (shown when selected customer has no phone)
+    const phoneCap = document.createElement('div');
+    phoneCap.className = 'phone-cap';
+    phoneCap.id = `phoneCap${i}`;
+    phoneCap.innerHTML = `
+      <span class="phone-cap-label" id="phoneCapLabel${i}">📞 Phone required to book — enter below:</span>
+      <div class="phone-cap-row">
+        <input class="phone-cap-input" id="phoneCapInput${i}" type="tel" placeholder="+1 (480) 555-1234" autocomplete="tel">
+        <button class="phone-cap-btn" onclick="savePlayerPhone(${i})">Save & Continue</button>
+      </div>`;
+    g.appendChild(phoneCap);
+
+    // New customer inline form
+    const ncForm = document.createElement('div');
+    ncForm.className = 'nc-form';
+    ncForm.id = `ncForm${i}`;
+    ncForm.style.display = 'none';
+    ncForm.innerHTML = `
+      <div class="nc-form-title">➕ New customer</div>
+      <div class="nc-fields">
+        <input class="nc-input nc-req" id="ncFirst${i}" placeholder="First name *" autocomplete="given-name">
+        <input class="nc-input nc-req" id="ncLast${i}"  placeholder="Last name *"  autocomplete="family-name">
+        <input class="nc-input nc-req nc-full" id="ncPhone${i}" type="tel"   placeholder="Phone * (required)"  autocomplete="tel">
+        <input class="nc-input nc-full"        id="ncEmail${i}" type="email" placeholder="Email (optional)"    autocomplete="email">
+      </div>
+      <div class="nc-actions">
+        <button class="nc-btn-create" onclick="createAndBook(${i})">Create &amp; Book</button>
+        <button class="nc-btn-back"   onclick="cancelNewCust(${i})">Back</button>
+      </div>`;
+    g.appendChild(ncForm);
+
     container.appendChild(g);
     attachAutocomplete(inp);
   }
@@ -2690,12 +2743,10 @@ function attachAutocomplete(input) {
     if (_acList) { _acList.remove(); _acList = null; }
   }
 
-  function showList(items) {
+  function showList(items, query) {
     removeList();
-    if (!items.length) return;
     _acList = document.createElement('div');
     _acList.className = 'ac-list';
-    // Position fixed below the input, escaping modal overflow:hidden
     const rect = input.getBoundingClientRect();
     const spaceBelow = window.innerHeight - rect.bottom - 8;
     _acList.style.left  = rect.left  + 'px';
@@ -2704,7 +2755,6 @@ function attachAutocomplete(input) {
       _acList.style.top    = rect.bottom + 'px';
       _acList.style.maxHeight = Math.min(320, spaceBelow) + 'px';
     } else {
-      // Flip above input if not enough room below
       _acList.style.top    = '';
       _acList.style.bottom = (window.innerHeight - rect.top) + 'px';
       _acList.style.maxHeight = Math.min(320, rect.top - 8) + 'px';
@@ -2712,6 +2762,7 @@ function attachAutocomplete(input) {
       _acList.style.borderTop = '1.5px solid var(--green-600)';
       _acList.style.borderBottom = 'none';
     }
+
     items.forEach(item => {
       const div = document.createElement('div');
       div.className = 'ac-item';
@@ -2723,15 +2774,53 @@ function attachAutocomplete(input) {
       div.addEventListener('mousedown', e => {
         e.preventDefault();
         input.value = displayName;
+        input._q18Customer = item;  // store customer object
         removeList();
+        // Clear any open phone-cap or nc-form for this slot
+        const idx = input.id.replace('addName','');
+        const pcDiv = document.getElementById(`phoneCap${idx}`);
+        const ncDiv = document.getElementById(`ncForm${idx}`);
+        if (pcDiv) pcDiv.classList.remove('visible');
+        if (ncDiv) ncDiv.style.display = 'none';
+        input.style.display = '';
       });
       _acList.appendChild(div);
     });
-    document.body.appendChild(_acList); // attach to body to escape modal clipping
+
+    // "New customer" row — always shown when there's a query
+    if (query && query.length >= 2) {
+      const newDiv = document.createElement('div');
+      newDiv.className = 'ac-item ac-item-new';
+      newDiv.innerHTML = items.length
+        ? `<span style="font-size:13px">➕ Add as new customer</span>`
+        : `<span style="font-size:13px">➕ No match — create new customer</span>`;
+      newDiv.addEventListener('mousedown', e => {
+        e.preventDefault();
+        removeList();
+        // Parse typed name into first/last
+        const idx = input.id.replace('addName','');
+        const q = input.value.trim();
+        let prefFirst = '', prefLast = '';
+        if (q.includes(',')) {
+          prefLast  = q.split(',')[0].trim();
+          prefFirst = q.split(',').slice(1).join(',').trim();
+        } else {
+          const parts = q.split(/\s+/);
+          prefFirst = parts[0] || '';
+          prefLast  = parts.slice(1).join(' ') || '';
+        }
+        showNewCustForm(idx, prefFirst, prefLast);
+      });
+      _acList.appendChild(newDiv);
+    }
+
+    if (_acList.children.length === 0) return;
+    document.body.appendChild(_acList);
   }
 
   input.addEventListener('input', () => {
     clearTimeout(_acTimer);
+    input._q18Customer = null;  // clear selection when user types
     const q = input.value.trim();
     if (q.length < 2) { removeList(); return; }
     _acTimer = setTimeout(async () => {
@@ -2741,10 +2830,16 @@ function attachAutocomplete(input) {
           acFilter = `&email=ilike.${encodeURIComponent(`*${q}*`)}`;
         } else {
           const { last: acLast, first: acFirst } = _parseCustQuery(q);
-          const acLPat = encodeURIComponent(`${acLast}*`);
-          acFilter = acFirst
-            ? `&last_name=ilike.${acLPat}&first_name=ilike.${encodeURIComponent(`${acFirst}*`)}`
-            : `&last_name=ilike.${acLPat}`;
+          if (acFirst) {
+            // "First Last" or "Last, First" — search both fields
+            const acLPat = encodeURIComponent(`${acLast}*`);
+            const acFPat = encodeURIComponent(`${acFirst}*`);
+            acFilter = `&last_name=ilike.${acLPat}&first_name=ilike.${acFPat}`;
+          } else {
+            // Single word — search last_name OR first_name
+            const pat = encodeURIComponent(`${acLast}*`);
+            acFilter = `&or=(last_name.ilike.${pat},first_name.ilike.${pat})`;
+          }
         }
         const rows = await fetch(
           `${SB_URL}/rest/v1/q18_customers` +
@@ -2754,9 +2849,9 @@ function attachAutocomplete(input) {
           `&order=reservation_count.desc&limit=12`,
           { headers: SB_H }
         ).then(r => r.json());
-        showList(rows || []);
+        showList(rows || [], q);
       } catch(e) { console.warn('Autocomplete error:', e); }
-    }, 280);
+    }, 120);
   });
 
   input.addEventListener('blur', () => setTimeout(removeList, 150));
@@ -2781,6 +2876,118 @@ function attachAutocomplete(input) {
       removeList();
     }
   });
+}
+
+// ─── New Customer + Phone Capture helpers ────────────────────────────────
+
+function showNewCustForm(idx, prefFirst, prefLast) {
+  const inp    = document.getElementById(`addName${idx}`);
+  const ncForm = document.getElementById(`ncForm${idx}`);
+  if (!inp || !ncForm) return;
+  inp.style.display = 'none';
+  ncForm.style.display = '';
+  const f = document.getElementById(`ncFirst${idx}`);
+  const l = document.getElementById(`ncLast${idx}`);
+  if (f) { f.value = prefFirst; }
+  if (l) { l.value = prefLast;  }
+  setTimeout(() => (f || document.getElementById(`ncFirst${idx}`))?.focus(), 50);
+}
+
+function cancelNewCust(idx) {
+  const inp    = document.getElementById(`addName${idx}`);
+  const ncForm = document.getElementById(`ncForm${idx}`);
+  if (!inp || !ncForm) return;
+  inp.style.display = '';
+  ncForm.style.display = 'none';
+  inp.value = '';
+  inp._q18Customer = null;
+  inp.focus();
+}
+
+async function createAndBook(idx) {
+  const first = (document.getElementById(`ncFirst${idx}`)?.value || '').trim();
+  const last  = (document.getElementById(`ncLast${idx}`)?.value  || '').trim();
+  const phone = (document.getElementById(`ncPhone${idx}`)?.value || '').trim();
+  const email = (document.getElementById(`ncEmail${idx}`)?.value || '').trim();
+
+  if (!first) { document.getElementById(`ncFirst${idx}`)?.focus(); toast('First name required'); return; }
+  if (!last)  { document.getElementById(`ncLast${idx}`)?.focus();  toast('Last name required');  return; }
+  if (!phone) { document.getElementById(`ncPhone${idx}`)?.focus(); toast('Phone required to book'); return; }
+
+  // Find next available negative q18_id
+  let newQ18Id;
+  try {
+    const existing = await fetch(
+      `${SB_URL}/rest/v1/q18_customers?select=q18_id&q18_id=lt.0&order=q18_id.asc&limit=1`,
+      { headers: SB_H }
+    ).then(r => r.json());
+    newQ18Id = existing.length ? existing[0].q18_id - 1 : -1;
+  } catch(e) { newQ18Id = -(Date.now() % 1000000); }
+
+  try {
+    const newCust = await fetch(`${SB_URL}/rest/v1/q18_customers`, {
+      method: 'POST',
+      headers: { ...SB_H, 'Prefer': 'return=representation' },
+      body: JSON.stringify({
+        q18_id: newQ18Id,
+        first_name: first,
+        last_name:  last,
+        phone:  phone || null,
+        email:  email || null,
+        reservation_count: 0,
+        notes: 'Walk-in — created at booking',
+      }),
+    }).then(r => r.json());
+
+    const created = Array.isArray(newCust) ? newCust[0] : newCust;
+    const inp    = document.getElementById(`addName${idx}`);
+    const ncForm = document.getElementById(`ncForm${idx}`);
+    if (inp) {
+      inp.value = `${last}, ${first}`;
+      inp._q18Customer = created;
+      inp.style.display = '';
+    }
+    if (ncForm) ncForm.style.display = 'none';
+    toast(`New customer created: ${first} ${last}`);
+    // Trigger save
+    document.getElementById('addSave').click();
+  } catch(err) {
+    console.error('Create customer failed:', err);
+    toast('⚠️ Could not create customer: ' + err.message);
+  }
+}
+
+function showPhoneCapture(idx, playerName) {
+  const pcDiv   = document.getElementById(`phoneCap${idx}`);
+  const pcLabel = document.getElementById(`phoneCapLabel${idx}`);
+  const pcInput = document.getElementById(`phoneCapInput${idx}`);
+  if (!pcDiv) return;
+  if (pcLabel) pcLabel.textContent = `📞 ${playerName} has no phone on file — required to book:`;
+  pcDiv.classList.add('visible');
+  setTimeout(() => pcInput?.focus(), 50);
+}
+
+async function savePlayerPhone(idx) {
+  const inp   = document.getElementById(`addName${idx}`);
+  const pcDiv = document.getElementById(`phoneCap${idx}`);
+  const phone = (document.getElementById(`phoneCapInput${idx}`)?.value || '').trim();
+  if (!phone) { document.getElementById(`phoneCapInput${idx}`)?.focus(); return; }
+
+  const cust = inp?._q18Customer;
+  if (!cust) return;
+
+  try {
+    await fetch(
+      `${SB_URL}/rest/v1/q18_customers?q18_id=eq.${cust.q18_id}`,
+      { method: 'PATCH', headers: { ...SB_H, 'Prefer': 'return=minimal' }, body: JSON.stringify({ phone }) }
+    );
+    cust.phone = phone;
+    if (pcDiv) pcDiv.classList.remove('visible');
+    toast(`Phone saved for ${cust.first_name} ${cust.last_name}`);
+    document.getElementById('addSave').click();
+  } catch(err) {
+    toast('⚠️ Could not save phone: ' + err.message);
+  }
 }
 
 // Parse "Last, First" input into { firstName, lastName, fullName }
@@ -2995,6 +3202,27 @@ document.getElementById("addSave").addEventListener("click", async () => {
     return;
   }
   // ── End group booking mode ──────────────────────────────────────
+
+  // ── Phone gate: block save if a selected customer has no phone ──
+  for (let i = 0; i < addCount; i++) {
+    const inp = document.getElementById(`addName${i}`);
+    if (!inp) continue;
+    const raw = (inp.value || '').trim();
+    if (!raw) continue;
+    // If a new-customer form is open and unsubmitted, focus it
+    const ncDiv = document.getElementById(`ncForm${i}`);
+    if (ncDiv && ncDiv.style.display !== 'none') {
+      document.getElementById(`ncFirst${i}`)?.focus();
+      return;
+    }
+    // If a Q18 customer was explicitly selected and has no phone, require it
+    const cust = inp._q18Customer;
+    if (cust && !cust.phone) {
+      showPhoneCapture(i, `${cust.first_name || ''} ${cust.last_name || ''}`.trim());
+      return;
+    }
+  }
+  // ── End phone gate ──
 
   // Collect names (Last, First format) — require at least the first
   const names = [];
