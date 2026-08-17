@@ -3910,8 +3910,8 @@ async function showTeeSheetMatches(matched, query) {
 async function custShowProfileByTeeSheetName(fullName) {
   document.getElementById('custBody').innerHTML = '<div class="cust-empty">Loading…</div>';
   try {
-    // Split "First Last" → search last_name + first_name
-    const parts = fullName.trim().split(/\s+/);
+    // Strip Q18 asterisks before lookup (e.g. "Sharon* Wilson" → "Sharon Wilson")
+    const parts = fullName.replace(/\*/g, '').trim().split(/\s+/);
     const lastName  = parts.length > 1 ? parts[parts.length - 1] : parts[0];
     const firstName = parts.length > 1 ? parts.slice(0, -1).join(' ') : '';
     const lPat = encodeURIComponent(`*${lastName}*`);
@@ -4810,8 +4810,14 @@ function _custLines(c, badges) {
 async function custShowProfile(name, q18 = null) {
   document.getElementById('custBody').innerHTML = '<div class="cust-empty">Loading profile…</div>';
   try {
-    const enc = encodeURIComponent(name);
-    const url = `${SB_URL}/rest/v1/booking_players?name=ilike.${encodeURIComponent(name)}` +
+    // Strip Q18 asterisks (e.g. "Sharon* Wilson" → "Sharon Wilson") then build
+    // a fuzzy pattern "Sharon% Wilson" that matches both forms in booking_players.
+    const cleanName = name.replace(/\*/g, '').trim();
+    const _bpParts  = cleanName.split(/\s+/);
+    const bpPat     = _bpParts.length >= 2
+      ? `${_bpParts.slice(0, -1).join(' ')}% ${_bpParts[_bpParts.length - 1]}`
+      : `%${cleanName}%`;
+    const url = `${SB_URL}/rest/v1/booking_players?name=ilike.${encodeURIComponent(bpPat)}` +
       `&select=name,rate_type,status,price_cents,bookings(created_at,status,tee_times(date,hour,minute,courses(name,slug)))` +
       `&limit=500`;
     const resp = await fetch(url, { headers: SB_H });
