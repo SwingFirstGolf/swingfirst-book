@@ -255,8 +255,9 @@
     </div>
 
     <div class="nav-section">
-      <span class="nav-label">Customer Drawer</span>
-      <a class="nav-link" href="#customers">Customer Search</a>
+      <span class="nav-label">Customers</span>
+      <a class="nav-link" href="#customers">Customer Drawer</a>
+      <a class="nav-link" href="#customers-page">Customers Page</a>
     </div>
 
     <div class="nav-section">
@@ -521,14 +522,60 @@
 
     <!-- ─── CUSTOMER DRAWER ─── -->
     <section id="customers">
-      <h2>Customer Search</h2>
-      <p>Click <strong>Customers</strong> in the left navigation to open the customer drawer. Type at least two characters to search by name.</p>
-      <p>Search results show each matching player's booking history, including the membership types they've used across all courses and dates. This is useful for verifying a player's membership status or looking up how many times they've played.</p>
-      <p>The customer drawer does not create or edit bookings — it's a read-only lookup tool.</p>
+      <h2>Customer Drawer</h2>
+      <p>Click <strong>Customers</strong> in the left navigation to open the customer drawer. Type at least two characters to search by name — the drawer searches first name, last name, and email simultaneously.</p>
+      <p>Search results show each matching player's total play count and membership badges. Clicking a result opens their full profile, which includes:</p>
+      <ul>
+        <li><strong>Contact info</strong> — email and phone (displayed as +1 (xxx) xxx-xxxx)</li>
+        <li><strong>Booking history</strong> — every round recorded in SwingFirst since April 2026, with date, course, and time</li>
+        <li><strong>Play Patterns</strong> — per-course breakdown, day-of-week distribution, and morning vs. afternoon preference</li>
+        <li><strong>Notes</strong> — staff notes attached to this customer (allergies, VIP status, accessibility needs, etc.)</li>
+      </ul>
+      <p>The drawer is read-only. To edit a customer record, use the <a href="#customers-page">Customers page</a>.</p>
+
+      <h3>Play Patterns</h3>
+      <p>The Play Patterns section appears in every customer profile. It shows bar charts for which courses the player frequents most, which days of the week they typically play, and whether they prefer morning or afternoon tee times.</p>
+      <p>If a player's history predates April 2026 (when the SwingFirst system launched), the section notes that no local breakdown is available but shows their total lifetime Quick18 reservation count.</p>
 
       <div class="callout callout-tip">
         <div class="callout-title">Membership verification</div>
         <p>If a player at the window claims to have an SF card but it doesn't show on today's booking, search for them in the Customer drawer. Their historical membership types will appear, which can help confirm whether they've held that card before.</p>
+      </div>
+    </section>
+
+
+    <!-- ─── CUSTOMERS PAGE ─── -->
+    <section id="customers-page">
+      <h2>Customers Page</h2>
+      <p>The <strong>Customers page</strong> is a standalone management view listing every player who has ever booked at a SwingFirst course. It opens in a new tab from the tee sheet navigation bar.</p>
+      <p>Unlike the tee sheet drawer (read-only), the Customers page lets you view and edit customer records directly.</p>
+
+      <h3>Searching</h3>
+      <p>The search bar filters by first name, last name, or email. Several formats work:</p>
+      <ul>
+        <li><strong>First name only</strong> — "kathy"</li>
+        <li><strong>First + last</strong> — "kathy transeth"</li>
+        <li><strong>Last, First</strong> — "transeth, kathy" (the comma tells the system to search last name first)</li>
+        <li><strong>Email fragment</strong> — "swingfirst.co"</li>
+      </ul>
+
+      <h3>Editing a record</h3>
+      <p>Click any row to open the edit modal. You can update the player's name, email, phone, and notes. Changes are saved immediately to the database and are visible everywhere — in the Customers page, in the tee sheet drawer, and during player search on the tee sheet.</p>
+      <p>Phone numbers are displayed in +1 (xxx) xxx-xxxx format regardless of how they were originally stored in Quick18.</p>
+
+      <h3>Notes</h3>
+      <p>The Notes field in the Customers page and the Notes shown in the tee sheet customer drawer are the same field — editing one updates the other instantly. Use notes for anything relevant at check-in: allergies, accessibility needs, VIP status, billing preferences, etc.</p>
+
+      <h3>Play Patterns</h3>
+      <p>The edit modal also shows the player's Play Patterns — the same per-course, day-of-week, and morning/afternoon breakdown shown in the tee sheet drawer. This data is computed live from booking history and cannot be edited.</p>
+
+      <h3>Shadow players</h3>
+      <p>Some regulars appear on your courses frequently but have never created their own Quick18 account — they've always been added to bookings by another player. These <em>shadow players</em> now appear in the Customers page with a note indicating they have no Q18 account.</p>
+      <p>Shadow player records are generated automatically from booking history. They may have no email or phone on file (since they never registered with Quick18), but you can add contact info manually via the edit modal.</p>
+
+      <div class="callout callout-note">
+        <div class="callout-title">Adding contact info for shadow players</div>
+        <p>If a regular shadow player gives you their phone number or email at the window, add it to their record via the Customers page edit modal. It will then appear in the tee sheet drawer and search results going forward.</p>
       </div>
     </section>
 
@@ -551,6 +598,9 @@
         <tr><td>DIA, Price Schedule</td><td>Consolidation moves</td></tr>
         <tr><td>New bookings from Quick18</td><td>Local cancellations</td></tr>
       </table>
+
+      <h3>Player name cleanup</h3>
+      <p>Quick18 occasionally stores player names with an asterisk suffix (e.g., "Kathy*"). SwingFirst automatically strips these when data syncs, so names always appear cleanly. Existing records with asterisks have been cleaned retroactively.</p>
     </section>
 
 
