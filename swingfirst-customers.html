@@ -381,6 +381,42 @@
     td.email, td.phone, td.date, td.id { display: none; }
     th.col-email, th.col-phone, th.col-date, th.col-id { display: none; }
   }
+  /* ── Enrichment badges ── */
+  .gender-badge { display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; border-radius:3px; font-size:10px; font-weight:700; line-height:1; flex-shrink:0; }
+  .gender-M { background:#dbeafe; color:#1d4ed8; }
+  .gender-F { background:#fce7f3; color:#9d174d; }
+  .gender-U { background:#f3f4f6; color:#9ca3af; font-size:9px; }
+  .vip-badge { display:inline-block; background:#fef3c7; color:#92400e; border-radius:3px; padding:0 5px; font-size:10px; font-weight:700; line-height:18px; margin-left:3px; letter-spacing:.02em; }
+  .shadow-badge { display:inline-block; background:#f3f4f6; color:#6b7280; border-radius:3px; padding:0 5px; font-size:10px; font-weight:600; line-height:18px; margin-left:3px; }
+  .risk-badge { display:inline-block; background:#fee2e2; color:#dc2626; border-radius:3px; padding:0 5px; font-size:10px; font-weight:700; line-height:18px; margin-left:3px; }
+  .staleness-fresh { color:#16a34a; font-size:12px; }
+  .staleness-warm  { color:#d97706; font-size:12px; }
+  .staleness-cold  { color:#dc2626; font-weight:600; font-size:12px; }
+  .staleness-never { color:var(--ink-muted); font-style:italic; font-size:12px; }
+  td.col-last-played { white-space:nowrap; }
+  td.col-home-course { font-size:11px; color:var(--ink-muted); max-width:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  th.col-home-course { min-width:90px; }
+  /* ── Filter chips ── */
+  .filter-row { display:flex; gap:6px; align-items:center; flex-wrap:wrap; padding:6px 0 2px; }
+  .chip { display:inline-flex; align-items:center; gap:4px; padding:4px 11px; border-radius:999px; font-size:11px; font-weight:600; cursor:pointer; border:1.5px solid var(--line); background:var(--card); color:var(--ink-muted); transition:all .12s; white-space:nowrap; user-select:none; }
+  .chip:hover { border-color:var(--ink-muted); color:var(--ink); }
+  .chip.chip-m.active  { border-color:#1d4ed8; background:#dbeafe; color:#1d4ed8; }
+  .chip.chip-f.active  { border-color:#be185d; background:#fce7f3; color:#be185d; }
+  .chip.chip-vip.active  { border-color:#92400e; background:#fef3c7; color:#92400e; }
+  .chip.chip-risk.active { border-color:#dc2626; background:#fee2e2; color:#dc2626; }
+  .chip.chip-shadow.active { border-color:#6b7280; background:#f3f4f6; color:#4b5563; }
+  .chip-sep { width:1px; height:20px; background:var(--line); margin:0 2px; }
+  /* ── Modal gender row ── */
+  .gender-select-wrap { display:flex; gap:6px; margin-top:4px; }
+  .gender-opt { flex:1; padding:6px 0; border-radius:6px; border:1.5px solid var(--line); background:var(--card); font-size:13px; font-weight:600; cursor:pointer; text-align:center; transition:all .12s; color:var(--ink-muted); }
+  .gender-opt:hover { border-color:var(--ink-muted); }
+  .gender-opt.sel-M { border-color:#1d4ed8; background:#dbeafe; color:#1d4ed8; }
+  .gender-opt.sel-F { border-color:#be185d; background:#fce7f3; color:#be185d; }
+  .gender-opt.sel-U { border-color:#6b7280; background:#f3f4f6; color:#4b5563; }
+  /* ── Playing network ── */
+  .partner-row { display:flex; align-items:center; gap:8px; padding:4px 0; border-bottom:1px solid var(--line); font-size:12px; }
+  .partner-row:last-child { border-bottom:none; }
+  .partner-count { font-size:10px; font-weight:700; color:var(--ink-muted); min-width:28px; text-align:right; }
 </style>
 </head>
 <body>
@@ -422,12 +458,22 @@
         <input class="modal-input" id="editPhone" type="tel" placeholder="Phone number" autocomplete="off"/>
       </div>
       <div class="modal-field">
+        <label class="modal-label">Gender</label>
+        <div class="gender-select-wrap" id="genderOptWrap">
+          <button class="gender-opt" data-g="M" onclick="selectGender('M')">♂ Male</button>
+          <button class="gender-opt" data-g="F" onclick="selectGender('F')">♀ Female</button>
+          <button class="gender-opt" data-g="U" onclick="selectGender('U')">? Unknown</button>
+        </div>
+      </div>
+      <div class="modal-field">
         <label class="modal-label">Notes</label>
         <textarea class="modal-input" id="editNotes" placeholder="Allergies, accessibility needs, VIP status…" rows="3" style="resize:vertical;font-family:inherit;font-size:13px;line-height:1.4"></textarea>
       </div>
       <div id="editPatternsSection" style="display:none">
         <div class="cust-section-label">Play Patterns</div>
         <div id="editPatternsContent" style="font-size:12px;color:var(--ink-muted)">Loading…</div>
+        <div class="cust-section-label" style="margin-top:12px">Frequent Playing Partners</div>
+        <div id="editPartnersContent" style="font-size:12px;color:var(--ink-muted)">Loading…</div>
       </div>
     </div>
     <div class="modal-foot">
@@ -467,6 +513,15 @@
     <button id="gnFilterBtn" onclick="toggleGnFilter()" style="background:none;border:1px solid #fcd34d;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:700;color:#92400e;cursor:pointer;opacity:.65;transition:all .12s" title="Show GolfNow bookers only">GN bookers</button>
     <div class="count-badge" id="countBadge"></div>
   </div>
+  <div class="filter-row" id="filterRow">
+    <span style="font-size:11px;font-weight:600;color:var(--ink-muted);margin-right:2px">Filter:</span>
+    <button class="chip chip-m"      id="chipM"      onclick="toggleChip('M')">♂ Men</button>
+    <button class="chip chip-f"      id="chipF"      onclick="toggleChip('F')">♀ Women</button>
+    <div class="chip-sep"></div>
+    <button class="chip chip-vip"    id="chipVip"    onclick="toggleChip('VIP')">⭐ VIP (20+)</button>
+    <button class="chip chip-risk"   id="chipRisk"   onclick="toggleChip('RISK')">⚠ At-risk</button>
+    <button class="chip chip-shadow" id="chipShadow" onclick="toggleChip('SHADOW')">👤 Shadow</button>
+  </div>
 
   <div class="table-wrap">
     <table id="custTable">
@@ -478,7 +533,8 @@
           <th class="col-email"data-col="email"             data-dir="asc">Email<span class="sort-arrows"><span class="arr-up"></span><span class="arr-dn"></span></span></th>
           <th class="col-phone"data-col="phone"             data-dir="asc">Phone<span class="sort-arrows"><span class="arr-up"></span><span class="arr-dn"></span></span></th>
           <th class="col-plays"data-col="reservation_count" data-dir="desc">Plays<span class="sort-arrows"><span class="arr-up"></span><span class="arr-dn"></span></span></th>
-          <th class="col-date" data-col="q18_created_at"    data-dir="asc">Member Since<span class="sort-arrows"><span class="arr-up"></span><span class="arr-dn"></span></span></th>
+          <th class="col-home-course">Home Course</th>
+          <th class="col-last-played" data-col="last_played" data-dir="desc">Last Played<span class="sort-arrows"><span class="arr-up"></span><span class="arr-dn"></span></span></th>
           <th class="col-del"></th>
         </tr>
       </thead>
@@ -511,15 +567,43 @@ const SB_H   = {
 };
 
 // ─── State ─────────────────────────────────────────────────────────
-let curPage    = 1;
-let perPage    = 50;
-let sortCol    = 'reservation_count';
-let sortDir    = 'desc';
-let searchVal  = '';
-let gnOnly     = false;
-let totalRows  = 0;
-let totalPages = 1;
-let debTimer   = null;
+let curPage      = 1;
+let perPage      = 50;
+let sortCol      = 'reservation_count';
+let sortDir      = 'desc';
+let searchVal    = '';
+let gnOnly       = false;
+let totalRows    = 0;
+let totalPages   = 1;
+let debTimer     = null;
+let filterGender = '';    // 'M', 'F', or ''
+let filterVip    = false;
+let filterRisk   = false;
+let filterShadow = false;
+
+function toggleChip(type) {
+  if (type === 'M') {
+    filterGender = filterGender === 'M' ? '' : 'M';
+    if (filterGender === 'M') filterGender = 'M';
+    document.getElementById('chipM').classList.toggle('active', filterGender === 'M');
+    document.getElementById('chipF').classList.toggle('active', filterGender === 'F');
+  } else if (type === 'F') {
+    filterGender = filterGender === 'F' ? '' : 'F';
+    document.getElementById('chipM').classList.toggle('active', filterGender === 'M');
+    document.getElementById('chipF').classList.toggle('active', filterGender === 'F');
+  } else if (type === 'VIP') {
+    filterVip = !filterVip;
+    document.getElementById('chipVip').classList.toggle('active', filterVip);
+  } else if (type === 'RISK') {
+    filterRisk = !filterRisk;
+    document.getElementById('chipRisk').classList.toggle('active', filterRisk);
+  } else if (type === 'SHADOW') {
+    filterShadow = !filterShadow;
+    document.getElementById('chipShadow').classList.toggle('active', filterShadow);
+  }
+  curPage = 1;
+  fetchCustomers();
+}
 
 function toggleGnFilter() {
   gnOnly = !gnOnly;
@@ -533,20 +617,37 @@ function toggleGnFilter() {
 // ─── Fetch ─────────────────────────────────────────────────────────
 async function fetchCustomers() {
   const body  = document.getElementById('custBody');
-  body.innerHTML = `<tr class="state-row"><td colspan="8"><span class="spinner"></span>Loading…</td></tr>`;
+  body.innerHTML = `<tr class="state-row"><td colspan="9"><span class="spinner"></span>Loading…</td></tr>`;
 
   const offset = (curPage - 1) * perPage;
   const order  = `${sortCol}.${sortDir}`;
 
-  let url = `${SB_URL}/rest/v1/q18_customers?select=q18_id,first_name,last_name,email,phone,reservation_count,q18_created_at,notes`
+  let url = `${SB_URL}/rest/v1/q18_customers?select=q18_id,first_name,last_name,email,phone,reservation_count,gender,last_played,home_course,notes`
           + `&order=${encodeURIComponent(order)}`
           + `&limit=${perPage}&offset=${offset}`;
 
-  // Only show players with at least 1 reservation (unless GN filter active — GN bookers can have 0)
-  url += `&reservation_count=gte.${gnOnly ? 4 : 1}`;
+  // Only show players with at least 1 reservation (unless GN filter active or shadow filter)
+  if (!filterShadow) {
+    url += `&reservation_count=gte.${gnOnly ? 4 : 1}`;
+  }
 
   // GolfNow filter
   if (gnOnly) url += `&email=ilike.${encodeURIComponent('*@noreply-golfnow.com')}`;
+
+  // Gender filter
+  if (filterGender) url += `&gender=eq.${filterGender}`;
+
+  // VIP filter (20+ plays)
+  if (filterVip) url += `&reservation_count=gte.20`;
+
+  // At-risk: last_played > 60 days ago AND plays >= 5
+  if (filterRisk) {
+    const sixtyAgo = new Date(Date.now() - 60 * 86400000).toISOString().slice(0, 10);
+    url += `&last_played=lte.${sixtyAgo}&reservation_count=gte.5`;
+  }
+
+  // Shadow players (negative q18_id = shadow player records)
+  if (filterShadow) url += `&q18_id=lt.0`;
 
   // Search filter — handle "Last, First" and "First Last" as well as bare terms
   const q = searchVal.trim();
@@ -582,45 +683,69 @@ async function fetchCustomers() {
     renderPagination();
     renderCountBadge();
   } catch (e) {
-    body.innerHTML = `<tr class="state-row"><td colspan="8">Error loading data: ${e.message}</td></tr>`;
+    body.innerHTML = `<tr class="state-row"><td colspan="9">Error loading data: ${e.message}</td></tr>`;
   }
 }
 
 // ─── Render table ──────────────────────────────────────────────────
+function _stalenessHtml(lastPlayed) {
+  if (!lastPlayed) return '<span class="staleness-never">—</span>';
+  const days = Math.floor((Date.now() - new Date(lastPlayed).getTime()) / 86400000);
+  const label = days === 0 ? 'Today'
+              : days === 1 ? 'Yesterday'
+              : days < 30  ? `${days}d ago`
+              : days < 365 ? `${Math.round(days/30)}mo ago`
+              : `${Math.round(days/365)}yr ago`;
+  const cls = days <= 30 ? 'staleness-fresh' : days <= 90 ? 'staleness-warm' : 'staleness-cold';
+  return `<span class="${cls}" title="${lastPlayed}">${label}</span>`;
+}
+
 function renderTable(rows) {
   const body = document.getElementById('custBody');
   if (!rows.length) {
-    body.innerHTML = `<tr class="state-row"><td colspan="8">No customers found.</td></tr>`;
+    body.innerHTML = `<tr class="state-row"><td colspan="9">No customers found.</td></tr>`;
     return;
   }
 
   body.innerHTML = rows.map(r => {
-    const plays    = r.reservation_count || 0;
+    const plays      = r.reservation_count || 0;
     const playsClass = plays >= 20 ? 'high' : plays >= 5 ? 'mid' : 'low';
-    const memberSince = r.q18_created_at
-      ? new Date(r.q18_created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
-      : '—';
-    const email = r.email || '—';
-    const phone = r.phone || '—';
-    const lastName  = escHtml(r.last_name  || '');
-    const firstName = escHtml(r.first_name || '');
+    const isShadow   = (r.q18_id || 0) < 0;
+    const isVip      = plays >= 20;
+    const lastPlayedDate = r.last_played;
+    const sixtyAgo   = new Date(Date.now() - 60 * 86400000).toISOString().slice(0,10);
+    const isAtRisk   = plays >= 5 && lastPlayedDate && lastPlayedDate < sixtyAgo;
 
     const emailEsc = escHtml(r.email || '');
     const phoneRaw = r.phone || '';
     const phoneFmt = _fmtPhone(phoneRaw) || '';
-    const phoneEsc = escHtml(phoneRaw);   // raw for modal input
-    const phoneDsp = escHtml(phoneFmt);   // formatted for display
+    const phoneDsp = escHtml(phoneFmt);
     const firstEsc = escHtml(r.first_name || '');
     const lastEsc  = escHtml(r.last_name  || '');
     const notesEsc = (r.notes || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-    return `<tr data-q18id="${r.q18_id}" onclick="openEditModal(${r.q18_id}, '${firstEsc}', '${lastEsc}', '${emailEsc}', '${phoneEsc}', '${notesEsc}')">
+    const genderVal = escHtml(r.gender || 'U');
+    const homeCourse = escHtml(r.home_course || '');
+
+    // Gender badge
+    const gLabel = r.gender === 'M' ? '♂' : r.gender === 'F' ? '♀' : '?';
+    const gBadge = `<span class="gender-badge gender-${genderVal}" title="${r.gender === 'M' ? 'Male' : r.gender === 'F' ? 'Female' : 'Unknown'}">${gLabel}</span>`;
+
+    // Extra badges
+    const vipBadge    = isVip    ? `<span class="vip-badge">⭐ VIP</span>` : '';
+    const riskBadge   = isAtRisk ? `<span class="risk-badge">⚠ at-risk</span>` : '';
+    const shadowBadge = isShadow ? `<span class="shadow-badge">👤 shadow</span>` : '';
+
+    const openArgs = `${r.q18_id}, '${firstEsc}', '${lastEsc}', '${emailEsc}', '${escHtml(phoneRaw)}', '${notesEsc}', '${genderVal}'`;
+
+    return `<tr data-q18id="${r.q18_id}" onclick="openEditModal(${openArgs})">
       <td class="id">${r.q18_id}</td>
-      <td class="name">${lastEsc}</td>
+      <td class="name" style="display:flex;gap:4px;align-items:center">${gBadge}<span>${lastEsc}</span>${vipBadge}${riskBadge}${shadowBadge}</td>
       <td class="name">${firstEsc}</td>
       <td class="email">${emailEsc || '<span style="color:var(--red);font-style:italic;opacity:.7">—</span>'}</td>
       <td class="phone">${phoneDsp || '<span style="color:var(--red);font-style:italic;opacity:.7">—</span>'}</td>
       <td class="plays ${playsClass}">${plays.toLocaleString()}</td>
-      <td class="date">${memberSince}</td>
+      <td class="col-home-course" title="${homeCourse}">${homeCourse || '<span style="opacity:.4">—</span>'}</td>
+      <td class="col-last-played">${_stalenessHtml(lastPlayedDate)}</td>
       <td class="del-col" onclick="event.stopPropagation()"><button class="del-btn" title="Delete record" onclick="initDelete(this, ${r.q18_id}, '${lastEsc}, ${firstEsc}')">🗑</button></td>
     </tr>`;
   }).join('');
@@ -724,7 +849,17 @@ function goPage(n) {
 // ─── Edit modal ────────────────────────────────────────────────────
 let _editQ18Id = null;
 
-function openEditModal(q18Id, firstName, lastName, email, phone, notes) {
+let _editGender = 'U';
+
+function selectGender(g) {
+  _editGender = g;
+  document.querySelectorAll('.gender-opt').forEach(btn => {
+    btn.classList.remove('sel-M','sel-F','sel-U');
+    if (btn.dataset.g === g) btn.classList.add(`sel-${g}`);
+  });
+}
+
+function openEditModal(q18Id, firstName, lastName, email, phone, notes, gender) {
   _editQ18Id = q18Id;
   document.getElementById('editModalTitle').textContent = lastName && firstName
     ? `Edit — ${lastName}, ${firstName}`
@@ -737,6 +872,7 @@ function openEditModal(q18Id, firstName, lastName, email, phone, notes) {
   document.getElementById('editErr').textContent = '';
   document.getElementById('editSaveBtn').disabled = false;
   document.getElementById('editSaveBtn').textContent = 'Save';
+  selectGender(gender || 'U');
   document.getElementById('editOverlay').classList.add('open');
   // Show play patterns section and load data
   const patternsSection = document.getElementById('editPatternsSection');
@@ -835,6 +971,68 @@ async function loadPlayPatterns(firstName, lastName) {
   } catch(e) {
     patternsContent.innerHTML = '<span style="color:var(--ink-muted);font-style:italic">Could not load play patterns.</span>';
   }
+
+  // Load playing partners separately
+  const partnersEl = document.getElementById('editPartnersContent');
+  if (!partnersEl) return;
+  try {
+    // Step 1: get tee_time_ids where this player appeared
+    const bpPat2 = (() => {
+      const parts = cleanName.split(/\s+/);
+      return parts.length >= 2
+        ? `${parts.slice(0, -1).join(' ')}% ${parts[parts.length - 1]}`
+        : `%${cleanName}%`;
+    })();
+    const myBookings = await fetch(
+      `${SB_URL}/rest/v1/booking_players?name=ilike.${encodeURIComponent(bpPat2)}&select=tee_time_id&limit=500`,
+      { headers: SB_H }
+    ).then(r => r.json());
+
+    if (!myBookings || myBookings.length === 0) {
+      partnersEl.innerHTML = '<span style="font-style:italic;color:var(--ink-muted)">No partners found.</span>';
+      return;
+    }
+
+    // Deduplicate tee_time_ids
+    const ttIds = [...new Set((myBookings || []).map(b => b.tee_time_id).filter(Boolean))];
+    if (ttIds.length === 0) { partnersEl.innerHTML = '<span style="font-style:italic;color:var(--ink-muted)">No partners found.</span>'; return; }
+
+    // Step 2: find other players in those same tee times (in batches of 100)
+    const coMap = {};
+    const chunk = 100;
+    for (let i = 0; i < ttIds.length; i += chunk) {
+      const batch = ttIds.slice(i, i + chunk);
+      const inList = batch.join(',');
+      const others = await fetch(
+        `${SB_URL}/rest/v1/booking_players?tee_time_id=in.(${inList})&select=name&limit=1000`,
+        { headers: SB_H }
+      ).then(r => r.json());
+      (others || []).forEach(o => {
+        const nm = (o.name || '').trim();
+        if (!nm || nm.toLowerCase() === cleanName.toLowerCase()) return;
+        coMap[nm] = (coMap[nm] || 0) + 1;
+      });
+    }
+
+    const partners = Object.entries(coMap)
+      .filter(([, cnt]) => cnt >= 2)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 6);
+
+    if (partners.length === 0) {
+      partnersEl.innerHTML = '<span style="font-style:italic;color:var(--ink-muted)">No frequent partners found.</span>';
+      return;
+    }
+
+    partnersEl.innerHTML = partners.map(([name, cnt]) =>
+      `<div class="partner-row">
+        <span style="flex:1">${escHtml(name)}</span>
+        <span class="partner-count">${cnt}✕</span>
+      </div>`
+    ).join('');
+  } catch(e) {
+    if (partnersEl) partnersEl.innerHTML = '<span style="color:var(--ink-muted);font-style:italic">Could not load partners.</span>';
+  }
 }
 
 function closeEditModal() {
@@ -862,7 +1060,7 @@ async function saveEdit() {
     const resp = await fetch(`${SB_URL}/rest/v1/q18_customers?q18_id=eq.${_editQ18Id}`, {
       method: 'PATCH',
       headers: Object.assign({}, SB_H, { 'Content-Type': 'application/json', 'Prefer': 'return=representation' }),
-      body: JSON.stringify({ first_name: first, last_name: last, email: email || null, phone: phone || null, notes: notes || null })
+      body: JSON.stringify({ first_name: first, last_name: last, email: email || null, phone: phone || null, notes: notes || null, gender: _editGender || 'U' })
     });
     if (!resp.ok) throw new Error(await resp.text());
 
