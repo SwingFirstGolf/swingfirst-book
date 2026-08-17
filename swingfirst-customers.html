@@ -548,12 +548,21 @@ async function fetchCustomers() {
   // GolfNow filter
   if (gnOnly) url += `&email=ilike.${encodeURIComponent('*@noreply-golfnow.com')}`;
 
-  // Search filter
+  // Search filter — handle "Last, First" and "First Last" as well as bare terms
   const q = searchVal.trim();
   if (q) {
-    const safe = q.replace(/[%_]/g, '\\$&');
-    const pat  = `*${safe}*`;
-    url += `&or=(last_name.ilike.${encodeURIComponent(pat)},first_name.ilike.${encodeURIComponent(pat)},email.ilike.${encodeURIComponent(pat)},phone.ilike.${encodeURIComponent(pat)})`;
+    const commaIdx = q.indexOf(',');
+    if (commaIdx !== -1) {
+      // "Transeth, Kathy" → separate last + first filters
+      const last  = q.slice(0, commaIdx).trim().replace(/[%_]/g, '\\$&');
+      const first = q.slice(commaIdx + 1).trim().replace(/[%_]/g, '\\$&');
+      url += `&last_name=ilike.${encodeURIComponent(`*${last}*`)}`;
+      if (first) url += `&first_name=ilike.${encodeURIComponent(`*${first}*`)}`;
+    } else {
+      const safe = q.replace(/[%_]/g, '\\$&');
+      const pat  = `*${safe}*`;
+      url += `&or=(last_name.ilike.${encodeURIComponent(pat)},first_name.ilike.${encodeURIComponent(pat)},email.ilike.${encodeURIComponent(pat)},phone.ilike.${encodeURIComponent(pat)})`;
+    }
   }
 
   try {
