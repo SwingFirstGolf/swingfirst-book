@@ -1794,7 +1794,7 @@ document.getElementById('bookSave').addEventListener('click', async () => {
 
     // ── PAY NOW — Stripe payment flow ──
     try {
-      const res = await fetch('/.netlify/functions/create-payment-intent', {
+      const res = await fetch('https://ojgxfeaesnaohskxdvam.supabase.co/functions/v1/create-payment-intent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
