@@ -697,6 +697,38 @@
   .grp-count-btn { border:1px solid var(--line); background:var(--slate-100); color:var(--ink); border-radius:6px; width:26px; height:26px; font-size:17px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; line-height:1; flex-shrink:0; }
   .grp-count-btn:hover { background:var(--green-100); border-color:var(--green-600); }
   .grp-count-display { font-size:14px; font-weight:800; min-width:32px; text-align:center; background:var(--green-700); color:#fff; border-radius:8px; padding:3px 10px; }
+
+  /* ─── POS Charge Overlay ───────────────────────────────────────── */
+  .pos-overlay{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center}
+  .pos-overlay-bd{position:absolute;inset:0;background:rgba(0,0,0,.65);animation:fadeIn .15s ease}
+  .pos-overlay-frame{position:relative;z-index:1;width:min(480px,96vw);height:min(720px,92vh);background:var(--paper);border-radius:12px;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.35);display:flex;flex-direction:column}
+  .pos-overlay-close{position:absolute;top:10px;right:10px;z-index:2;background:rgba(0,0,0,.55);color:#fff;border:none;border-radius:50%;width:28px;height:28px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .pos-overlay-close:hover{background:rgba(0,0,0,.8)}
+  .pos-overlay-iframe{flex:1;border:none;width:100%;height:100%}
+  /* ─── Edit Booking / Players Modal ────────────────────────────── */
+  .editbp-overlay{position:fixed;inset:0;z-index:8888;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55);animation:fadeIn .15s ease}
+  .editbp-modal{width:min(540px,95vw);max-height:88vh;background:var(--card);border-radius:12px;box-shadow:0 20px 56px rgba(0,0,0,.3);display:flex;flex-direction:column;overflow:hidden}
+  .editbp-hd{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line);flex-shrink:0}
+  .editbp-title{flex:1;font-weight:700;font-size:15px}
+  .editbp-save-top{padding:6px 14px;font-size:13px;font-weight:600;background:var(--green-700);color:#fff;border:none;border-radius:6px;cursor:pointer}
+  .editbp-save-top:hover{background:var(--green-900)}
+  .editbp-close-btn{background:none;border:none;font-size:18px;cursor:pointer;color:var(--ink-muted);line-height:1;padding:0 4px}
+  .editbp-body{flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:12px}
+  .editbp-player-card{border:1px solid var(--line);border-radius:8px;padding:12px;background:var(--paper)}
+  .editbp-player-hd{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+  .editbp-player-num{font-size:12px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em}
+  .editbp-warn{font-size:11px;color:var(--amber-700);background:var(--amber-50);border-radius:4px;padding:2px 6px}
+  .editbp-field{margin-bottom:8px}
+  .editbp-label{display:block;font-size:11px;font-weight:600;color:var(--ink-soft);margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em}
+  .editbp-input,.editbp-textarea{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:6px;padding:7px 9px;font-size:13px;background:var(--card);color:var(--ink);font-family:inherit}
+  .editbp-input:disabled,.editbp-textarea:disabled{opacity:.45;cursor:not-allowed}
+  .editbp-textarea{resize:vertical;min-height:56px}
+  .editbp-ft{padding:12px 16px;border-top:1px solid var(--line);flex-shrink:0;display:flex;flex-direction:column;gap:8px}
+  .editbp-notes-lbl{font-size:11px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em}
+  .editbp-save-wide{width:100%;padding:9px;font-size:14px;font-weight:700;background:var(--green-700);color:#fff;border:none;border-radius:8px;cursor:pointer}
+  .editbp-save-wide:hover{background:var(--green-900)}
+  .editbp-loading{text-align:center;padding:30px;color:var(--ink-muted);font-size:14px}
+
 </style>
 </head>
 <body>
@@ -833,8 +865,10 @@
     <div class="player-ctx-name" id="pctxName">—</div>
     <div class="player-ctx-time" id="pctxTime">—</div>
   </div>
-  <div class="player-ctx-item" id="pctxEdit"><span class="pci-ico">✏️</span> Edit Booking</div>
+  <div class="player-ctx-item" id="pctxEditBP"><span class="pci-ico">✏️</span> Edit Booking / Players</div>
+  <div class="player-ctx-item" id="pctxCharge"><span class="pci-ico">💳</span> Charge Player</div>
   <div class="player-ctx-sep"></div>
+  <div class="player-ctx-item" id="pctxAddPlayer"><span class="pci-ico">➕</span> Add Player</div>
   <div class="player-ctx-item" id="pctxCopy"><span class="pci-ico">📋</span> Copy Player</div>
   <div class="player-ctx-item" id="pctxCut"><span class="pci-ico">✂️</span> Cut Player</div>
   <div class="player-ctx-item" id="pctxPaste"><span class="pci-ico">📋</span> <span id="pctxPasteLabel">Paste Player</span></div>
@@ -1117,6 +1151,32 @@
 </div>
 
 <div class="toast" id="toast"></div>
+
+
+<!-- POS Charge Overlay -->
+<div class="pos-overlay" id="chargePosOverlay" style="display:none">
+  <div class="pos-overlay-bd" id="chargePosBackdrop"></div>
+  <div class="pos-overlay-frame">
+    <button class="pos-overlay-close" id="chargePosClose" title="Close">✕</button>
+    <iframe class="pos-overlay-iframe" id="chargePosIframe" src=""></iframe>
+  </div>
+</div>
+<!-- Edit Booking / Players Modal -->
+<div class="editbp-overlay" id="editBPOverlay" style="display:none">
+  <div class="editbp-modal">
+    <div class="editbp-hd">
+      <div class="editbp-title">✏️ Edit Booking / Players</div>
+      <button class="editbp-save-top" onclick="saveEditBP()">Save</button>
+      <button class="editbp-close-btn" onclick="closeEditBPModal()">✕</button>
+    </div>
+    <div class="editbp-body" id="editBPBody"><div class="editbp-loading">Loading…</div></div>
+    <div class="editbp-ft">
+      <div class="editbp-notes-lbl">Booking Notes</div>
+      <textarea class="editbp-textarea" id="editBPBookingNotes" rows="2" placeholder="Notes about this booking…"></textarea>
+      <button class="editbp-save-wide" onclick="saveEditBP()">Save All Changes</button>
+    </div>
+  </div>
+</div>
 
 <script>
 // ─── Supabase ────────────────────────────────────────────────────
@@ -3482,10 +3542,17 @@ function openPlayerCtx(e, slot, pi) {
   playerCtxEl.classList.add("open");
 }
 function closePlayerCtx() { playerCtxEl.classList.remove("open"); playerCtxTarget = null; }
-document.getElementById("pctxEdit").addEventListener("click", () => {
+document.getElementById("pctxEditBP").addEventListener("click", () => {
   if (!playerCtxTarget) { closePlayerCtx(); return; }
   const { slot, pi } = playerCtxTarget;
-  editBooking(slot, pi);
+  const player = slot.players[pi];
+  if (!player) { closePlayerCtx(); return; }
+  const filled = slot.players.filter(Boolean);
+  if (filled.length >= 1 && filled.every(p => p.name === player.name)) {
+    editBooking(slot, pi);
+  } else {
+    openEditBPModal(slot, pi);
+  }
   closePlayerCtx();
 });
 document.getElementById("pctxCopy").addEventListener("click", () => {
@@ -5401,6 +5468,125 @@ function custFmtDate(dateStr) {
   const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   return `${months[m-1]} ${d}, ${y}`;
 }
+
+// ─── Charge Player overlay ────────────────────────────────────────
+document.getElementById("pctxCharge").addEventListener("click", () => {
+  if (!playerCtxTarget) { closePlayerCtx(); return; }
+  const { slot, pi } = playerCtxTarget;
+  const player = slot.players[pi];
+  if (!player) { closePlayerCtx(); return; }
+  openChargeOverlay(player, slot);
+  closePlayerCtx();
+});
+function openChargeOverlay(player) {
+  const params = new URLSearchParams({ player: player.name, from_sheet: '1' });
+  document.getElementById('chargePosIframe').src = '/swingfirst-pos.html?' + params.toString();
+  document.getElementById('chargePosOverlay').style.display = '';
+  document.body.style.overflow = 'hidden';
+}
+document.getElementById('chargePosClose').addEventListener('click', closeChargeOverlay);
+document.getElementById('chargePosBackdrop').addEventListener('click', closeChargeOverlay);
+function closeChargeOverlay() {
+  document.getElementById('chargePosOverlay').style.display = 'none';
+  document.getElementById('chargePosIframe').src = '';
+  document.body.style.overflow = '';
+}
+// ─── Add Player (context menu) ────────────────────────────────────
+document.getElementById("pctxAddPlayer").addEventListener("click", () => {
+  if (!playerCtxTarget) { closePlayerCtx(); return; }
+  const { slot } = playerCtxTarget;
+  closePlayerCtx();
+  openAddModal(slot);
+});
+// ─── Edit Booking / Players modal ─────────────────────────────────
+let _editBPSlot = null, _editBPQ18 = {};
+async function openEditBPModal(slot, pi) {
+  _editBPSlot = slot; _editBPQ18 = {};
+  document.getElementById('editBPBookingNotes').value = slot.bookingNotes || '';
+  const body = document.getElementById('editBPBody');
+  body.innerHTML = '<div class="editbp-loading">Loading player info…</div>';
+  document.getElementById('editBPOverlay').style.display = '';
+  document.body.style.overflow = 'hidden';
+  await Promise.all(slot.players.map(async (player, i) => {
+    if (!player) return;
+    const parts = player.name.trim().split(' ');
+    const last = encodeURIComponent(parts[parts.length - 1]);
+    const first = parts.length > 1 ? encodeURIComponent(parts.slice(0,-1).join(' ')) : '';
+    try {
+      const url = SB_URL + '/rest/v1/q18_customers?select=q18_id,first_name,last_name,phone,notes&last_name=ilike.' + last + (first ? '&first_name=ilike.' + first : '') + '&limit=1';
+      const rows = await fetch(url, { headers: SB_H }).then(r => r.json());
+      _editBPQ18[i] = rows[0] || null;
+    } catch(e) { _editBPQ18[i] = null; }
+  }));
+  let num = 0;
+  body.innerHTML = slot.players.map((player, i) => {
+    if (!player) return '';
+    num++;
+    const q18 = _editBPQ18[i], inSys = !!q18, dis = inSys ? '' : ' disabled';
+    const warn = inSys ? '' : '<span class="editbp-warn">⚠ Not registered</span>';
+    const phone = (q18 && q18.phone) ? q18.phone : '';
+    const notes = (q18 && q18.notes) ? q18.notes : '';
+    const name = (player.name||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+    return '<div class="editbp-player-card" data-pi="'+i+'">' +
+      '<div class="editbp-player-hd"><span class="editbp-player-num">Player '+num+'</span>'+warn+'</div>' +
+      '<div class="editbp-field"><label class="editbp-label">Name</label><input type="text" class="editbp-input" data-field="name" data-pi="'+i+'" value="'+name+'" /></div>' +
+      '<div class="editbp-field"><label class="editbp-label">Phone</label><input type="tel" class="editbp-input" data-field="phone" data-pi="'+i+'" value="'+phone+'"'+dis+' placeholder="—" /></div>' +
+      '<div class="editbp-field"><label class="editbp-label">Player Notes</label><textarea class="editbp-textarea" data-field="notes" data-pi="'+i+'"'+dis+' placeholder="—">'+notes+'</textarea></div>' +
+      '</div>';
+  }).join('');
+}
+async function saveEditBP() {
+  if (!_editBPSlot) return;
+  const slot = _editBPSlot;
+  const topBtn = document.querySelector('.editbp-save-top');
+  const wideBtn = document.querySelector('.editbp-save-wide');
+  if (topBtn) { topBtn.textContent = 'Saving…'; topBtn.disabled = true; }
+  if (wideBtn) wideBtn.disabled = true;
+  const errs = [];
+  for (let i = 0; i < slot.players.length; i++) {
+    const player = slot.players[i]; if (!player) continue;
+    const nameEl  = document.querySelector('.editbp-input[data-field="name"][data-pi="'+i+'"]');
+    const phoneEl = document.querySelector('.editbp-input[data-field="phone"][data-pi="'+i+'"]');
+    const notesEl = document.querySelector('.editbp-textarea[data-field="notes"][data-pi="'+i+'"]');
+    if (nameEl) { const n = nameEl.value.trim(); if (n) player.name = n; }
+    const q18 = _editBPQ18[i];
+    if (q18) {
+      const upd = {};
+      if (phoneEl) upd.phone = phoneEl.value.trim();
+      if (notesEl) upd.notes = notesEl.value.trim();
+      if (Object.keys(upd).length) {
+        try {
+          await fetch(SB_URL+'/rest/v1/q18_customers?q18_id=eq.'+q18.q18_id, {
+            method:'PATCH', headers:{...SB_H,'Content-Type':'application/json','Prefer':'return=minimal'}, body:JSON.stringify(upd)
+          });
+        } catch(e) { errs.push(player.name); }
+      }
+    }
+  }
+  const bookingNotes = document.getElementById('editBPBookingNotes').value;
+  const bookingId = slot.players.find(Boolean)?.bookingId;
+  if (bookingId) {
+    try {
+      await fetch(SB_URL+'/rest/v1/bookings?id=eq.'+bookingId, {
+        method:'PATCH', headers:{...SB_H,'Content-Type':'application/json','Prefer':'return=minimal'}, body:JSON.stringify({booking_notes:bookingNotes})
+      });
+      slot.bookingNotes = bookingNotes;
+    } catch(e) { errs.push('booking notes'); }
+  }
+  renderRows();
+  toast(errs.length ? '⚠ Some changes could not be saved' : '✅ Changes saved');
+  closeEditBPModal();
+}
+function closeEditBPModal() {
+  document.getElementById('editBPOverlay').style.display = 'none';
+  document.body.style.overflow = '';
+  _editBPSlot = null; _editBPQ18 = {};
+  const topBtn = document.querySelector('.editbp-save-top');
+  const wideBtn = document.querySelector('.editbp-save-wide');
+  if (topBtn) { topBtn.textContent = 'Save'; topBtn.disabled = false; }
+  if (wideBtn) wideBtn.disabled = false;
+}
+
 </script>
 </body>
 </html>
