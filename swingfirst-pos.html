@@ -1085,6 +1085,10 @@ function renderPlayerInputs() {
       <input class="player-input" type="text" placeholder="${i === 0 ? 'Last name *' : 'Last name (opt.)'}"
         id="player-${i}" ${i === 0 ? 'required' : ''}/>
     </div>`).join('');
+  if (!window._playerPrefilled) {
+    const _pn = new URLSearchParams(location.search).get('player');
+    if (_pn) { const el = document.getElementById('player-0'); if (el) { el.value = _pn.split(' ').pop(); window._playerPrefilled = true; } }
+  }
 }
 
 function getPlayerNames() {
