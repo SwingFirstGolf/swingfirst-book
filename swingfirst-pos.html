@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
+<script src="https://js.stripe.com/v3/"></script>
 <title>SwingFirst — Point of Sale</title>
 <style>
   /* ─── Variables ─── */
@@ -395,6 +396,12 @@
   .panel-body::-webkit-scrollbar { width: 4px; }
   .panel-body::-webkit-scrollbar-track { background: transparent; }
   .panel-body::-webkit-scrollbar-thumb { background: var(--slate-200); border-radius: 4px; }
+
+  /* ─── Phone payment modal ─── */
+  .phone-pay-amount { text-align:center; font-size:28px; font-weight:800; color:var(--ink); margin:16px 0 4px; }
+  .phone-pay-label  { text-align:center; font-size:13px; color:var(--ink-muted); margin-bottom:14px; }
+  .stripe-element-wrap { border:1px solid var(--line); border-radius:var(--radius-sm); padding:12px 14px; background:#fff; }
+  #phonePayError { color:var(--rose-700); font-size:13px; margin-top:10px; display:none; }
 </style>
 </head>
 <body>
@@ -652,6 +659,21 @@
         </div>
       </div>
 
+
+      <div class="payment-section">
+        <div class="payment-section-label">Phone / Card-Not-Present</div>
+        <div class="pay-methods">
+          <button class="pay-btn" id="btnPhone" onclick="startPhonePayment()" disabled>
+            <div class="pay-btn-ico">📞</div>
+            <div class="pay-btn-info">
+              <div class="pay-btn-name">Charge by Phone</div>
+              <div class="pay-btn-sub">Operator enters card details</div>
+            </div>
+            <div class="pay-btn-amt" id="phoneAmt">—</div>
+          </button>
+        </div>
+      </div>
+
       <div style="padding:0 14px">
         <button class="clear-btn" onclick="clearCart()">🗑 Clear order</button>
       </div>
@@ -862,6 +884,29 @@
     <div class="modal-footer">
       <button class="btn-cancel" onclick="document.getElementById('tillModal').classList.remove('open')">Cancel</button>
       <button class="btn-save" id="tillConfirmBtn" onclick="confirmTill()">Open Till</button>
+    </div>
+  </div>
+</div>
+
+<!-- Phone payment modal -->
+<div class="modal-overlay" id="phoneModal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h2>📞 Charge by Phone</h2>
+      <button class="modal-close" onclick="closePhoneModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="phone-pay-label">Amount due</div>
+      <div class="phone-pay-amount" id="phoneModalAmount">$0.00</div>
+      <div class="phone-pay-label" style="margin-top:14px">Enter customer's card details</div>
+      <div class="stripe-element-wrap">
+        <div id="phonePaymentElement"></div>
+      </div>
+      <div id="phonePayError"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closePhoneModal()">Cancel</button>
+      <button class="btn-save" id="phonePayBtn" onclick="confirmPhonePayment()">Charge Card</button>
     </div>
   </div>
 </div>
@@ -1136,6 +1181,8 @@ function updatePaymentButtons(sub) {
   document.getElementById('cashAmt').textContent   = hasItems ? money(sub) : '—';
   document.getElementById('zelleAmt').textContent  = hasItems ? money(sub) : '—';
   document.getElementById('checkAmt').textContent  = hasItems ? money(sub) : '—';
+  document.getElementById('btnPhone').disabled   = !hasItems;
+  document.getElementById('phoneAmt').textContent  = hasItems ? money(sub) : '—';
   document.getElementById('creditSub').textContent = hasItems ? `+${money(Math.round(sub * SURCHARGE_RATE))} surcharge` : '3% surcharge applies';
 }
 
@@ -1292,7 +1339,7 @@ async function completeTransaction({ method, totalCents, ref }) {
   }
 
   // Show success flash
-  const methodLabel = { credit: 'Card', debit: 'Debit', cash: 'Cash', zelle: 'Zelle', check: 'Check' }[method] || method;
+  const methodLabel = { credit: 'Card', debit: 'Debit', cash: 'Cash', zelle: 'Zelle', check: 'Check', phone: 'Phone (Card)' }[method] || method;
   showSuccess(`Payment complete`, `${money(totalCents)} via ${methodLabel} · ${ref}`);
 
   // Open receipt modal after flash
@@ -1347,7 +1394,7 @@ function openReceiptModal() {
   const { items, totalCents, ref, method, timestamp } = lastTxn;
   const timeStr = timestamp.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
   const dateStr = timestamp.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  const methodLabel = { credit: 'Credit Card', debit: 'Debit Card', cash: 'Cash', zelle: 'Zelle', check: 'Check' }[method] || method;
+  const methodLabel = { credit: 'Credit Card', debit: 'Debit Card', cash: 'Cash', zelle: 'Zelle', check: 'Check', phone: 'Phone (Card-Not-Present)' }[method] || method;
   const itemRows = items.map(i =>
     `<div class="receipt-item"><span>${i.name} ×${i.qty}</span><span>$${(i.price*i.qty/100).toFixed(2)}</span></div>`
   ).join('');
@@ -1379,7 +1426,7 @@ async function sendReceipt() {
       ref,
       courseName: 'SwingFirst Pro Shop',
     };
-    const res = await fetch('/.netlify/functions/send-pos-receipt', {
+    const res = await fetch('https://ojgxfeaesnaohskxdvam.supabase.co/functions/v1/send-pos-receipt', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify(payload),
@@ -1477,10 +1524,88 @@ function toast(msg) {
 // Keyboard shortcut: Escape closes modals
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
-    ['terminalModal','zelleModal','checkModal','customItemModal','receiptModal','tillModal']
+    ['terminalModal','zelleModal','checkModal','customItemModal','receiptModal','tillModal','phoneModal']
       .forEach(id => document.getElementById(id).classList.remove('open'));
   }
 });
+// ─── Phone payment (manual card entry / MOTO) ─────────────────────
+const STRIPE_PK = 'pk_test_51TO4fJJCvnQR8CTLwi8h5TkB7e2HwJEwbQMj9lXFligYNtOl0ZXcj50LEHWyWInBPUOQpdZhW3L1mQCNRbNKQbJI00jLZ0M8PT';
+const SUPABASE_FN_URL = 'https://ojgxfeaesnaohskxdvam.supabase.co/functions/v1';
+let stripeInst     = null;
+let phoneElements  = null;
+let phoneClientSecret = null;
+let phoneTotalCents   = 0;
+
+function getStripe() {
+  if (!stripeInst) stripeInst = Stripe(STRIPE_PK);
+  return stripeInst;
+}
+
+async function startPhonePayment() {
+  const { sub } = calcTotals(false);
+  phoneTotalCents = sub;
+  document.getElementById('phoneModalAmount').textContent = money(sub);
+  document.getElementById('phonePayError').style.display  = 'none';
+  document.getElementById('phonePayBtn').disabled = false;
+  document.getElementById('phonePayBtn').textContent = 'Charge Card';
+  document.getElementById('phonePaymentElement').innerHTML = '';
+  document.getElementById('phoneModal').classList.add('open');
+
+  try {
+    const res = await fetch(SUPABASE_FN_URL + '/create-payment-intent', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ amountCents: sub, description: 'SwingFirst POS — phone payment' }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.clientSecret) throw new Error(data.error || 'Could not create payment');
+    phoneClientSecret = data.clientSecret;
+
+    const stripe   = getStripe();
+    const elements = stripe.elements({ clientSecret: phoneClientSecret, appearance: { theme: 'stripe' } });
+    phoneElements  = elements;
+    elements.create('payment').mount('#phonePaymentElement');
+  } catch(e) {
+    showPhoneError(e.message || 'Could not start payment');
+  }
+}
+
+function closePhoneModal() {
+  document.getElementById('phoneModal').classList.remove('open');
+  document.getElementById('phonePaymentElement').innerHTML = '';
+  phoneElements     = null;
+  phoneClientSecret = null;
+}
+
+async function confirmPhonePayment() {
+  if (!phoneElements || !phoneClientSecret) return;
+  const btn = document.getElementById('phonePayBtn');
+  btn.disabled = true;
+  btn.textContent = 'Processing…';
+  document.getElementById('phonePayError').style.display = 'none';
+
+  try {
+    const { error, paymentIntent } = await getStripe().confirmPayment({
+      elements: phoneElements,
+      confirmParams: { return_url: window.location.href },
+      redirect: 'if_required',
+    });
+    if (error) throw new Error(error.message);
+    closePhoneModal();
+    await completeTransaction({ method: 'phone', totalCents: phoneTotalCents, ref: paymentIntent?.id || ('pi_' + randId()) });
+  } catch(e) {
+    showPhoneError(e.message || 'Payment failed — check card details and try again');
+    btn.disabled = false;
+    btn.textContent = 'Charge Card';
+  }
+}
+
+function showPhoneError(msg) {
+  const el = document.getElementById('phonePayError');
+  el.textContent = '⚠️ ' + msg;
+  el.style.display = '';
+}
+
 </script>
 </body>
 </html>
