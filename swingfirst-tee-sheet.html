@@ -5624,6 +5624,10 @@ function closeEditBPModal() {
     });
   }
 
+  /* Suppress browser autocomplete on group name input */
+  var nameInput = document.getElementById("grpEditName");
+  if (nameInput) nameInput.setAttribute("autocomplete", "off");
+
   /* ── Delete Group persistence fix ── */
   var _SB = "https://ojgxfeaesnaohskxdvam.supabase.co";
   var _SK = "sb_publishable_4UVFMXQWGOt4XNgHVNzWoQ_Id6TBqcu";
@@ -5645,37 +5649,42 @@ function closeEditBPModal() {
     var date = _getDate();
     if (!date) { alert("Delete Group: couldn\'t detect date."); return; }
     try {
+      /* 1. Find tee_time IDs that have any non-cancelled booking for this lead */
       var resp = await fetch(
-        _SB + "/rest/v1/tee_times?date=eq." + date + "&select=id,bookings(id,lead_name,status)&order=hour.asc",
+        _SB + "/rest/v1/tee_times?date=eq." + date +
+        "&select=id,bookings(id,lead_name,status)&order=hour.asc",
         { headers: _SH }
       );
       var all = await resp.json();
-      var bookingIds = [], ttIds = [];
+      var ttIds = [];
       all.forEach(function(tt) {
-        var hasGroup = false;
-        (tt.bookings || []).forEach(function(b) {
-          if (b.status !== "cancelled" && b.lead_name === leadName) {
-            bookingIds.push(b.id);
-            hasGroup = true;
-          }
+        var hasLead = (tt.bookings || []).some(function(b) {
+          return b.status !== "cancelled" && b.lead_name === leadName;
         });
-        if (hasGroup) ttIds.push(tt.id);
+        if (hasLead) ttIds.push(tt.id);
       });
-      /* Bulk PATCH — two requests total, not N+M */
-      if (bookingIds.length) {
-        await fetch(_SB + "/rest/v1/bookings?id=in.(" + bookingIds.join(",") + ")", {
+      if (!ttIds.length) { location.reload(); return; }
+
+      /* 2. Cancel ALL non-cancelled bookings on those tee_times (clears overlapping groups too) */
+      await fetch(
+        _SB + "/rest/v1/bookings?tee_time_id=in.(" + ttIds.join(",") + ")&status=neq.cancelled",
+        {
           method: "PATCH",
           headers: Object.assign({}, _SH, { "Content-Type": "application/json", "Prefer": "return=minimal" }),
           body: JSON.stringify({ status: "cancelled" })
-        });
-      }
-      if (ttIds.length) {
-        await fetch(_SB + "/rest/v1/tee_times?id=in.(" + ttIds.join(",") + ")", {
+        }
+      );
+
+      /* 3. Set those tee_times back to open */
+      await fetch(
+        _SB + "/rest/v1/tee_times?id=in.(" + ttIds.join(",") + ")",
+        {
           method: "PATCH",
           headers: Object.assign({}, _SH, { "Content-Type": "application/json", "Prefer": "return=minimal" }),
           body: JSON.stringify({ status: "open" })
-        });
-      }
+        }
+      );
+
       location.reload();
     } catch(e) { alert("Delete Group error: " + e.message); }
   }
@@ -5684,11 +5693,13 @@ function closeEditBPModal() {
     var btn = e.target.closest("#grpEditDelete");
     if (!btn) return;
     e.stopImmediatePropagation();
-    var leadName = (document.getElementById("grpEditName")
-      ? document.getElementById("grpEditName").value
-      : (document.getElementById("grpEditTitle") || {}).textContent || "").trim();
+    var nameEl = document.getElementById("grpEditName");
+    var titleEl = document.getElementById("grpEditTitle");
+    var leadName = (nameEl ? nameEl.value : (titleEl ? titleEl.textContent : "")).trim();
     var meta = ((document.getElementById("grpEditMeta") || {}).textContent || "").trim();
     if (!window.confirm('Delete "' + leadName + '"?\n' + meta)) return;
+    btn.disabled = true;
+    btn.textContent = "Deleting…";
     var overlay = document.getElementById("grpEditModal");
     if (overlay) overlay.style.display = "none";
     _persistGroupDelete(leadName);
