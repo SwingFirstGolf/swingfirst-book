@@ -5661,15 +5661,16 @@ function closeEditBPModal() {
         });
         if (hasGroup) ttIds.push(tt.id);
       });
-      for (var i = 0; i < bookingIds.length; i++) {
-        await fetch(_SB + "/rest/v1/bookings?id=eq." + bookingIds[i], {
+      /* Bulk PATCH — two requests total, not N+M */
+      if (bookingIds.length) {
+        await fetch(_SB + "/rest/v1/bookings?id=in.(" + bookingIds.join(",") + ")", {
           method: "PATCH",
           headers: Object.assign({}, _SH, { "Content-Type": "application/json", "Prefer": "return=minimal" }),
           body: JSON.stringify({ status: "cancelled" })
         });
       }
-      for (var j = 0; j < ttIds.length; j++) {
-        await fetch(_SB + "/rest/v1/tee_times?id=eq." + ttIds[j], {
+      if (ttIds.length) {
+        await fetch(_SB + "/rest/v1/tee_times?id=in.(" + ttIds.join(",") + ")", {
           method: "PATCH",
           headers: Object.assign({}, _SH, { "Content-Type": "application/json", "Prefer": "return=minimal" }),
           body: JSON.stringify({ status: "open" })
