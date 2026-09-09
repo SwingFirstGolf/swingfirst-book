@@ -5600,7 +5600,7 @@ function closeEditBPModal() {
       <button id="swPriceBtn"      class="ctx-item" style="padding:11px 14px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;text-align:left;cursor:pointer;font-size:14px">💰  Override $</button>
       <button id="swTeeOffBtn"     class="ctx-item" style="padding:11px 14px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;text-align:left;cursor:pointer;font-size:14px">🏌️  Tee Off</button>
       <button id="swSqueezeBtn"    class="ctx-item" style="padding:11px 14px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;text-align:left;cursor:pointer;font-size:14px">⏱️  Squeeze</button>
-      <button id="swDelSqueezeBtn" class="ctx-item ctx-danger" style="padding:11px 14px;border:1px solid #fca5a5;border-radius:8px;background:#fff;text-align:left;cursor:pointer;font-size:14px;display:none">🗑️  Delete Squeeze</button>
+      <button id="swDelSqueezeBtn" class="ctx-item" style="padding:11px 14px;border:1px solid #fca5a5;border-radius:8px;background:#fff;text-align:left;cursor:pointer;font-size:14px;display:none">🗑️  Delete Squeeze</button>
     </div>
   </div>
 </div>
@@ -5608,7 +5608,7 @@ function closeEditBPModal() {
   <div class="modal-card">
     <div class="modal-head"><h2>💰 Override Price</h2><button class="modal-close" id="swBulkPriceClose">✕</button></div>
     <div class="modal-body">
-      <div id="swBulkPriceSlotInfo" class="slot-info" style="margin-bottom:12px"></div>
+      <div id="swBulkPriceSlotInfo" style="margin-bottom:12px;font-size:13px;color:#6b7280"></div>
       <div class="form-group">
         <label style="font-size:13px;font-weight:500;color:#374151">New price per player (USD)</label>
         <input type="number" id="swBulkPriceInput" class="form-control" min="0" step="1" placeholder="e.g. 39" style="margin-top:6px;width:100%">
@@ -5620,16 +5620,13 @@ function closeEditBPModal() {
     </div>
   </div>
 </div>
-
 <script>
 (function() {
   var _SB = "https://ojgxfeaesnaohskxdvam.supabase.co";
   var _SK = "sb_publishable_4UVFMXQWGOt4XNgHVNzWoQ_Id6TBqcu";
   var _SH = { apikey: _SK, "Authorization": "Bearer " + _SK };
-
   var rowsEl  = document.getElementById("rows");
   var ctxMenu = document.getElementById("ctxMenu");
-
   var _actionRows = [], _actionMode = "single", _dragModalId = null;
   var _inDragIntercept = false, _dragActive = false, _dragRowSet = [];
 
@@ -5654,8 +5651,7 @@ function closeEditBPModal() {
   async function _getRowTeeTimeIds(rowIndices) {
     var date=_getDate(); if(!date) return [];
     var resp=await fetch(_SB+"/rest/v1/tee_times?date=eq."+date+"&select=id,hour,minute",{headers:_SH});
-    var tts=await resp.json();
-    var result=[];
+    var tts=await resp.json(); var result=[];
     rowIndices.forEach(function(idx){
       var t=_parseRowTime(idx); if(!t) return;
       var tt=tts.find(function(r){return r.hour===t.hour&&r.minute===t.minute;});
@@ -5663,8 +5659,6 @@ function closeEditBPModal() {
     });
     return result;
   }
-
-  function _show(id, visible) { var el=document.getElementById(id); if(el) el.style.display=visible?"":"none"; }
 
   function _showActionModal() {
     var modal=document.getElementById("swActionModal"); if(!modal) return;
@@ -5678,37 +5672,45 @@ function closeEditBPModal() {
         title.textContent=(f?f.label:"")+" – "+(l?l.label:"");
       } else { var t=_parseRowTime(_actionRows[0]); title.textContent=t?t.label:"Tee Time"; }
     }
-    _show("swTeeOffBtn",!isDrag);
-    _show("swSqueezeBtn",!isDrag&&!isSq);
-    _show("swDelSqueezeBtn",!isDrag&&isSq);
+    var teeOffBtn=document.getElementById("swTeeOffBtn");
+    var sqBtn=document.getElementById("swSqueezeBtn");
+    var delSqBtn=document.getElementById("swDelSqueezeBtn");
+    if(teeOffBtn) teeOffBtn.style.display=isDrag?"none":"";
+    if(sqBtn)     sqBtn.style.display=(isDrag||isSq)?"none":"";
+    if(delSqBtn)  delSqBtn.style.display=(!isDrag&&isSq)?"":"none";
     modal.style.display="flex";
   }
 
-  function _hideActionModal() { var m=document.getElementById("swActionModal"); if(m) m.style.display="none"; }
+  function _hideActionModal() {
+    var m=document.getElementById("swActionModal"); if(m) m.style.display="none";
+  }
 
   /* Autocomplete suppression */
   var ni=document.getElementById("grpEditName"); if(ni) ni.setAttribute("autocomplete","off");
 
-  /* ── Single TIME click — CAPTURE phase (fires after existing handler sets ctxIdx) ── */
+  /* Single TIME click — capture phase */
   document.addEventListener("click", function(e) {
     if(_inDragIntercept) return;
     var tc=e.target.closest(".row-time"); if(!tc) return;
     var row=tc.closest(".row"); if(!row||!rowsEl) return;
     var idx=Array.from(rowsEl.children).indexOf(row);
     _actionRows=[idx]; _actionMode="single";
-    if(ctxMenu) ctxMenu.style.display="none";
+    /* Hide ctxMenu after existing handler opens it */
+    setTimeout(function(){ if(ctxMenu) ctxMenu.style.display="none"; },0);
     _showActionModal();
-  }, true); /* <-- CAPTURE: existing handler runs first, sets state, we hide+show */
+  }, true);
 
   /* Close on outside click */
   document.addEventListener("click",function(e){
     var m=document.getElementById("swActionModal");
     if(!m||m.style.display==="none") return;
+    if(e.target.closest(".row-time")) return;
     if(!m.contains(e.target)) _hideActionModal();
   });
-  var _ac=document.getElementById("swActionClose"); if(_ac) _ac.addEventListener("click",_hideActionModal);
 
-  /* ── Drag tracking ── */
+  var ac=document.getElementById("swActionClose"); if(ac) ac.addEventListener("click",_hideActionModal);
+
+  /* Drag tracking */
   if(rowsEl){
     rowsEl.addEventListener("pointerdown",function(e){
       if(!e.target.closest(".row-time")) return;
@@ -5745,7 +5747,7 @@ function closeEditBPModal() {
     }).observe(m,{attributes:true,attributeFilter:["style","class"]});
   });
 
-  /* ── Action buttons ── */
+  /* Action buttons */
   function _wire(id,fn){var el=document.getElementById(id);if(el) el.addEventListener("click",fn);}
 
   _wire("swBookBtn",function(){
@@ -5776,10 +5778,13 @@ function closeEditBPModal() {
   });
 
   _wire("swTeeOffBtn",function(){_hideActionModal();var ci=document.getElementById("ctxTeeOffItem");if(ci) ci.click();});
-  _wire("swSqueezeBtn",function(){_hideActionModal();if(_actionRows.length>0&&typeof squeezeTeeTime==="function") squeezeTeeTime(_actionRows[0]);});
+  _wire("swSqueezeBtn",function(){
+    _hideActionModal();
+    var ai=document.getElementById("addSqueezeItem"); if(ai) ai.click();
+  });
   _wire("swDelSqueezeBtn",function(){_hideActionModal();var ci=document.getElementById("deleteSqueezeItem");if(ci) ci.click();});
 
-  /* ── Bulk Block ── */
+  /* Bulk Block */
   async function _bulkBlock(rowIndices){
     try{
       var ids=await _getRowTeeTimeIds(rowIndices);
@@ -5792,7 +5797,7 @@ function closeEditBPModal() {
     }catch(e){alert("Block error: "+e.message);}
   }
 
-  /* ── Bulk Price ── */
+  /* Bulk Price */
   _wire("swBulkPriceCancel",function(){var m=document.getElementById("swBulkPriceModal");if(m) m.style.display="none";});
   _wire("swBulkPriceClose", function(){var m=document.getElementById("swBulkPriceModal");if(m) m.style.display="none";});
   _wire("swBulkPriceSave",async function(){
@@ -5800,7 +5805,7 @@ function closeEditBPModal() {
     var dollars=parseFloat(inp?inp.value:"");
     if(isNaN(dollars)||dollars<0){alert("Enter a valid price.");return;}
     var cents=Math.round(dollars*100);
-    var m=document.getElementById("swBulkPriceModal"); if(m) m.style.display="none";
+    var bm=document.getElementById("swBulkPriceModal"); if(bm) bm.style.display="none";
     try{
       var ids=await _getRowTeeTimeIds(_actionRows);
       if(!ids.length){alert("Could not identify tee times.");return;}
@@ -5812,9 +5817,10 @@ function closeEditBPModal() {
     }catch(e){alert("Price error: "+e.message);}
   });
 
-  /* ── Delete Group persistence ── */
+  /* Delete Group */
   async function _persistGroupDelete(leadName){
-    var date=_getDate(); if(!date){alert("Couldn\'t detect date.");return;}
+    var date=_getDate();
+    if(!date){alert("Could not detect date.");return;}
     try{
       var resp=await fetch(_SB+"/rest/v1/tee_times?date=eq."+date+"&select=id,bookings(id,lead_name,status)&order=hour.asc",{headers:_SH});
       var all=await resp.json(); var ttIds=[];
@@ -5829,7 +5835,7 @@ function closeEditBPModal() {
         method:"PATCH",headers:Object.assign({},_SH,{"Content-Type":"application/json","Prefer":"return=minimal"}),body:JSON.stringify({status:"open"})
       });
       location.reload();
-    }catch(e){alert("Delete Group error: "+e.message);}
+    }catch(err){alert("Delete Group error: "+err.message);}
   }
 
   document.addEventListener("click",function(e){
@@ -5838,7 +5844,8 @@ function closeEditBPModal() {
     var nameEl=document.getElementById("grpEditName"),titleEl=document.getElementById("grpEditTitle");
     var leadName=(nameEl?nameEl.value:(titleEl?titleEl.textContent:"")).trim();
     var meta=((document.getElementById("grpEditMeta")||{}).textContent||"").trim();
-    if(!window.confirm(\'Delete "\'+leadName+\'"?\\n\'+meta)) return;
+    var msg="Delete \""+leadName+"\"?\n"+meta;
+    if(!window.confirm(msg)) return;
     btn.disabled=true; btn.textContent="Deleting…";
     var overlay=document.getElementById("grpEditModal"); if(overlay) overlay.style.display="none";
     _persistGroupDelete(leadName);
