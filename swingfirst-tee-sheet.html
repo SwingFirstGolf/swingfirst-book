@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>SwingFirst â Tee Sheet</title>
+<title>SwingFirst — Tee Sheet</title>
 <style>
-  /* âââ Variables âââ */
+  /* ─── Variables ─── */
   :root {
     --ink:        #0d1f17;
     --ink-soft:   #3b4a42;
@@ -56,7 +56,7 @@
   button { font: inherit; color: inherit; cursor: pointer; }
   h1,h2,h3 { margin: 0; font-weight: 600; letter-spacing: -.01em; }
 
-  /* âââ Top bar âââ */
+  /* ─── Top bar ─── */
   .topbar {
     display: flex; align-items: center; justify-content: space-between;
     padding: 13px 24px; border-bottom: 1px solid var(--line);
@@ -83,11 +83,11 @@
   .user-pop-btn { width: 100%; background: var(--green-700); color: #fff; border: none; border-radius: 8px; padding: 8px; font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer; transition: background .15s; }
   .user-pop-btn:hover { background: var(--green-600); }
 
-  /* âââ Layout âââ */
+  /* ─── Layout ─── */
   .shell { display: grid; grid-template-columns: 210px 1fr 268px; height: calc(100vh - 8px); overflow: hidden; }
   @media (max-width:1100px) { .shell { grid-template-columns: 1fr; } .sidebar-left,.sidebar-right { display: none; } }
 
-  /* âââ Left nav âââ */
+  /* ─── Left nav ─── */
   .sidebar-left { border-right: 1px solid var(--line); background: var(--card); padding: 14px 10px; overflow-y: auto; }
   .nav-group { margin-bottom: 12px; }
   .nav-title { font-size: 11px; color: var(--ink-muted); text-transform: uppercase; letter-spacing: .06em; padding: 5px 10px; }
@@ -97,7 +97,7 @@
   .nav-item .dot { width: 6px; height: 6px; border-radius: 999px; background: var(--green-600); visibility: hidden; }
   .nav-item.active .dot { visibility: visible; }
 
-  /* âââ Main âââ */
+  /* ─── Main ─── */
   main { padding: 0 22px 0; min-width: 0; overflow: hidden; background: var(--paper); display: flex; flex-direction: column; height: 100%; }
   .page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 14px; margin-bottom: 16px; flex-wrap: wrap; }
   .page-title { font-size: 21px; }
@@ -115,7 +115,7 @@
   .btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: var(--radius-sm); border: 1px solid var(--line); background: var(--card); box-shadow: var(--shadow-sm); font-weight: 500; font-size: 13px; color: var(--ink-soft); }
   .btn:hover { background: var(--slate-100); }
   .btn-primary { background: var(--green-700); color: white; border-color: var(--green-700); }
-  /* ââ 18 / 9-hole mode tabs ââ */
+  /* ── 18 / 9-hole mode tabs ── */
   .mode-tabs { display:flex; align-items:flex-end; gap:2px; }
   .mode-tab { font-size:13px; font-weight:700; padding:7px 16px; border:1.5px solid var(--line); background:var(--card); cursor:pointer; color:var(--ink-muted); border-radius:8px; transition:all .15s ease; white-space:nowrap; }
   .mode-tab:hover { color:var(--ink); background:var(--slate-100); }
@@ -128,14 +128,14 @@
   .b9-sheet-sub { font-size:12px; color:#92400e; font-weight:500; }
   .btn-primary:hover { background: var(--green-900); border-color: var(--green-900); }
 
-  /* âââ Stats (sidebar 2Ã2 grid) âââ */
+  /* ─── Stats (sidebar 2×2 grid) ─── */
   .summary { display: grid; grid-template-columns: repeat(2,1fr); gap: 8px; margin-bottom: 14px; }
   .stat { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 11px; box-shadow: var(--shadow-sm); }
   .stat .k { font-size: 10px; color: var(--ink-muted); text-transform: uppercase; letter-spacing: .06em; font-weight: 600; }
   .stat .v { font-size: 18px; font-weight: 700; margin-top: 2px; letter-spacing: -.01em; }
   .stat .sub { font-size: 10px; color: var(--ink-muted); margin-top: 2px; }
 
-  /* âââ Tee sheet âââ */
+  /* ─── Tee sheet ─── */
   /* Grid: TIME(82) | RATE(58) | P1 | P2 | P3 | P4 | +(28) */
   .sheet {
     background: var(--card); border: 1px solid var(--line);
@@ -177,9 +177,9 @@
   /* Squeezed tee time indicator */
   .row.squeezed { background: #fffdf0; }
   .row.squeezed .row-time { background: #fef3c7 !important; color: #92400e !important; }
-  .row.squeezed .row-time::after { content:"â"; font-size:7px; color: var(--amber-700); margin-left:4px; vertical-align:middle; }
+  .row.squeezed .row-time::after { content:"●"; font-size:7px; color: var(--amber-700); margin-left:4px; vertical-align:middle; }
 
-  /* Time cell â clickable */
+  /* Time cell — clickable */
   .row-time {
     display: flex; align-items: center;
     padding: 0 8px 0 12px;
@@ -189,7 +189,7 @@
     gap: 4px;
   }
   .row-time:hover { color: var(--green-700); }
-  .row-time:hover::before { content:"â¾"; font-size:10px; color:var(--green-600); }
+  .row-time:hover::before { content:"▾"; font-size:10px; color:var(--green-600); }
   .row-time .time-text { }
 
   .row-rate {
@@ -211,7 +211,7 @@
   /* Player column */
   .player-col { border-left: 1px solid var(--line); padding: 2px 3px; display: flex; align-items: stretch; }
 
-  /* ââ COMPACT player cell ââ */
+  /* ── COMPACT player cell ── */
   .player-cell {
     flex: 1; border-radius: 5px;
     display: flex; flex-direction: row; align-items: center;
@@ -230,7 +230,7 @@
   }
   .player-cell.empty:hover { border-color: var(--green-600); color: var(--green-700); background: var(--green-50); }
 
-  /* Occupied â status via left border + bg tint */
+  /* Occupied — status via left border + bg tint */
   .player-cell.checked_in { background: var(--green-50); border: 1px solid #c7e6d5; border-left: 3px solid var(--green-600); }
   .player-cell.paid       { background: var(--amber-50); border: 1px solid #FDE68A; border-left: 3px solid #F59E0B; cursor: grab; }
   .player-cell.pending    { background: var(--orange-50); border: 1px solid #FED7AA; border-left: 3px solid #F97316; cursor: grab; }
@@ -246,7 +246,7 @@
   /* Ghost while dragging */
   .player-cell.is-dragging { opacity: .35; }
 
-  /* Cell content â two-row layout: name on top, price centered below */
+  /* Cell content — two-row layout: name on top, price centered below */
   .player-cell { flex-direction: column; align-items: flex-start; justify-content: center; gap: 1px; }
   .cell-top  { width: 100%; display: flex; align-items: center; min-width: 0; }
   .cell-bot  { width: 100%; display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 1px; }
@@ -255,7 +255,7 @@
   .player-name  { font-size: 11px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; color: var(--ink); line-height: 1; }
   .player-rate  { display: none; }
   .player-price { font-size: 10px; font-weight: 700; color: var(--ink-muted); white-space: nowrap; }
-  /* Q18 rate color triangle â bottom-right corner of player cell */
+  /* Q18 rate color triangle — bottom-right corner of player cell */
   .rate-triangle {
     position: absolute; bottom: 0; right: 0;
     width: 0; height: 0;
@@ -276,7 +276,7 @@
   .pip-member     { background: #7C3AED; }
   .pip-no_show    { background: var(--rose-700); }
 
-  /* ââ Notes indicator â corner triangle ââ */
+  /* ── Notes indicator — corner triangle ── */
   .notes-dot {
     position: absolute;
     top: 0; left: 0;
@@ -288,7 +288,7 @@
     pointer-events: none;
     z-index: 1;
   }
-  /* Consolidation arrow â sits between player name and price in the flex row */
+  /* Consolidation arrow — sits between player name and price in the flex row */
   .cons-arrow-badge {
     flex-shrink: 0;
     font-size: 13px;
@@ -316,7 +316,7 @@
   .ntt-sep { grid-column: 1/-1; height: 1px; background: rgba(255,255,255,.1); margin: 4px 0; }
   .ntt-plain { padding: 7px 12px 9px; white-space: pre-wrap; }
 
-  /* ââ Player right-click context menu ââ */
+  /* ── Player right-click context menu ── */
   .player-ctx {
     position: fixed; z-index: 500;
     background: var(--card); border: 1px solid var(--line);
@@ -347,7 +347,7 @@
   .player-ctx-item.danger:hover { background: var(--rose-50); color: var(--rose-700); }
   .player-ctx-sep { height: 1px; background: var(--line); margin: 4px 0; }
 
-  /* ââ Undo bar ââ */
+  /* ── Undo bar ── */
   .undo-bar {
     position: fixed; bottom: 24px; left: 50%;
     transform: translateX(-50%) translateY(80px);
@@ -378,7 +378,7 @@
     z-index: 2;
   }
 
-  /* ââ Squeeze "+" column ââ */
+  /* ── Squeeze "+" column ── */
   .plus-col { border-left: 1px solid var(--line); display: flex; align-items: center; justify-content: center; }
   .squeeze-btn {
     width: 20px; height: 20px; border-radius: 4px;
@@ -391,7 +391,7 @@
   /* Blocked row: no squeeze btn */
   .row-blocked-plus { border-left: 1px solid var(--line); }
 
-  /* âââ Context menu âââ */
+  /* ─── Context menu ─── */
   .ctx-menu {
     position: fixed; z-index: 300;
     background: var(--card); border: 1px solid var(--line);
@@ -415,7 +415,7 @@
   .ctx-item.ctx-danger:hover { background: var(--rose-50); }
   .ctx-head { padding: 6px 14px 4px; font-size: 11px; font-weight: 700; color: var(--ink-muted); text-transform: uppercase; letter-spacing: .06em; }
 
-  /* âââ Right sidebar âââ */
+  /* ─── Right sidebar ─── */
   .sidebar-right { border-left: 1px solid var(--line); background: var(--card); padding: 16px 14px; overflow-y: auto; }
   .sidebar-right h3 { font-size: 11px; color: var(--ink-muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 9px; }
   .activity { list-style: none; margin: 0; padding: 0; }
@@ -431,19 +431,19 @@
   .activity .act-line1 .act-type.type-walkin     { color: #7c3aed; }
   .activity .act-line2 { font-size: 11px; color: var(--ink-muted); margin-top: 1px; font-variant-numeric: tabular-nums; }
 
-  /* âââ Course nav (left sidebar) âââ */
+  /* ─── Course nav (left sidebar) ─── */
   .course-nav-section { padding: 0 4px 12px; border-bottom: 1px solid var(--line); margin-bottom: 12px; }
   .course-nav-label { font-size: 10px; color: var(--ink-muted); text-transform: uppercase; letter-spacing: .07em; font-weight: 700; padding: 4px 6px 6px; }
   .course-btn { width: 100%; text-align: left; padding: 6px 10px; border-radius: 7px; border: none; background: none; font-size: 13px; font-weight: 500; color: var(--ink-soft); cursor: pointer; }
   .course-btn:hover { background: var(--slate-100); color: var(--ink); }
   .course-btn.active { background: var(--green-50); color: var(--green-900); font-weight: 700; }
 
-  /* âââ Course banner âââ */
+  /* ─── Course banner ─── */
   .course-banner { border-radius: 0 0 10px 10px; padding: 8px 22px; margin: 0 -22px 10px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
   .course-banner-name { font-size: 21px; font-weight: 900; letter-spacing: -.02em; line-height: 1.1; }
   .course-banner-sub { font-size: 11px; font-weight: 600; opacity: .7; margin-top: 2px; letter-spacing: .02em; text-transform: uppercase; }
 
-  /* âââ Live search âââ */
+  /* ─── Live search ─── */
   .live-search { display: flex; align-items: center; gap: 7px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 7px 12px; box-shadow: var(--shadow-sm); flex: 1; max-width: 260px; }
   .live-search input { border: 0; outline: 0; background: transparent; font: inherit; font-size: 13px; color: var(--ink); flex: 1; }
   .live-search input::placeholder { color: var(--ink-muted); }
@@ -452,7 +452,7 @@
   .row.search-dim { opacity: 0.15; }
   .row.search-match { box-shadow: 0 0 0 2px var(--green-600); z-index: 1; }
 
-  /* âââ Week-strip date picker âââ */
+  /* ─── Week-strip date picker ─── */
   .week-strip { display: flex; align-items: center; gap: 6px; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; margin-bottom: 0; box-shadow: var(--shadow-sm); }
   .ws-btn { background: none; border: 1px solid var(--line); border-radius: 5px; padding: 2px 7px; font-size: 11px; font-weight: 600; color: var(--ink-soft); cursor: pointer; white-space: nowrap; line-height: 1.5; flex-shrink: 0; }
   .ws-btn:hover { background: var(--slate-100); }
@@ -466,13 +466,13 @@
   .ws-pill.ws-active .wp-mo, .ws-pill.ws-active .wp-d, .ws-pill.ws-active .wp-wd { color: var(--course-btn-text, var(--green-700)); }
   .ws-sep { width: 1px; height: 22px; background: var(--line); flex-shrink: 0; margin: 0 2px; }
 
-  /* âââ Banner âââ */
+  /* ─── Banner ─── */
 
-  /* âââ Toast âââ */
+  /* ─── Toast ─── */
   .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(60px); background: var(--ink); color: white; padding: 9px 18px; border-radius: 999px; font-size: 13px; box-shadow: var(--shadow-md); opacity: 0; transition: transform 200ms ease, opacity 200ms ease; pointer-events: none; z-index: 200; white-space: nowrap; }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-  /* âââ Modals âââ */
+  /* ─── Modals ─── */
   .modal-overlay { position: fixed; inset: 0; background: rgba(13,31,23,.5); backdrop-filter: blur(3px); display: flex; align-items: center; justify-content: center; z-index: 100; opacity: 0; pointer-events: none; transition: opacity 200ms ease; }
   .modal-overlay.open { opacity: 1; pointer-events: all; }
   .modal-card { background: var(--card); border-radius: 16px; box-shadow: var(--shadow-lg); width: 380px; max-width: calc(100vw - 32px); overflow: hidden; transform: translateY(14px) scale(.97); transition: transform 200ms ease; }
@@ -532,7 +532,7 @@
   /* Time cell block-selection highlight */
   .row-time.bsel { background: #ede9fe !important; color: #5b21b6 !important; outline: 2px solid #7c3aed; outline-offset: -2px; font-weight: 700; }
 
-  /* âââ Trash drawer âââ */
+  /* ─── Trash drawer ─── */
   .undo-main-btn { display: inline-flex; align-items: center; gap: 4px; padding: 4px 11px; border-radius: 999px; background: rgba(0,0,0,.15); color: inherit; font-size: 12px; font-weight: 600; border: 1px solid rgba(255,255,255,.3); cursor: pointer; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; transition: opacity 180ms; }
   .undo-main-btn:disabled { opacity: 0.35; cursor: default; }
   .undo-main-btn:not(:disabled):hover { background: rgba(0,0,0,.25); }
@@ -545,7 +545,7 @@
   .trash-btn-badge.visible { display: block; }
   .trash-overlay { position: fixed; inset: 0; z-index: 299; display: none; background: rgba(13,31,23,.25); }
   .trash-overlay.open { display: block; }
-  /* ââ New Customer inline form ââ */
+  /* ── New Customer inline form ── */
   .nc-form { background: var(--green-50); border: 1.5px solid var(--green-600); border-radius: 10px; padding: 14px 16px; margin-top: 6px; }
   .nc-form-title { font-size: 11px; font-weight: 700; color: var(--green-700); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
   .nc-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
@@ -557,17 +557,17 @@
   .nc-btn-create { padding: 7px 14px; border-radius: 6px; border: none; background: var(--green-700); color: #fff; font: 600 13px/1 inherit; cursor: pointer; transition: background .12s; }
   .nc-btn-create:hover { background: var(--green-600); }
   .nc-btn-back { background: none; border: none; font: 500 12px/1 inherit; color: var(--ink-muted); cursor: pointer; text-decoration: underline; padding: 0; }
-  /* ââ Phone capture banner ââ */
+  /* ── Phone capture banner ── */
   .phone-cap { background: #fffbeb; border: 1.5px solid #f59e0b; border-radius: 8px; padding: 10px 12px; margin-top: 6px; display: none; }
   .phone-cap.visible { display: block; }
   .phone-cap-label { font-size: 11px; font-weight: 700; color: #92400e; margin-bottom: 6px; display: block; }
   .phone-cap-row { display: flex; gap: 8px; align-items: center; }
   .phone-cap-input { flex: 1; padding: 7px 10px; border: 1.5px solid #f59e0b; border-radius: 6px; font-size: 13px; font-family: inherit; color: var(--ink); outline: none; }
   .phone-cap-btn { padding: 7px 12px; border-radius: 6px; border: none; background: var(--green-700); color: #fff; font: 600 12px/1 inherit; cursor: pointer; white-space: nowrap; }
-  /* ââ Autocomplete new-customer row ââ */
+  /* ── Autocomplete new-customer row ── */
   .ac-item-new { border-top: 1px solid var(--line); color: var(--green-700); font-weight: 600; font-size: 13px; }
   .ac-item-new:hover { background: var(--green-50); }
-  /* âââ Customer Drawer âââ */
+  /* ─── Customer Drawer ─── */
   .cust-drawer { position: fixed; top: 0; right: 0; bottom: 0; width: 400px; background: var(--card); border-left: 1px solid var(--line); box-shadow: -4px 0 28px rgba(13,31,23,.15); z-index: 350; transform: translateX(100%); transition: transform 240ms cubic-bezier(.4,0,.2,1); display: flex; flex-direction: column; }
   .cust-drawer.open { transform: translateX(0); }
   .cust-head { display: flex; align-items: center; justify-content: space-between; padding: 15px 16px 13px; border-bottom: 1px solid var(--line); flex-shrink: 0; }
@@ -672,7 +672,7 @@
   .trash-restore-btn:hover { background: var(--green-700); color: white; }
   .trash-restore-btn:disabled { opacity: .45; cursor: default; }
 
-  /* âââ Autocomplete dropdown âââ */
+  /* ─── Autocomplete dropdown ─── */
   .ac-wrap { position: relative; }
   .ac-list {
     /* position/top/left/width set dynamically via JS to escape modal overflow:hidden */
@@ -691,21 +691,21 @@
   .ac-item-name { font-weight: 700; color: var(--ink); }
   .ac-item-sub  { font-size: 11px; color: var(--ink-muted); }
 
-  /* âââ Group booking count picker âââ */
+  /* ─── Group booking count picker ─── */
   .grp-count-row { display:none; align-items:center; gap:6px; margin-left:4px; }
   .grp-count-row.visible { display:flex; }
   .grp-count-btn { border:1px solid var(--line); background:var(--slate-100); color:var(--ink); border-radius:6px; width:26px; height:26px; font-size:17px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; line-height:1; flex-shrink:0; }
   .grp-count-btn:hover { background:var(--green-100); border-color:var(--green-600); }
   .grp-count-display { font-size:14px; font-weight:800; min-width:32px; text-align:center; background:var(--green-700); color:#fff; border-radius:8px; padding:3px 10px; }
 
-  /* âââ POS Charge Overlay âââââââââââââââââââââââââââââââââââââââââ */
+  /* ─── POS Charge Overlay ───────────────────────────────────────── */
   .pos-overlay{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center}
   .pos-overlay-bd{position:absolute;inset:0;background:rgba(0,0,0,.65);animation:fadeIn .15s ease}
   .pos-overlay-frame{position:relative;z-index:1;width:min(480px,96vw);height:min(720px,92vh);background:var(--paper);border-radius:12px;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.35);display:flex;flex-direction:column}
   .pos-overlay-close{position:absolute;top:10px;right:10px;z-index:2;background:rgba(0,0,0,.55);color:#fff;border:none;border-radius:50%;width:28px;height:28px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center}
   .pos-overlay-close:hover{background:rgba(0,0,0,.8)}
   .pos-overlay-iframe{flex:1;border:none;width:100%;height:100%}
-  /* âââ Edit Booking / Players Modal ââââââââââââââââââââââââââââââ */
+  /* ─── Edit Booking / Players Modal ────────────────────────────── */
   .editbp-overlay{position:fixed;inset:0;z-index:8888;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55);animation:fadeIn .15s ease}
   .editbp-modal{width:min(540px,95vw);max-height:88vh;background:var(--card);border-radius:12px;box-shadow:0 20px 56px rgba(0,0,0,.3);display:flex;flex-direction:column;overflow:hidden}
   .editbp-hd{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line);flex-shrink:0}
@@ -735,7 +735,7 @@
 
 <div class="user-pop" id="userPop">
   <div class="user-pop-label">Logged in as</div>
-  <div class="user-pop-name" id="userPopName">â</div>
+  <div class="user-pop-name" id="userPopName">—</div>
   <div class="user-pop-divider"></div>
   <div class="user-pop-label" style="margin-bottom:6px">Change name</div>
   <input class="user-pop-input" id="userPopInput" type="text" placeholder="Your full name" autocomplete="off"/>
@@ -777,17 +777,17 @@
     <div class="course-banner" id="courseBanner" style="background:#4ade80;color:#14532d;">
       <div>
         <div class="course-banner-name" id="courseBannerName">Palmbrook Golf Club</div>
-        <div class="course-banner-sub">Operator Â· Tee Sheet</div>
+        <div class="course-banner-sub">Operator · Tee Sheet</div>
       </div>
       <div style="display:flex;align-items:center;gap:10px;">
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;opacity:.9;">
-          <div style="font-weight:800;font-size:13px;letter-spacing:-.01em;">â³ SwingFirst <span style="font-weight:500;opacity:.85;">Operator</span></div>
+          <div style="font-weight:800;font-size:13px;letter-spacing:-.01em;">⛳ SwingFirst <span style="font-weight:500;opacity:.85;">Operator</span></div>
           <span id="clock" style="font-size:12px;"></span>
         </div>
-        <a href="https://book.swingfirst.ai/" style="display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:999px;background:rgba(0,0,0,.15);color:inherit;font-size:12px;font-weight:600;text-decoration:none;border:1px solid rgba(255,255,255,.3);" target="_blank">ð Golfer View</a>
-        <button class="sync-toggle-btn sync-live" id="syncToggleBtn" style="display:none" title="Sync is live (every 30 min)">â¸ Pause Sync</button>
-        <button class="undo-main-btn" id="undoBtn" disabled title="Nothing to undo">â© Undo</button>
-        <button class="trash-btn" id="trashBtn" title="Cancelled players">ð<span class="trash-btn-badge" id="trashBadge"></span></button>
+        <a href="https://book.swingfirst.ai/" style="display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:999px;background:rgba(0,0,0,.15);color:inherit;font-size:12px;font-weight:600;text-decoration:none;border:1px solid rgba(255,255,255,.3);" target="_blank">🌐 Golfer View</a>
+        <button class="sync-toggle-btn sync-live" id="syncToggleBtn" style="display:none" title="Sync is live (every 30 min)">⏸ Pause Sync</button>
+        <button class="undo-main-btn" id="undoBtn" disabled title="Nothing to undo">↩ Undo</button>
+        <button class="trash-btn" id="trashBtn" title="Cancelled players">🗑<span class="trash-btn-badge" id="trashBadge"></span></button>
         <div class="avatar" id="avatarEl" title="Set staff name" style="background:rgba(0,0,0,.2);color:inherit;border-color:rgba(255,255,255,.3);">?</div>
       </div>
     </div>
@@ -795,35 +795,35 @@
     <!-- Week-strip with tabs/search inline -->
     <div class="week-strip" id="weekStrip" style="margin-bottom:12px;">
       <div class="live-search" style="flex-shrink:0;max-width:220px;">
-        <span style="font-size:14px;color:var(--ink-muted);">ð</span>
-        <input type="text" id="opSearch" placeholder="Search playerâ¦" autocomplete="off"/>
-        <button class="ls-clear" id="opSearchClear" title="Clear">â</button>
+        <span style="font-size:14px;color:var(--ink-muted);">🔍</span>
+        <input type="text" id="opSearch" placeholder="Search player…" autocomplete="off"/>
+        <button class="ls-clear" id="opSearchClear" title="Clear">✕</button>
       </div>
       <div class="ws-sep"></div>
-      <button class="ws-btn" id="prevDay">â¹ Prev</button>
+      <button class="ws-btn" id="prevDay">‹ Prev</button>
       <div class="ws-days" id="wsDays"></div>
-      <button class="ws-btn" id="nextDay">Next âº</button>
+      <button class="ws-btn" id="nextDay">Next ›</button>
       <div class="ws-sep"></div>
       <div class="mode-tabs" style="flex-shrink:0;">
-        <button class="mode-tab active" id="opTab18" onclick="setSheetMode('18')">â³ 18 Holes</button>
-        <button class="mode-tab tab-b9"  id="opTab9"  onclick="setSheetMode('9')">âï¸ 9 Holes</button>
+        <button class="mode-tab active" id="opTab18" onclick="setSheetMode('18')">⛳ 18 Holes</button>
+        <button class="mode-tab tab-b9"  id="opTab9"  onclick="setSheetMode('9')">☀️ 9 Holes</button>
       </div>
     </div>
 
     <!-- Selection bar (appears when cells are ctrl+selected) -->
     <div class="sel-bar" id="selBar">
       <span id="selCount">0 players selected</span>
-      <span style="color:var(--ink-muted);font-weight:400">â drag any selected cell to move the group</span>
-      <button id="selClear">â Clear</button>
+      <span style="color:var(--ink-muted);font-weight:400">— drag any selected cell to move the group</span>
+      <button id="selClear">✕ Clear</button>
     </div>
 
     <div class="bulk-bar" id="bulkBar">
-      <span>ð«</span>
+      <span>🚫</span>
       <span id="bulkBarCount">0 tee times selected</span>
       <span class="bulk-bar-range" id="bulkBarRange"></span>
-      <span style="color:#7c3aed;font-weight:400;font-size:11px">â Ctrl+click to select, then book as a group</span>
+      <span style="color:#7c3aed;font-weight:400;font-size:11px">— Ctrl+click to select, then book as a group</span>
       <button class="bulk-bar-block" id="bulkBlockBtn">Book Slots</button>
-      <button class="bulk-bar-clear" id="bulkClearBtn">â Clear</button>
+      <button class="bulk-bar-clear" id="bulkClearBtn">✕ Clear</button>
     </div>
 
     <div class="sheet" id="sheet">
@@ -862,46 +862,46 @@
 <div class="player-ctx" id="playerCtx">
   <div class="player-ctx-head">
     <div class="player-ctx-eyebrow" id="pctxEyebrow">Player</div>
-    <div class="player-ctx-name" id="pctxName">â</div>
-    <div class="player-ctx-time" id="pctxTime">â</div>
+    <div class="player-ctx-name" id="pctxName">—</div>
+    <div class="player-ctx-time" id="pctxTime">—</div>
   </div>
-  <div class="player-ctx-item" id="pctxEditBP"><span class="pci-ico">âï¸</span> Edit Booking / Players</div>
-  <div class="player-ctx-item" id="pctxCharge"><span class="pci-ico">ð³</span> Charge Player</div>
+  <div class="player-ctx-item" id="pctxEditBP"><span class="pci-ico">✏️</span> Edit Booking / Players</div>
+  <div class="player-ctx-item" id="pctxCharge"><span class="pci-ico">💳</span> Charge Player</div>
   <div class="player-ctx-sep"></div>
-  <div class="player-ctx-item" id="pctxAddPlayer"><span class="pci-ico">â</span> Add Player</div>
-  <div class="player-ctx-item" id="pctxCopy"><span class="pci-ico">ð</span> Copy Player</div>
-  <div class="player-ctx-item" id="pctxCut"><span class="pci-ico">âï¸</span> Cut Player</div>
-  <div class="player-ctx-item" id="pctxPaste"><span class="pci-ico">ð</span> <span id="pctxPasteLabel">Paste Player</span></div>
+  <div class="player-ctx-item" id="pctxAddPlayer"><span class="pci-ico">➕</span> Add Player</div>
+  <div class="player-ctx-item" id="pctxCopy"><span class="pci-ico">📋</span> Copy Player</div>
+  <div class="player-ctx-item" id="pctxCut"><span class="pci-ico">✂️</span> Cut Player</div>
+  <div class="player-ctx-item" id="pctxPaste"><span class="pci-ico">📋</span> <span id="pctxPasteLabel">Paste Player</span></div>
   <div class="player-ctx-sep" id="pctxCancelSep"></div>
-  <div class="player-ctx-item danger" id="pctxCancel"><span class="pci-ico">ð</span> Cancel Player</div>
+  <div class="player-ctx-item danger" id="pctxCancel"><span class="pci-ico">🗑</span> Cancel Player</div>
 </div>
 
 <!-- Undo bar -->
 <div class="undo-bar" id="undoBar">
   <span id="undoBarText">Player removed</span>
-  <button class="undo-bar-btn" id="undoBarBtn">â© Undo</button>
+  <button class="undo-bar-btn" id="undoBarBtn">↩ Undo</button>
 </div>
 
 <!-- Customer drawer -->
 <div class="cust-drawer" id="custDrawer">
   <div class="cust-head">
-    <div class="cust-head-title">ð¥ Customer Lookup</div>
-    <button class="cust-head-close" id="custDrawerClose">â</button>
+    <div class="cust-head-title">👥 Customer Lookup</div>
+    <button class="cust-head-close" id="custDrawerClose">✕</button>
   </div>
   <div class="cust-search-wrap">
-    <input type="text" class="cust-search-input" id="custSearchInput" placeholder="Search by nameâ¦" autocomplete="off" spellcheck="false"/>
+    <input type="text" class="cust-search-input" id="custSearchInput" placeholder="Search by name…" autocomplete="off" spellcheck="false"/>
   </div>
   <div class="cust-sort-bar" id="custSortBar">
     <button class="cust-sort-btn" id="custSortName" title="Sort by name">
-      Name <span class="cust-sort-arrow" id="custSortNameArrow">â</span>
+      Name <span class="cust-sort-arrow" id="custSortNameArrow">↕</span>
     </button>
     <button class="cust-sort-btn active" id="custSortPlays" title="Sort by plays">
-      Plays <span class="cust-sort-arrow" id="custSortPlaysArrow">â</span>
+      Plays <span class="cust-sort-arrow" id="custSortPlaysArrow">↓</span>
     </button>
     <div class="cust-sort-spacer"></div>
     <div class="cust-plays-filter" title="Filter by minimum play count">
-      <span>Plays&nbsp;â¥</span>
-      <input type="number" id="custMinPlays" min="0" placeholder="â" title="Minimum plays">
+      <span>Plays&nbsp;≥</span>
+      <input type="number" id="custMinPlays" min="0" placeholder="—" title="Minimum plays">
     </div>
     <button class="cust-gn-toggle" id="custGnToggle" title="Show GolfNow bookers only">GN</button>
   </div>
@@ -915,13 +915,13 @@
 <div class="trash-drawer" id="trashDrawer">
   <div class="trash-drawer-head">
     <div>
-      <div class="trash-drawer-title">ð Cancelled Players</div>
-      <div class="trash-drawer-sub" id="trashDateLabel">â</div>
+      <div class="trash-drawer-title">🗑 Cancelled Players</div>
+      <div class="trash-drawer-sub" id="trashDateLabel">—</div>
     </div>
-    <button class="trash-close" id="trashClose">â</button>
+    <button class="trash-close" id="trashClose">✕</button>
   </div>
   <div class="trash-list" id="trashList">
-    <div class="trash-empty">Loadingâ¦</div>
+    <div class="trash-empty">Loading…</div>
   </div>
 </div>
 
@@ -929,27 +929,27 @@
 <div class="ctx-menu" id="ctxMenu">
   <div class="ctx-head" id="ctxHead">6:00 AM</div>
   <div class="ctx-sep"></div>
-  <div class="ctx-item" data-action="unblockTime" id="ctxUnblockItem"><span class="ctx-ico">ð</span> Unblock Tee Time</div>
-  <div class="ctx-item" data-action="blockTime" id="ctxBlockItem"><span class="ctx-ico">ð«</span> Block Tee Time</div>
-  <div class="ctx-item" data-action="teeOff" id="ctxTeeOffItem"><span class="ctx-ico">ðï¸</span> Tee Off</div>
-  <div class="ctx-item" data-action="overridePrice" id="ctxPriceItem"><span class="ctx-ico">ð°</span> Override Price</div>
+  <div class="ctx-item" data-action="unblockTime" id="ctxUnblockItem"><span class="ctx-ico">🔓</span> Unblock Tee Time</div>
+  <div class="ctx-item" data-action="blockTime" id="ctxBlockItem"><span class="ctx-ico">🚫</span> Block Tee Time</div>
+  <div class="ctx-item" data-action="teeOff" id="ctxTeeOffItem"><span class="ctx-ico">🏌️</span> Tee Off</div>
+  <div class="ctx-item" data-action="overridePrice" id="ctxPriceItem"><span class="ctx-ico">💰</span> Override Price</div>
   <div class="ctx-sep" id="ctxClipSep"></div>
-  <div class="ctx-item" data-action="copyBooking" id="ctxCopyItem"><span class="ctx-ico">ð</span> Copy Booking</div>
-  <div class="ctx-item" data-action="cutBooking"  id="ctxCutItem"><span class="ctx-ico">âï¸</span> Cut Booking</div>
-  <div class="ctx-item" data-action="pasteBooking" id="ctxPasteItem"><span class="ctx-ico">ð</span> <span id="ctxPasteLabel">Paste Booking</span></div>
+  <div class="ctx-item" data-action="copyBooking" id="ctxCopyItem"><span class="ctx-ico">📋</span> Copy Booking</div>
+  <div class="ctx-item" data-action="cutBooking"  id="ctxCutItem"><span class="ctx-ico">✂️</span> Cut Booking</div>
+  <div class="ctx-item" data-action="pasteBooking" id="ctxPasteItem"><span class="ctx-ico">📋</span> <span id="ctxPasteLabel">Paste Booking</span></div>
   <div class="ctx-sep" id="ctxDangerSep"></div>
-  <div class="ctx-item" data-action="groupBooking" id="ctxGroupItem"><span class="ctx-ico">ð¥</span> Group Booking</div>
-  <div class="ctx-item ctx-danger" data-action="cancelResv" id="ctxCancelItem"><span class="ctx-ico">â</span> Cancel Booking</div>
+  <div class="ctx-item" data-action="groupBooking" id="ctxGroupItem"><span class="ctx-ico">👥</span> Group Booking</div>
+  <div class="ctx-item ctx-danger" data-action="cancelResv" id="ctxCancelItem"><span class="ctx-ico">✕</span> Cancel Booking</div>
   <div class="ctx-item" id="addSqueezeItem" style="display:none"><span class="ctx-ico">⏱️</span> Add Squeeze Below</div>
-  <div class="ctx-item ctx-danger" data-action="deleteSqueeze" id="deleteSqueezeItem" style="display:none"><span class="ctx-ico">ðï¸</span> Delete Squeeze</div>
+  <div class="ctx-item ctx-danger" data-action="deleteSqueeze" id="deleteSqueezeItem" style="display:none"><span class="ctx-ico">🗑️</span> Delete Squeeze</div>
 </div>
 
 <!-- Group Booking Modal -->
 <div class="modal-overlay" id="groupModal">
   <div class="modal-card">
-    <div class="modal-head"><h2>ð¥ Group Booking</h2><button class="modal-close" id="groupClose">â</button></div>
+    <div class="modal-head"><h2>👥 Group Booking</h2><button class="modal-close" id="groupClose">✕</button></div>
     <div class="modal-body">
-      <div class="slot-info">Starting at: <strong id="groupStartLabel">â</strong></div>
+      <div class="slot-info">Starting at: <strong id="groupStartLabel">—</strong></div>
       <div class="form-group" style="margin-top:12px">
         <label class="form-label">Number of players in the group</label>
         <input type="number" class="form-input" id="groupPlayerCount" min="5" max="64" value="12" autocomplete="off"/>
@@ -966,9 +966,9 @@
 <!-- Tee Off Modal -->
 <div class="modal-overlay" id="teeOffModal">
   <div class="modal-card">
-    <div class="modal-head"><h2>ðï¸ Tee Off</h2><button class="modal-close" id="teeOffClose">â</button></div>
+    <div class="modal-head"><h2>🏌️ Tee Off</h2><button class="modal-close" id="teeOffClose">✕</button></div>
     <div class="modal-body">
-      <div class="slot-info">Scheduled: <strong id="teeOffScheduled">â</strong></div>
+      <div class="slot-info">Scheduled: <strong id="teeOffScheduled">—</strong></div>
       <div class="form-group">
         <label class="form-label">Actual tee off time</label>
         <input type="time" class="form-input" id="teeOffTimeInput"/>
@@ -985,12 +985,12 @@
 <!-- Block Times Modal -->
 <div class="modal-overlay" id="blockModal">
   <div class="modal-card">
-    <div class="modal-head"><h2>ð« Block Times</h2><button class="modal-close" id="blockClose">â</button></div>
+    <div class="modal-head"><h2>🚫 Block Times</h2><button class="modal-close" id="blockClose">✕</button></div>
     <div class="modal-body">
-      <div class="slot-info">Tee time: <strong id="blockSlotLabel">â</strong></div>
+      <div class="slot-info">Tee time: <strong id="blockSlotLabel">—</strong></div>
       <div class="form-group">
         <label class="form-label">Block reason / label</label>
-        <input type="text" class="form-input" id="blockLabel" placeholder="e.g. Ladies' League, Maintenanceâ¦" autocomplete="off"/>
+        <input type="text" class="form-input" id="blockLabel" placeholder="e.g. Ladies' League, Maintenance…" autocomplete="off"/>
       </div>
       <div style="font-size:12px;color:var(--ink-muted)">Existing bookings on this slot will be cleared.</div>
     </div>
@@ -1004,9 +1004,9 @@
 <!-- Override Price Modal -->
 <div class="modal-overlay" id="priceModal">
   <div class="modal-card">
-    <div class="modal-head"><h2>ð° Override Price</h2><button class="modal-close" id="priceClose">â</button></div>
+    <div class="modal-head"><h2>💰 Override Price</h2><button class="modal-close" id="priceClose">✕</button></div>
     <div class="modal-body">
-      <div class="slot-info">Tee time: <strong id="priceSlotLabel">â</strong> Â· Current: <strong id="priceCurrentRate">â</strong></div>
+      <div class="slot-info">Tee time: <strong id="priceSlotLabel">—</strong> · Current: <strong id="priceCurrentRate">—</strong></div>
       <div class="form-group">
         <label class="form-label">New rate ($ per player)</label>
         <input type="number" class="form-input" id="priceInput" min="0" max="999" step="5" placeholder="e.g. 75"/>
@@ -1022,20 +1022,20 @@
 <!-- QR Modal -->
 <div class="modal-overlay" id="qrModal">
   <div class="modal-card">
-    <div class="modal-head"><h2>ð Cart Desk Scanner</h2><button class="modal-close" id="qrClose">â</button></div>
+    <div class="modal-head"><h2>🛒 Cart Desk Scanner</h2><button class="modal-close" id="qrClose">✕</button></div>
     <div class="modal-body">
       <div id="qrPre">
         <div class="qr-wrap">
-          <div><div class="qr-name" id="qrName">â</div><div class="qr-detail" id="qrDetail">â</div></div>
+          <div><div class="qr-name" id="qrName">—</div><div class="qr-detail" id="qrDetail">—</div></div>
           <div class="qr-code-box" id="qrCodeBox"><div id="qrSvg"></div></div>
-          <div class="qr-token" id="qrToken">â</div>
-          <button class="scan-btn" id="scanBtn">ð· &nbsp;Simulate Scan</button>
+          <div class="qr-token" id="qrToken">—</div>
+          <button class="scan-btn" id="scanBtn">📷 &nbsp;Simulate Scan</button>
         </div>
       </div>
       <div class="qr-success" id="qrSuccess">
-        <div class="qr-checkmark">â</div>
+        <div class="qr-checkmark">✓</div>
         <div class="qr-success-text">Checked In!</div>
-        <div class="qr-success-sub" id="qrSuccessDetail">â</div>
+        <div class="qr-success-sub" id="qrSuccessDetail">—</div>
       </div>
     </div>
   </div>
@@ -1044,7 +1044,7 @@
 <!-- Placeholder / Booking Detail Modal -->
 <div class="modal-overlay" id="placeholderModal">
   <div class="modal-card" style="min-width:320px;max-width:420px">
-    <div class="modal-head"><h2 id="placeholderTitle">Booking Detail</h2><button class="modal-close" id="placeholderClose">â</button></div>
+    <div class="modal-head"><h2 id="placeholderTitle">Booking Detail</h2><button class="modal-close" id="placeholderClose">✕</button></div>
     <div class="modal-body" style="padding:24px 20px 28px;text-align:center">
       <p style="font-size:15px;color:var(--ink-muted);margin:0">Placeholder</p>
     </div>
@@ -1064,15 +1064,15 @@
           <button class="pc-btn" data-n="4">4</button>
         </div>
         <div class="grp-count-row" id="grpCountRow">
-          <button class="grp-count-btn" id="grpMinus">â</button>
+          <button class="grp-count-btn" id="grpMinus">−</button>
           <span class="grp-count-display" id="grpCountDisplay">16</span>
           <button class="grp-count-btn" id="grpPlus">+</button>
         </div>
       </div>
-      <button class="modal-close" id="addClose">â</button>
+      <button class="modal-close" id="addClose">✕</button>
     </div>
     <div class="modal-body">
-      <div class="slot-info">Tee time: <strong id="addSlotLabel">â</strong></div>
+      <div class="slot-info">Tee time: <strong id="addSlotLabel">—</strong></div>
       <div id="addNamesContainer"></div>
       <div class="form-row">
         <div class="form-group"><label class="form-label">Status</label><select class="form-select" id="addStatus"><option value="paid">Paid</option><option value="pending">Pending</option><option value="member">Member</option></select></div>
@@ -1098,7 +1098,7 @@
   </div>
 </div>
 
-<!-- âââ Group Edit Modal âââââââââââââââââââââââââââââââââââââââ -->
+<!-- ─── Group Edit Modal ─────────────────────────────────────── -->
 <div class="modal-overlay" id="grpEditModal">
   <div class="modal-card" id="grpEditCard" style="max-width:460px">
     <div class="modal-head">
@@ -1106,7 +1106,7 @@
         <div id="grpEditTitle" style="font-size:15px;font-weight:700;line-height:1.3"></div>
         <div id="grpEditMeta" style="font-size:12px;color:var(--ink-muted);margin-top:2px"></div>
       </div>
-      <button class="modal-close" onclick="closeGrpEditModal()">â</button>
+      <button class="modal-close" onclick="closeGrpEditModal()">✕</button>
     </div>
 
     <!-- Summary panel -->
@@ -1145,7 +1145,7 @@
     <!-- Players panel -->
     <div id="grpPlayersPanel" style="display:none;max-height:60vh;overflow-y:auto;padding:4px 0"></div>
     <div class="modal-footer" id="grpPlayersFooter" style="display:none;justify-content:space-between">
-      <button class="btn-cancel" id="grpPlayersBack">â Back</button>
+      <button class="btn-cancel" id="grpPlayersBack">← Back</button>
       <button class="btn-save" id="grpPlayersSave">Save Players</button>
     </div>
   </div>
@@ -1158,7 +1158,7 @@
 <div class="pos-overlay" id="chargePosOverlay" style="display:none">
   <div class="pos-overlay-bd" id="chargePosBackdrop"></div>
   <div class="pos-overlay-frame">
-    <button class="pos-overlay-close" id="chargePosClose" title="Close">â</button>
+    <button class="pos-overlay-close" id="chargePosClose" title="Close">✕</button>
     <iframe class="pos-overlay-iframe" id="chargePosIframe" src=""></iframe>
   </div>
 </div>
@@ -1166,21 +1166,21 @@
 <div class="editbp-overlay" id="editBPOverlay" style="display:none">
   <div class="editbp-modal">
     <div class="editbp-hd">
-      <div class="editbp-title">âï¸ Edit Booking / Players</div>
+      <div class="editbp-title">✏️ Edit Booking / Players</div>
       <button class="editbp-save-top" onclick="saveEditBP()">Save</button>
-      <button class="editbp-close-btn" onclick="closeEditBPModal()">â</button>
+      <button class="editbp-close-btn" onclick="closeEditBPModal()">✕</button>
     </div>
-    <div class="editbp-body" id="editBPBody"><div class="editbp-loading">Loadingâ¦</div></div>
+    <div class="editbp-body" id="editBPBody"><div class="editbp-loading">Loading…</div></div>
     <div class="editbp-ft">
       <div class="editbp-notes-lbl">Booking Notes</div>
-      <textarea class="editbp-textarea" id="editBPBookingNotes" rows="2" placeholder="Notes about this bookingâ¦"></textarea>
+      <textarea class="editbp-textarea" id="editBPBookingNotes" rows="2" placeholder="Notes about this booking…"></textarea>
       <button class="editbp-save-wide" onclick="saveEditBP()">Save All Changes</button>
     </div>
   </div>
 </div>
 
 <script>
-// âââ Supabase ââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─── Supabase ────────────────────────────────────────────────────
 const SB_URL = 'https://ojgxfeaesnaohskxdvam.supabase.co';
 const SB_KEY = 'sb_publishable_4UVFMXQWGOt4XNgHVNzWoQ_Id6TBqcu';
 const SB_H   = { apikey: SB_KEY, 'Authorization': 'Bearer ' + SB_KEY };
@@ -1206,7 +1206,7 @@ const COURSE_COLORS = {
   'briarwood-cc':       { bg: '#166534', text: '#f0fdf4' },
 };
 
-let _dbCourses = [];        // courses from DB â drives the nav
+let _dbCourses = [];        // courses from DB — drives the nav
 let currentCourseSlug = localStorage.getItem('sf_op_course') || 'palmbrook';
 let currentCourseName = 'Palmbrook Golf Club';
 
@@ -1233,9 +1233,9 @@ function applyCourseBanner(slug, name) {
 }
 
 
-let _courseCache = null;    // slug â id
+let _courseCache = null;    // slug → id
 let currentCourseId = null;
-const courseB9 = {};        // courseId â { cutoffMin, rateCents }
+const courseB9 = {};        // courseId → { cutoffMin, rateCents }
 let sheetMode = '18';       // '18' | '9'
 let _mainCourseId   = null; // saved 18-hole course ID while in 9-hole view
 let _mainCourseSlug = null; // saved 18-hole slug while in 9-hole view
@@ -1244,15 +1244,15 @@ let _syncPaused     = false;// sync_paused state for the current facility
 let _facilitySlug   = null; // facility_slug for the current course
 let _clipboard      = null; // { players: [...], rateCents, notes } for copy/paste across days
 
-// ââ Bulk block selection state âââââââââââââââââââââââââââââââââââ
+// ── Bulk block selection state ───────────────────────────────────
 const blockSel      = new Set(); // slot IDs selected for bulk block
 let blockSelAnchor  = null;      // slot.id used as range anchor
 let _bselDown       = false;     // mouse is held on time column
 let _bselDragAnchor = null;      // slot.id where drag started
-let _bselDragActive = false;     // at least two cells visited â drag mode
+let _bselDragActive = false;     // at least two cells visited → drag mode
 document.addEventListener("mouseup", () => {
   if (_bselDragActive && blockSel.size > 0) {
-    // Drag just completed â open booking modal directly, no banner needed
+    // Drag just completed — open booking modal directly, no banner needed
     _bselDragActive = false;
     _bselDown = false;
     const sorted = [...blockSel]
@@ -1338,7 +1338,7 @@ async function initCourses() {
 function renderCourseNav() {
   const SLUG_ORDER = COURSES.map(c => c.slug);
   const raw  = _dbCourses.length > 0 ? _dbCourses : COURSES;
-  // Exclude back-9 sibling courses â they're accessed via the 9 Holes tab, not the sidebar
+  // Exclude back-9 sibling courses — they're accessed via the 9 Holes tab, not the sidebar
   const list = [...raw].filter(c => !c.slug.endsWith('-back-9')).sort((a, b) => {
     const ai = SLUG_ORDER.indexOf(a.slug), bi = SLUG_ORDER.indexOf(b.slug);
     return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
@@ -1377,7 +1377,7 @@ async function switchCourse(slug) {
 }
 
 async function getCourseId(slug) {
-  // Legacy helper â initCourses populates _courseCache
+  // Legacy helper — initCourses populates _courseCache
   if (_courseCache) return _courseCache[slug];
   await initCourses();
   return _courseCache ? _courseCache[slug] : null;
@@ -1425,8 +1425,8 @@ function generateWalkInRef(slot) {
 }
 
 function isPastSlot(slot) {
-  if (state.dayOffset < 0) return true;  // entire past date â all slots locked
-  if (state.dayOffset > 0) return false; // future date â all slots open
+  if (state.dayOffset < 0) return true;  // entire past date — all slots locked
+  if (state.dayOffset > 0) return false; // future date — all slots open
   // Today: compare by minute-of-day
   const nowPhx = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Phoenix' }));
   return slot.hour * 60 + slot.minute < nowPhx.getHours() * 60 + nowPhx.getMinutes();
@@ -1435,7 +1435,7 @@ function isPastSlot(slot) {
 function getSelectedDate() {
   const d = new Date();
   d.setDate(d.getDate() + state.dayOffset);
-  // Use local Phoenix time, not UTC â toISOString() would flip to tomorrow after 5 PM AZ
+  // Use local Phoenix time, not UTC — toISOString() would flip to tomorrow after 5 PM AZ
   return d.toLocaleDateString('en-CA', { timeZone: 'America/Phoenix' });
 }
 
@@ -1488,7 +1488,7 @@ async function loadSheetFromSupabase() {
             .filter(bp => bp.status !== 'cancelled')
             .slice()
             .sort((a, b) => (b.is_lead ? 1 : 0) - (a.is_lead ? 1 : 0));
-          // Count players per Q18 reservation color â same color = same original reservation
+          // Count players per Q18 reservation color — same color = same original reservation
           const _colorCount = {};
           bps.forEach(bp => { const k = bp.q18_color || ''; _colorCount[k] = (_colorCount[k]||0)+1; });
           bps.forEach(bp => {
@@ -1536,13 +1536,13 @@ async function loadSheetFromSupabase() {
 
   } catch(e) {
     console.error('loadSheetFromSupabase:', e);
-    toast('â ï¸ Could not load: ' + e.message);
+    toast('⚠️ Could not load: ' + e.message);
   } finally {
     sheetEl.style.opacity = '';
   }
 }
 
-// âââ Data helpers âââââââââââââââââââââââââââââââââââââââââââââââ
+// ─── Data helpers ───────────────────────────────────────────────
 const FIRST = ["Mike","Sarah","Tom","Lisa","Dan","Jess","Rob","Emily","Carlos","Priya","Wes","Nicole","Brandon","Aisha","Greg","Kayla","Hank","Monica","Jamal","Tara","Chris","Dana","Ryan","Zoe","Marcus","Heather"];
 const LAST  = ["Park","Reyes","Sullivan","Nguyen","Okafor","Cohen","Patel","Morales","Brown","Kim","Evans","Diaz","Foster","Ramsey","Chen","Walker","Gupta","Hughes","Torres","Baker","Scott","Lee","Wright","Harris"];
 const RATES = ["Public","Public","Public","Senior","Junior","Twilight","Member"];
@@ -1562,7 +1562,7 @@ function mkGroup(s, n, status) {
   return Array.from({length: n}, () => ({ id: _nextPid++, name, groupLeader: true, status, rateType }));
 }
 
-// âââ Seed âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─── Seed ───────────────────────────────────────────────────────
 function seedTeeTimes() {
   const slots = []; let minutes = 6*60, slotId = 1, seed = 1; const BASE = 95;
   while (minutes <= 16*60+32) {
@@ -1592,7 +1592,7 @@ function seedTeeTimes() {
     }
     slots.push(slot); minutes+=8; seed+=10;
   }
-  // Hand-placed vivid rows at top â mix of individually named and group bookings
+  // Hand-placed vivid rows at top — mix of individually named and group bookings
   // Row 0: 4-player group booking (one name, all GRP:)
   { const g=mkGroup(200,4,"checked_in"); slots[0].players=[g[0],g[1],g[2],g[3]]; }
   // Row 1: 2 individually named checked-in players + 2 open
@@ -1610,7 +1610,7 @@ function seedTeeTimes() {
   return slots;
 }
 
-// âââ State ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─── State ──────────────────────────────────────────────────────
 const state = {
   slots: seedTeeTimes(),
   activity: [],
@@ -1619,7 +1619,7 @@ const state = {
 
 // currentCourseSlug already initialized from localStorage above
 
-// âââ Live activity from Supabase ââââââââââââââââââââââââââââââââ
+// ─── Live activity from Supabase ────────────────────────────────
 const ACT_DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
 function fmtActivityName(raw) {
@@ -1631,7 +1631,7 @@ function fmtActivityName(raw) {
 }
 
 function fmtActivityDate(dateStr, h, m) {
-  // "2026-07-12", 17, 45  â  "7/12 Sun, 5:45 PM"
+  // "2026-07-12", 17, 45  →  "7/12 Sun, 5:45 PM"
   const d = new Date(dateStr + 'T00:00:00');
   const ampm = h < 12 ? 'AM' : 'PM';
   const h12  = h % 12 || 12;
@@ -1678,7 +1678,7 @@ async function loadRecentActivity() {
   } catch(e) { /* silently ignore */ }
 }
 
-// âââ Selection (ctrl+click multi-select) ââââââââââââââââââââââââ
+// ─── Selection (ctrl+click multi-select) ────────────────────────
 const sel = { slotId: null, indices: new Set() };
 
 function toggleSelect(slotId, pi) {
@@ -1696,7 +1696,7 @@ function toggleSelect(slotId, pi) {
 }
 function clearSelection() { sel.slotId = null; sel.indices.clear(); updateSelBar(); renderRows(); }
 
-// ââ Bulk block selection helpers âââââââââââââââââââââââââââââââââ
+// ── Bulk block selection helpers ─────────────────────────────────
 function setBSelRange(fromId, toId) {
   const slots  = state.slots;
   const fromIdx = slots.findIndex(s => s.id === fromId);
@@ -1719,7 +1719,7 @@ function clearBSel() {
 
 function updateBulkBar() {
   const bar = document.getElementById('bulkBar');
-  // During an active drag we open the modal on mouseup instead â show highlight but not bar
+  // During an active drag we open the modal on mouseup instead — show highlight but not bar
   if (_bselDragActive) { renderRows(); return; }
   if (blockSel.size === 0) { bar.classList.remove('visible'); renderRows(); return; }
   bar.classList.add('visible');
@@ -1729,7 +1729,7 @@ function updateBulkBar() {
     .filter(s => blockSel.has(s.id))
     .sort((a, b) => (a.hour * 60 + a.minute) - (b.hour * 60 + b.minute));
   const rangeStr = selSlots.length > 1
-    ? `${fmt12(selSlots[0].hour, selSlots[0].minute)} â ${fmt12(selSlots[selSlots.length-1].hour, selSlots[selSlots.length-1].minute)}`
+    ? `${fmt12(selSlots[0].hour, selSlots[0].minute)} – ${fmt12(selSlots[selSlots.length-1].hour, selSlots[selSlots.length-1].minute)}`
     : fmt12(selSlots[0].hour, selSlots[0].minute);
   document.getElementById('bulkBarRange').textContent = rangeStr;
   renderRows();
@@ -1753,7 +1753,7 @@ function updateSelBar() {
 }
 document.getElementById("selClear").addEventListener("click", clearSelection);
 
-// âââ Drag state âââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─── Drag state ─────────────────────────────────────────────────
 let dragInfo    = null;
 let pendingDrop = null; // held while move-confirm modal is open
 
@@ -1797,11 +1797,11 @@ function confirmDrop(targetSlot, emptyIdxs) {
     singleEl.textContent   = `Just ${firstName}`;
     singleEl.style.display = '';
   } else if (isGroup && !roomForGroup) {
-    // Group drag but not enough room â offer single-player only
+    // Group drag but not enough room — offer single-player only
     msgEl.textContent = `Not enough room for the full group of ${groupMoved.length}. Move just ${draggedPlayer.name} from ${srcTime} to ${dstTime}?`;
     okEl.textContent  = 'Move Player';
   } else {
-    // Single-player drag (pi>0) â simple confirm
+    // Single-player drag (pi>0) — simple confirm
     msgEl.textContent = `Move ${draggedPlayer.name} from ${srcTime} to ${dstTime}?`;
     okEl.textContent  = 'Move Player';
   }
@@ -1813,13 +1813,13 @@ function executePendingDrop() {
   if (!pendingDrop) return;
   const { srcSlot, groupMoved, targetSlot, emptyIdxs } = pendingDrop;
   const _names = groupMoved.map(m => m.player.name.split(' ')[0]).join(', ');
-  pushUndo(`Move ${_names} â ${fmt12(targetSlot.hour, targetSlot.minute)}`);
+  pushUndo(`Move ${_names} → ${fmt12(targetSlot.hour, targetSlot.minute)}`);
   groupMoved.forEach(({ pi, player }, i) => {
     if (srcSlot) srcSlot.players[pi] = null;
     targetSlot.players[emptyIdxs[i]] = player;
   });
   const names = groupMoved.map(m => m.player.name.split(' ')[0]).join(', ');
-  recordActivity(`Moved ${names} â ${fmt12(targetSlot.hour, targetSlot.minute)}`);
+  recordActivity(`Moved ${names} → ${fmt12(targetSlot.hour, targetSlot.minute)}`);
   toast(`Moved to ${fmt12(targetSlot.hour, targetSlot.minute)}`);
   sel.slotId = null; sel.indices.clear(); updateSelBar();
   pendingDrop = null;
@@ -1831,10 +1831,10 @@ function executePendingDrop() {
 function executePendingDropSingle() {
   if (!pendingDrop) return;
   const { srcSlot, draggedPi, draggedPlayer, targetSlot, emptyIdxs } = pendingDrop;
-  pushUndo(`Move ${draggedPlayer.name.split(' ')[0]} â ${fmt12(targetSlot.hour, targetSlot.minute)}`);
+  pushUndo(`Move ${draggedPlayer.name.split(' ')[0]} → ${fmt12(targetSlot.hour, targetSlot.minute)}`);
   if (srcSlot) srcSlot.players[draggedPi] = null;
   targetSlot.players[emptyIdxs[0]] = draggedPlayer;
-  recordActivity(`Moved ${draggedPlayer.name.split(' ')[0]} â ${fmt12(targetSlot.hour, targetSlot.minute)}`);
+  recordActivity(`Moved ${draggedPlayer.name.split(' ')[0]} → ${fmt12(targetSlot.hour, targetSlot.minute)}`);
   toast(`Moved to ${fmt12(targetSlot.hour, targetSlot.minute)}`);
   sel.slotId = null; sel.indices.clear(); updateSelBar();
   pendingDrop = null;
@@ -1848,9 +1848,9 @@ function cancelPendingDrop() {
   document.getElementById('moveConfirmModal').classList.remove('open');
 }
 
-// âââ Persist a player move to Supabase âââââââââââââââââââââââââââ
+// ─── Persist a player move to Supabase ───────────────────────────
 // movedPlayers: array of { player } objects that have been moved.
-// srcSlot: the slot they came from (already mutated in memory â used to count remaining).
+// srcSlot: the slot they came from (already mutated in memory — used to count remaining).
 // targetSlot: the slot they moved to.
 async function _persistMove(movedPlayers, srcSlot, targetSlot) {
   if (!targetSlot._sb_id) return; // target not in DB yet, nothing to update
@@ -1868,7 +1868,7 @@ async function _persistMove(movedPlayers, srcSlot, targetSlot) {
       const remainingAtSrc = (srcSlot?.players || []).filter(p => p && String(p.bookingId) === String(bookingId)).length;
 
       if (remainingAtSrc === 0) {
-        // Full-group move: just update the booking's tee_time_id â all its players follow
+        // Full-group move: just update the booking's tee_time_id — all its players follow
         await fetch(`${SB_URL}/rest/v1/bookings?id=eq.${bookingId}`, {
           method: 'PATCH',
           headers: { ...SB_H, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
@@ -1887,7 +1887,7 @@ async function _persistMove(movedPlayers, srcSlot, targetSlot) {
         // Partial move (splitting a booking): reassign the moved players to a booking at the target slot
         let targetBookingId = targetSlot.players.find(p => p && p.bookingId)?.bookingId || null;
         if (!targetBookingId) {
-          // No existing booking at target â create one
+          // No existing booking at target — create one
           const lead = players[0];
           const newB = await sbPost('bookings', {
             tee_time_id:  targetSlot._sb_id,
@@ -1914,17 +1914,17 @@ async function _persistMove(movedPlayers, srcSlot, targetSlot) {
     }
   } catch(err) {
     console.error('Move persist error:', err);
-    toast('â ï¸ Move saved locally but DB sync failed: ' + err.message);
+    toast('⚠️ Move saved locally but DB sync failed: ' + err.message);
   } finally {
     _writeInFlight--;
   }
 }
 
-// âââ Utils ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─── Utils ──────────────────────────────────────────────────────
 function fmt12(h,m) { const mer=h>=12?"PM":"AM"; return ((h+11)%12+1)+":"+String(m).padStart(2,"0")+" "+mer; }
 function money(cents) { return "$"+(cents/100).toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0}); }
 
-// âââ Sunrise / start-time (shared with live sheet) ââââââââââââââ
+// ─── Sunrise / start-time (shared with live sheet) ──────────────
 function phoenixSunrise(date) {
   const LAT=33.45*Math.PI/180, LON=-112.07, TZ=-420;
   const JD=Math.floor(date.getTime()/86400000)+2440587.5, n=JD-2451545;
@@ -1992,7 +1992,7 @@ function recordActivity(text, eventType, name, dateLabel, offset) {
   renderActivity();
 }
 
-// âââ Fake QR ââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─── Fake QR ────────────────────────────────────────────────────
 function makeFakeQR(seed) {
   const N=21, g=Array.from({length:N},()=>Array(N).fill(0));
   const FP=[[1,1,1,1,1,1,1],[1,0,0,0,0,0,1],[1,0,1,1,1,0,1],[1,0,1,1,1,0,1],[1,0,1,1,1,0,1],[1,0,0,0,0,0,1],[1,1,1,1,1,1,1]];
@@ -2008,7 +2008,7 @@ function makeFakeQR(seed) {
 }
 function fakeToken(pid,sid){ const C="ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789"; let t="SF.",s=(pid*7919+sid*4001)|0; for(let i=0;i<24;i++){s=(s*1664525+1013904223)|0;t+=C[Math.abs(s)%C.length];if(i===7||i===15)t+=".";} return t; }
 
-// âââ Rendering ââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─── Rendering ──────────────────────────────────────────────────
 function renderRows() {
   const wrap = document.getElementById("rows");
   wrap.innerHTML = "";
@@ -2066,7 +2066,7 @@ function renderRows() {
       });
     }
 
-    // Time cell (clickable â context menu; ctrl/drag â bulk block selection)
+    // Time cell (clickable → context menu; ctrl/drag → bulk block selection)
     const _todOp = timeOfDayStyle(slot.hour, slot.minute);
     const te = document.createElement("div");
     const _isBSel = blockSel.has(slot.id);
@@ -2083,7 +2083,7 @@ function renderRows() {
     te.addEventListener("mouseenter", e => {
       if (!_bselDown || e.buttons !== 1) return;
       if (!_bselDragActive) {
-        // First cell entered after mousedown on a different cell â activate drag mode
+        // First cell entered after mousedown on a different cell → activate drag mode
         if (slot.id !== _bselDragAnchor) {
           _bselDragActive = true;
           setBSelRange(_bselDragAnchor, slot.id);
@@ -2154,7 +2154,7 @@ function renderRows() {
           const past = isPastSlot(slot);
           if (past) {
             cell.className = "player-cell past-empty";
-            cell.innerHTML = `<span style="font-size:14px;line-height:1;color:var(--ink-muted);opacity:.35">â</span>`;
+            cell.innerHTML = `<span style="font-size:14px;line-height:1;color:var(--ink-muted);opacity:.35">—</span>`;
           } else {
             cell.className = "player-cell empty";
             cell.innerHTML = `<span style="font-size:14px;line-height:1">+</span>`;
@@ -2172,7 +2172,7 @@ function renderRows() {
             cell.style.color      = _gs.text;
           }
           cell.setAttribute("draggable","true");
-          // Detect non-lead "Guest X" players â show "GRP: LastName" from their OWN booking
+          // Detect non-lead "Guest X" players — show "GRP: LastName" from their OWN booking
           // (player.leadName = booking.lead_name stored per-player at load time)
           const isGuestPlayer = player.groupLeader &&
             /^guest(\s*\d+)?$/i.test((player.name || '').trim());
@@ -2184,7 +2184,7 @@ function renderRows() {
           // Consolidation arrow
           const notesDot     = player.consolidationDir ? `<div class="notes-dot" title=""></div>` : "";
           const _arrowBadge  = player.consolidationDir
-            ? `<div class="cons-arrow-badge">${player.consolidationDir === 'up' ? 'â' : 'â'}</div>`
+            ? `<div class="cons-arrow-badge">${player.consolidationDir === 'up' ? '↑' : '↓'}</div>`
             : '';
           // Q18 rate color triangle (bottom-right corner)
           const _triHtml = player.q18Color
@@ -2219,26 +2219,26 @@ function renderRows() {
             ${_triHtml}
             ${isSelected && sel.indices.size>1 ? `<div class="drag-count-badge">${sel.indices.size}</div>` : ""}
           `;
-          // Tooltip on hover â rich player card for all booked cells
+          // Tooltip on hover — rich player card for all booked cells
           cell.addEventListener("mouseenter", e => showPlayerTooltip(e, player, slot));
           cell.addEventListener("mousemove",  e => moveNotesTooltip(e));
           cell.addEventListener("mouseleave", hideNotesTooltip);
-          // Right-click â player context menu
+          // Right-click → player context menu
           cell.addEventListener("contextmenu", e => {
             e.preventDefault(); e.stopPropagation();
             openPlayerCtx(e, slot, pi);
           });
 
-          // ââ Drag events ââ
+          // ── Drag events ──
           cell.addEventListener("dragstart", e => {
             let dragPlayers;
             let fromSelection = false;
             if (sel.slotId === slot.id && sel.indices.size > 0) {
-              // Ctrl+click multi-select is already active â use that selection
+              // Ctrl+click multi-select is already active — use that selection
               dragPlayers = [...sel.indices].map(idx => ({ pi: idx, player: slot.players[idx] }));
               fromSelection = true;
             } else if (pi === 0) {
-              // First position: start with the booking group â modal will offer single option
+              // First position: start with the booking group — modal will offer single option
               dragPlayers = slot.players
                 .map((p, idx) => ({ pi: idx, player: p }))
                 .filter(({ player: p }) => p && p.bookingRef === player.bookingRef);
@@ -2265,7 +2265,7 @@ function renderRows() {
             document.querySelectorAll(".drop-valid,.drop-invalid").forEach(el=>el.classList.remove("drop-valid","drop-invalid"));
           });
 
-          // ââ Click events ââ
+          // ── Click events ──
           cell.addEventListener("click", e => {
             if (e.ctrlKey || e.metaKey) {
               e.stopPropagation();
@@ -2352,7 +2352,7 @@ function renderActivity() {
   if (!state.activity.length) ul.innerHTML=`<li style="color:var(--ink-muted);cursor:default">No activity yet.</li>`;
 }
 
-// âââ Squeeze tee time ââââââââââââââââââââââââââââââââââââââââââââ
+// ─── Squeeze tee time ────────────────────────────────────────────
 async function squeezeTeeTime(afterIdx) {
   const slot = state.slots[afterIdx];
   const next = state.slots[afterIdx+1];
@@ -2366,7 +2366,7 @@ async function squeezeTeeTime(afterIdx) {
   const newSlot = { id: _nextSlotId++, hour:h, minute:m, rateCents:slot.rateCents, status:"open", players:[null,null,null,null], squeezed:true };
   pushUndo(`Insert squeeze ${fmt12(h,m)}`);
   state.slots.splice(afterIdx+1, 0, newSlot);
-  recordActivity(`Squeeze tee time inserted â ${fmt12(h,m)}`);
+  recordActivity(`Squeeze tee time inserted — ${fmt12(h,m)}`);
   toast(`Squeeze added at ${fmt12(h,m)}`);
   renderRows();
 
@@ -2383,17 +2383,17 @@ async function squeezeTeeTime(afterIdx) {
     if (rows && rows[0]) newSlot._sb_id = rows[0].id;
   } catch(e) {
     console.error('squeezeTeeTime persist error:', e);
-    toast('â ï¸ Squeeze saved locally but could not be written to database');
+    toast('⚠️ Squeeze saved locally but could not be written to database');
   }
 }
 
-// âââ Context menu ââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─── Context menu ────────────────────────────────────────────────
 let ctxSlot = null;
 const ctxMenu = document.getElementById("ctxMenu");
 
 function openCtxMenu(e, slot, si) {
   ctxSlot = { slot, si };
-  document.getElementById("ctxHead").textContent = fmt12(slot.hour,slot.minute) + " Â· " + money(slot.rateCents);
+  document.getElementById("ctxHead").textContent = fmt12(slot.hour,slot.minute) + " · " + money(slot.rateCents);
 
   const isBlocked = slot.status === "blocked";
   const show = (id, vis) => { document.getElementById(id).style.display = vis ? "" : "none"; };
@@ -2414,8 +2414,8 @@ function openCtxMenu(e, slot, si) {
   show("ctxClipSep",    !isBlocked && (hasBookings || canPasteHere));
   if (_clipboard) {
     const label = _clipboard.type === 'player'
-      ? `Paste â ${_clipboard.player.name.split(" ")[0]}`
-      : `Paste â ${_clipboard.players.filter(Boolean).map(p=>p.name.split(" ")[0]).join(", ")}`;
+      ? `Paste — ${_clipboard.player.name.split(" ")[0]}`
+      : `Paste — ${_clipboard.players.filter(Boolean).map(p=>p.name.split(" ")[0]).join(", ")}`;
     document.getElementById("ctxPasteLabel").textContent = label;
   }
   show("ctxGroupItem",    !isBlocked && !hasBookings);
@@ -2433,7 +2433,7 @@ function openCtxMenu(e, slot, si) {
 }
 function closeCtxMenu() { ctxMenu.classList.remove("open"); ctxSlot=null; }
 
-// âââ Group Booking ââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─── Group Booking ────────────────────────────────────────────────────────
 let groupSlot = null;
 
 function openGroupModal(slot) {
@@ -2478,13 +2478,13 @@ function updateGroupInfo() {
 
   if (consecutive >= timesNeeded) {
     const times = state.slots.slice(startIdx, startIdx + timesNeeded)
-                             .map(s => fmt12(s.hour, s.minute)).join(' Â· ');
-    infoEl.innerHTML = `<span style="color:var(--green-700)">â ${timesNeeded} consecutive empty slots available:<br><b>${times}</b></span>`;
+                             .map(s => fmt12(s.hour, s.minute)).join(' · ');
+    infoEl.innerHTML = `<span style="color:var(--green-700)">✓ ${timesNeeded} consecutive empty slots available:<br><b>${times}</b></span>`;
     confirmBtn.disabled = false;
     confirmBtn.textContent = `Block ${timesNeeded} Tee Times`;
   } else {
     const needed = timesNeeded, have = consecutive;
-    infoEl.innerHTML = `<span style="color:var(--rose-700)">â  Need <b>${needed}</b> consecutive empty tee times but only <b>${have}</b> available from ${fmt12(groupSlot.hour, groupSlot.minute)}.<br>Try a different starting time or reduce the group size.</span>`;
+    infoEl.innerHTML = `<span style="color:var(--rose-700)">⚠ Need <b>${needed}</b> consecutive empty tee times but only <b>${have}</b> available from ${fmt12(groupSlot.hour, groupSlot.minute)}.<br>Try a different starting time or reduce the group size.</span>`;
     confirmBtn.disabled = true;
     confirmBtn.textContent = 'Block Tee Times';
   }
@@ -2500,10 +2500,10 @@ function executeGroupBooking() {
   pushUndo(`Group hold ${players} players @ ${fmt12(groupSlot.hour, groupSlot.minute)}`);
   toBlock.forEach(s => {
     s.status      = 'blocked';
-    s.block_label = `Group Hold â ${players} players`;
+    s.block_label = `Group Hold — ${players} players`;
   });
 
-  recordActivity(`Group hold: ${players} players Ã ${timesNeeded} tee times from ${fmt12(groupSlot.hour, groupSlot.minute)}`);
+  recordActivity(`Group hold: ${players} players × ${timesNeeded} tee times from ${fmt12(groupSlot.hour, groupSlot.minute)}`);
   toast(`${timesNeeded} tee times held for group of ${players}`);
   renderRows();
   closeGroupModal();
@@ -2524,7 +2524,7 @@ ctxMenu.addEventListener("click", e => {
       notes: slot.bookingNotes || "",
     };
     const names = _clipboard.players.filter(Boolean).map(p => p.name.split(" ")[0]).join(", ");
-    toast(`ð Copied â ${names}. Navigate to target day and right-click an empty tee time to paste.`);
+    toast(`📋 Copied — ${names}. Navigate to target day and right-click an empty tee time to paste.`);
     closeCtxMenu();
 
   } else if (action === "cutBooking") {
@@ -2541,7 +2541,7 @@ ctxMenu.addEventListener("click", e => {
     slot.players = [null, null, null, null];
     delete slot.bookingNotes;
     recordActivity(`Booking cut: <b>${names}</b> from ${fmt12(slot.hour, slot.minute)}`);
-    toast(`âï¸ Cut â ${names}. Navigate to target day and right-click an empty tee time to paste.`);
+    toast(`✂️ Cut — ${names}. Navigate to target day and right-click an empty tee time to paste.`);
     renderRows(); closeCtxMenu();
 
   } else if (action === "pasteBooking") {
@@ -2550,17 +2550,17 @@ ctxMenu.addEventListener("click", e => {
     if (_clipboard.type === 'player') {
       // Paste single player into first empty position
       const emptyIdx = slot.players.findIndex(p => !p);
-      if (emptyIdx === -1) { toast('â  No empty player positions in this tee time.'); closeCtxMenu(); return; }
+      if (emptyIdx === -1) { toast('⚠ No empty player positions in this tee time.'); closeCtxMenu(); return; }
       slot.players[emptyIdx] = {..._clipboard.player, bookingId: null, bpId: null};
       const name = _clipboard.player.name.split(" ")[0];
-      recordActivity(`Player pasted: <b>${name}</b> â ${fmt12(slot.hour, slot.minute)}`);
-      toast(`ð Pasted ${name} â ${fmt12(slot.hour, slot.minute)}`);
+      recordActivity(`Player pasted: <b>${name}</b> → ${fmt12(slot.hour, slot.minute)}`);
+      toast(`📋 Pasted ${name} → ${fmt12(slot.hour, slot.minute)}`);
     } else {
       slot.players = _clipboard.players.map(p => p ? {...p, bookingId: null, bpId: null} : null);
       if (_clipboard.notes) slot.bookingNotes = _clipboard.notes;
       const names = slot.players.filter(Boolean).map(p => p.name.split(" ")[0]).join(", ");
-      recordActivity(`Booking pasted: <b>${names}</b> â ${fmt12(slot.hour, slot.minute)}`);
-      toast(`ð Pasted â ${names} â ${fmt12(slot.hour, slot.minute)}`);
+      recordActivity(`Booking pasted: <b>${names}</b> → ${fmt12(slot.hour, slot.minute)}`);
+      toast(`📋 Pasted — ${names} → ${fmt12(slot.hour, slot.minute)}`);
     }
     _clipboard = null;
     renderRows(); closeCtxMenu();
@@ -2584,7 +2584,7 @@ ctxMenu.addEventListener("click", e => {
         body: JSON.stringify({ status: 'open' }),
       }).catch(e => console.warn('Unblock save failed:', e));
     }
-    recordActivity(`Tee time unblocked â ${fmt12(slot.hour, slot.minute)}`);
+    recordActivity(`Tee time unblocked — ${fmt12(slot.hour, slot.minute)}`);
     toast(`${fmt12(slot.hour, slot.minute)} unblocked`);
     renderRows(); closeCtxMenu();
 
@@ -2603,8 +2603,8 @@ ctxMenu.addEventListener("click", e => {
     const bpIds      = occ.map(p => p.bpId).filter(Boolean);
     pushUndo(`Cancel booking ${fmt12(slot.hour, slot.minute)}`);
     slot.players = [null, null, null, null];
-    recordActivity(`Booking cancelled: <b>${names}</b> â ${fmt12(slot.hour, slot.minute)}`);
-    toast(`Booking cancelled â ${fmt12(slot.hour, slot.minute)}`);
+    recordActivity(`Booking cancelled: <b>${names}</b> — ${fmt12(slot.hour, slot.minute)}`);
+    toast(`Booking cancelled — ${fmt12(slot.hour, slot.minute)}`);
     renderRows(); closeCtxMenu();
     // Persist to Supabase immediately
     (async () => {
@@ -2627,35 +2627,35 @@ ctxMenu.addEventListener("click", e => {
         }
       } catch(e) {
         console.error('cancelResv persist error:', e);
-        toast('â ï¸ Could not save cancellation to database');
+        toast('⚠️ Could not save cancellation to database');
       }
     })();
 
   } else if (action === "deleteSqueeze") {
     const label = fmt12(slot.hour, slot.minute);
-    // Block deletion if the squeeze has active bookings â cancel them first
+    // Block deletion if the squeeze has active bookings — cancel them first
     if (slot.players.some(Boolean)) {
-      toast('â ï¸ Cancel bookings on this squeeze time before deleting it.');
+      toast('⚠️ Cancel bookings on this squeeze time before deleting it.');
       closeCtxMenu(); return;
     }
-    // Remove from DB first â only remove from UI if DB succeeds
+    // Remove from DB first — only remove from UI if DB succeeds
     if (slot._sb_id) {
       (async () => {
         try {
           await sbDelete('tee_times', slot._sb_id);
           const slotIdx = state.slots.indexOf(slot);
           if (slotIdx !== -1) { pushUndo(`Delete squeeze ${label}`); state.slots.splice(slotIdx, 1); }
-          recordActivity(`Squeeze tee time removed â ${label}`);
+          recordActivity(`Squeeze tee time removed — ${label}`);
           toast(`Squeeze tee time at ${label} deleted`);
           renderRows(); closeCtxMenu();
         } catch(e) {
           console.error('deleteSqueeze persist error:', e);
-          toast('â ï¸ Could not delete squeeze: ' + e.message);
+          toast('⚠️ Could not delete squeeze: ' + e.message);
           closeCtxMenu();
         }
       })();
     } else {
-      // Never persisted to DB â just remove from in-memory state
+      // Never persisted to DB — just remove from in-memory state
       const slotIdx = state.slots.indexOf(slot);
       if (slotIdx !== -1) { pushUndo(`Delete squeeze ${label}`); state.slots.splice(slotIdx, 1); }
       toast(`Squeeze tee time at ${label} deleted`);
@@ -2672,7 +2672,7 @@ document.addEventListener("keydown", e => {
 document.getElementById('undoBtn').addEventListener('click', undoLast);
 document.getElementById('syncToggleBtn').addEventListener('click', toggleSync);
 
-// âââ QR Modal ââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─── QR Modal ────────────────────────────────────────────────────
 let qrTarget = null;
 
 function openQRModal(slot, pi) {
@@ -2680,23 +2680,23 @@ function openQRModal(slot, pi) {
   if (!player) return;
   qrTarget = {slot,pi};
   document.getElementById("qrName").textContent   = player.name;
-  document.getElementById("qrDetail").textContent = fmt12(slot.hour,slot.minute)+" Â· "+player.rateType+" Â· "+money(slot.rateCents);
+  document.getElementById("qrDetail").textContent = fmt12(slot.hour,slot.minute)+" · "+player.rateType+" · "+money(slot.rateCents);
   document.getElementById("qrSvg").innerHTML      = makeFakeQR(player.id*37+slot.id*11);
   document.getElementById("qrToken").textContent  = fakeToken(player.id,slot.id);
   document.getElementById("qrPre").style.display  = "";
   document.getElementById("qrSuccess").classList.remove("show");
   document.getElementById("qrCodeBox").classList.remove("scanning");
   const btn = document.getElementById("scanBtn");
-  btn.disabled=false; btn.textContent="ð·  Simulate Scan";
+  btn.disabled=false; btn.textContent="📷  Simulate Scan";
   document.getElementById("qrModal").classList.add("open");
 }
 function closeQRModal() { document.getElementById("qrModal").classList.remove("open"); qrTarget=null; }
 document.getElementById("qrClose").addEventListener("click",closeQRModal);
 document.getElementById("qrModal").addEventListener("click",e=>{ if(e.target.id==="qrModal")closeQRModal(); });
 
-// ââ Placeholder modal ââ
+// ── Placeholder modal ──
 function openPlaceholderModal(slot, player) {
-  const name = player.name || 'â';
+  const name = player.name || '—';
   document.getElementById("placeholderTitle").textContent = name;
   document.getElementById("placeholderModal").classList.add("open");
 }
@@ -2705,22 +2705,22 @@ document.getElementById("placeholderClose").addEventListener("click", closePlace
 document.getElementById("placeholderModal").addEventListener("click", e => { if(e.target.id==="placeholderModal") closePlaceholderModal(); });
 document.getElementById("scanBtn").addEventListener("click",function(){
   if(!qrTarget)return;
-  this.disabled=true; this.textContent="â³  Scanningâ¦";
+  this.disabled=true; this.textContent="⏳  Scanning…";
   document.getElementById("qrCodeBox").classList.add("scanning");
   setTimeout(()=>{
     const {slot,pi}=qrTarget, player=slot.players[pi];
     player.status="checked_in";
     recordActivity(null,'checkin',fmtActivityName(player.name),fmtActivityDate(getSelectedDate(),slot.hour,slot.minute),state.dayOffset);
-    toast(`â ${player.name} checked in`);
+    toast(`✓ ${player.name} checked in`);
     renderRows();
     document.getElementById("qrPre").style.display="none";
     document.getElementById("qrSuccess").classList.add("show");
-    document.getElementById("qrSuccessDetail").textContent=player.name+" Â· "+fmt12(slot.hour,slot.minute);
+    document.getElementById("qrSuccessDetail").textContent=player.name+" · "+fmt12(slot.hour,slot.minute);
     setTimeout(closeQRModal,1800);
   },1400);
 });
 
-// âââ Add Player Modal ââââââââââââââââââââââââââââââââââââââââââââ
+// ─── Add Player Modal ────────────────────────────────────────────
 let addTarget = null;
 let addCount = 1;
 let _multiBookQueue  = [];   // slots for a group booking
@@ -2761,7 +2761,7 @@ function renderAddNames() {
     phoneCap.className = 'phone-cap';
     phoneCap.id = `phoneCap${i}`;
     phoneCap.innerHTML = `
-      <span class="phone-cap-label" id="phoneCapLabel${i}">ð Phone required to book â enter below:</span>
+      <span class="phone-cap-label" id="phoneCapLabel${i}">📞 Phone required to book — enter below:</span>
       <div class="phone-cap-row">
         <input class="phone-cap-input" id="phoneCapInput${i}" type="tel" placeholder="+1 (480) 555-1234" autocomplete="tel">
         <button class="phone-cap-btn" onclick="savePlayerPhone(${i})">Save & Continue</button>
@@ -2774,7 +2774,7 @@ function renderAddNames() {
     ncForm.id = `ncForm${i}`;
     ncForm.style.display = 'none';
     ncForm.innerHTML = `
-      <div class="nc-form-title">â New customer</div>
+      <div class="nc-form-title">➕ New customer</div>
       <div class="nc-fields">
         <input class="nc-input nc-req" id="ncFirst${i}" placeholder="First name *" autocomplete="given-name">
         <input class="nc-input nc-req" id="ncLast${i}"  placeholder="Last name *"  autocomplete="family-name">
@@ -2848,13 +2848,13 @@ function attachAutocomplete(input) {
       _acList.appendChild(div);
     });
 
-    // "New customer" row â always shown when there's a query
+    // "New customer" row — always shown when there's a query
     if (query && query.length >= 2) {
       const newDiv = document.createElement('div');
       newDiv.className = 'ac-item ac-item-new';
       newDiv.innerHTML = items.length
-        ? `<span style="font-size:13px">â Add as new customer</span>`
-        : `<span style="font-size:13px">â No match â create new customer</span>`;
+        ? `<span style="font-size:13px">➕ Add as new customer</span>`
+        : `<span style="font-size:13px">➕ No match — create new customer</span>`;
       newDiv.addEventListener('mousedown', e => {
         e.preventDefault();
         removeList();
@@ -2892,12 +2892,12 @@ function attachAutocomplete(input) {
         } else {
           const { last: acLast, first: acFirst } = _parseCustQuery(q);
           if (acFirst) {
-            // "First Last" or "Last, First" â search both fields
+            // "First Last" or "Last, First" — search both fields
             const acLPat = encodeURIComponent(`${acLast}*`);
             const acFPat = encodeURIComponent(`${acFirst}*`);
             acFilter = `&last_name=ilike.${acLPat}&first_name=ilike.${acFPat}`;
           } else {
-            // Single word â search last_name OR first_name
+            // Single word — search last_name OR first_name
             const pat = encodeURIComponent(`${acLast}*`);
             acFilter = `&or=(last_name.ilike.${pat},first_name.ilike.${pat})`;
           }
@@ -2939,7 +2939,7 @@ function attachAutocomplete(input) {
   });
 }
 
-// âââ New Customer + Phone Capture helpers ââââââââââââââââââââââââââââââââ
+// ─── New Customer + Phone Capture helpers ────────────────────────────────
 
 function showNewCustForm(idx, prefFirst, prefLast) {
   const inp    = document.getElementById(`addName${idx}`);
@@ -2996,7 +2996,7 @@ async function createAndBook(idx) {
         phone:  phone || null,
         email:  email || null,
         reservation_count: 0,
-        notes: 'Walk-in â created at booking',
+        notes: 'Walk-in — created at booking',
       }),
     }).then(r => r.json());
 
@@ -3014,7 +3014,7 @@ async function createAndBook(idx) {
     document.getElementById('addSave').click();
   } catch(err) {
     console.error('Create customer failed:', err);
-    toast('â ï¸ Could not create customer: ' + err.message);
+    toast('⚠️ Could not create customer: ' + err.message);
   }
 }
 
@@ -3023,7 +3023,7 @@ function showPhoneCapture(idx, playerName) {
   const pcLabel = document.getElementById(`phoneCapLabel${idx}`);
   const pcInput = document.getElementById(`phoneCapInput${idx}`);
   if (!pcDiv) return;
-  if (pcLabel) pcLabel.textContent = `ð ${playerName} has no phone on file â required to book:`;
+  if (pcLabel) pcLabel.textContent = `📞 ${playerName} has no phone on file — required to book:`;
   pcDiv.classList.add('visible');
   setTimeout(() => pcInput?.focus(), 50);
 }
@@ -3047,7 +3047,7 @@ async function savePlayerPhone(idx) {
     toast(`Phone saved for ${cust.first_name} ${cust.last_name}`);
     document.getElementById('addSave').click();
   } catch(err) {
-    toast('â ï¸ Could not save phone: ' + err.message);
+    toast('⚠️ Could not save phone: ' + err.message);
   }
 }
 
@@ -3056,7 +3056,7 @@ function parseLastFirst(raw) {
   const val = (raw || "").trim();
   const commaIdx = val.indexOf(",");
   if (commaIdx === -1) {
-    // No comma â treat entire value as lastName
+    // No comma — treat entire value as lastName
     return { lastName: val, firstName: "", fullName: val };
   }
   const lastName  = val.slice(0, commaIdx).trim();
@@ -3086,7 +3086,7 @@ document.getElementById("pcPicker").addEventListener("click", e => {
   setTimeout(() => document.getElementById("addName0")?.focus(), 50);
 });
 
-// Group count â / + buttons
+// Group count − / + buttons
 document.getElementById('grpMinus').addEventListener('click', () => {
   if (_grpTotalCount <= 1) return;
   _grpTotalCount--;
@@ -3105,7 +3105,7 @@ function openAddModal(slot, pi, defaultCount) {
   document.querySelectorAll(".pc-btn").forEach(b => b.classList.toggle("active", b.dataset.n === String(addCount)));
   document.getElementById("addStatus").value = "paid";
   document.getElementById("addRateType").value = "Public";
-  document.getElementById("addSlotLabel").textContent = fmt12(slot.hour, slot.minute) + " Â· " + money(slot.rateCents);
+  document.getElementById("addSlotLabel").textContent = fmt12(slot.hour, slot.minute) + " · " + money(slot.rateCents);
   renderAddNames();
   document.getElementById("addModal").classList.add("open");
   setTimeout(() => document.getElementById("addName0")?.focus(), 100);
@@ -3140,7 +3140,7 @@ function openMultiBookModal(slots) {
   addTarget = { slot: sorted[0], pi: 0 };
   addCount  = 1;  // only one name field in group mode
 
-  // Switch picker â group count row
+  // Switch picker → group count row
   document.getElementById('pcPicker').style.display = 'none';
   document.getElementById('grpCountRow').classList.add('visible');
   document.getElementById('grpCountDisplay').textContent = _grpTotalCount;
@@ -3148,10 +3148,10 @@ function openMultiBookModal(slots) {
   // Slot info: range summary
   const first = sorted[0], last = sorted[sorted.length - 1];
   const rangeStr = sorted.length > 1
-    ? `${fmt12(first.hour, first.minute)} â ${fmt12(last.hour, last.minute)}`
+    ? `${fmt12(first.hour, first.minute)} – ${fmt12(last.hour, last.minute)}`
     : fmt12(first.hour, first.minute);
   document.getElementById('addSlotLabel').textContent =
-    `${sorted.length} tee times Â· ${rangeStr} Â· ${money(first.rateCents)}`;
+    `${sorted.length} tee times · ${rangeStr} · ${money(first.rateCents)}`;
 
   // Status and rate type defaults
   document.getElementById('addStatus').value   = 'paid';
@@ -3167,13 +3167,13 @@ function openMultiBookModal(slots) {
   setTimeout(() => document.getElementById('addName0')?.focus(), 100);
 }
 
-function _openQueueSlot() { /* unused in group mode â kept for compat */ }
+function _openQueueSlot() { /* unused in group mode — kept for compat */ }
 
 document.getElementById("addClose").addEventListener("click", _cancelMultiBook);
 document.getElementById("addCancel").addEventListener("click", _cancelMultiBook);
 document.getElementById("addModal").addEventListener("click", e => { if (e.target.id === "addModal") _cancelMultiBook(); });
 
-// âââ Move Confirmation Modal wiring ââââââââââââââââââââââââââââââ
+// ─── Move Confirmation Modal wiring ──────────────────────────────
 document.getElementById("moveConfirmOk").addEventListener("click", executePendingDrop);
 document.getElementById("moveConfirmSingle").addEventListener("click", executePendingDropSingle);
 document.getElementById("moveConfirmCancel").addEventListener("click", cancelPendingDrop);
@@ -3190,7 +3190,7 @@ document.getElementById("addSave").addEventListener("click", async () => {
   const status   = document.getElementById("addStatus").value;
   const rateType = document.getElementById("addRateType").value;
 
-  // ââ Group booking mode ââââââââââââââââââââââââââââââââââââââââââ
+  // ── Group booking mode ──────────────────────────────────────────
   if (_isGroupMode) {
     const groupName = (document.getElementById('addName0')?.value || '').trim();
     if (!groupName) { document.getElementById('addName0')?.focus(); return; }
@@ -3216,8 +3216,8 @@ document.getElementById("addSave").addEventListener("click", async () => {
     }
 
     const booked = _grpTotalCount - remaining;
-    toast(`${groupName} â ${booked} player${booked !== 1 ? 's' : ''} across ${slots.length} tee times`);
-    recordActivity(`Group booked: <b>${groupName}</b> â ${booked} players across ${slots.length} tee times`);
+    toast(`${groupName} — ${booked} player${booked !== 1 ? 's' : ''} across ${slots.length} tee times`);
+    recordActivity(`Group booked: <b>${groupName}</b> — ${booked} players across ${slots.length} tee times`);
     _multiBookQueue = []; _multiBookIdx = 0;
     closeAddModal(); renderRows();
 
@@ -3254,7 +3254,7 @@ document.getElementById("addSave").addEventListener("click", async () => {
         }
       } catch (err) {
         console.error('Group booking save failed:', err);
-        toast('â ï¸ Saved locally but failed to sync: ' + err.message);
+        toast('⚠️ Saved locally but failed to sync: ' + err.message);
       } finally {
         _writeInFlight--;
         loadSheetFromSupabase();
@@ -3262,9 +3262,9 @@ document.getElementById("addSave").addEventListener("click", async () => {
     })();
     return;
   }
-  // ââ End group booking mode ââââââââââââââââââââââââââââââââââââââ
+  // ── End group booking mode ──────────────────────────────────────
 
-  // ââ Phone gate: block save if a selected customer has no phone ââ
+  // ── Phone gate: block save if a selected customer has no phone ──
   for (let i = 0; i < addCount; i++) {
     const inp = document.getElementById(`addName${i}`);
     if (!inp) continue;
@@ -3283,9 +3283,9 @@ document.getElementById("addSave").addEventListener("click", async () => {
       return;
     }
   }
-  // ââ End phone gate ââ
+  // ── End phone gate ──
 
-  // Collect names (Last, First format) â require at least the first
+  // Collect names (Last, First format) — require at least the first
   const names = [];
   for (let i = 0; i < addCount; i++) {
     const raw = (document.getElementById(`addName${i}`)?.value || "").trim();
@@ -3318,7 +3318,7 @@ document.getElementById("addSave").addEventListener("click", async () => {
                                       bookingId: existingBookingId, bookingRef: null };
   });
   const label = fmt12(slot.hour, slot.minute);
-  recordActivity(`${toAdd.length} player${toAdd.length > 1 ? "s" : ""} added: <b>${toAdd.join(", ")}</b> â ${label}`);
+  recordActivity(`${toAdd.length} player${toAdd.length > 1 ? "s" : ""} added: <b>${toAdd.join(", ")}</b> — ${label}`);
   toast(`${toAdd.length > 1 ? toAdd.length + " players" : toAdd[0]} added to ${label}`);
 
   // Multi-slot queue: capture before closing (closeAddModal clears addTarget)
@@ -3332,7 +3332,7 @@ document.getElementById("addSave").addEventListener("click", async () => {
     _multiBookQueue = []; _multiBookIdx = 0;
   }
 
-  // Persist to Supabase in background â guard against auto-refresh overwriting optimistic state
+  // Persist to Supabase in background — guard against auto-refresh overwriting optimistic state
   if (slot._sb_id) {
     _writeInFlight++;
     try {
@@ -3381,7 +3381,7 @@ document.getElementById("addSave").addEventListener("click", async () => {
       }
     } catch (err) {
       console.error('Walk-in save failed:', err);
-      toast('â ï¸ Saved locally but failed to sync: ' + err.message);
+      toast('⚠️ Saved locally but failed to sync: ' + err.message);
     } finally {
       _writeInFlight--;
       // Re-fetch to confirm Supabase state now that writes are done
@@ -3391,13 +3391,13 @@ document.getElementById("addSave").addEventListener("click", async () => {
 });
 
 
-// âââ Undo check-in âââââââââââââââââââââââââââââââââââââââââââââââ
+// ─── Undo check-in ───────────────────────────────────────────────
 function undoCheckIn(slot,pi) {
   const p=slot.players[pi]; if(!p)return;
-  p.status="paid"; toast(`â© Undid check-in for ${p.name}`); renderRows();
+  p.status="paid"; toast(`↩ Undid check-in for ${p.name}`); renderRows();
 }
 
-// âââ Notes tooltip âââââââââââââââââââââââââââââââââââââââââââââââ
+// ─── Notes tooltip ───────────────────────────────────────────────
 const notesTooltipEl = document.getElementById("notesTooltip");
 function showNotesTooltip(e, notes) {
   notesTooltipEl.innerHTML = `<div class="ntt-plain">${notes}</div>`;
@@ -3416,8 +3416,8 @@ function hideNotesTooltip() { notesTooltipEl.classList.remove("visible"); }
 function showPlayerTooltip(e, player, slot) {
   const myVersion = ++_tooltipVersion;
   const pc        = player.priceCents ?? null;
-  const priceStr  = pc !== null ? money(pc) : 'â';
-  const wrfStr    = pc !== null ? money(Math.round(pc * 0.04)) : 'â';
+  const priceStr  = pc !== null ? money(pc) : '—';
+  const wrfStr    = pc !== null ? money(Math.round(pc * 0.04)) : '—';
 
   // Effective rate: prefer the membership code embedded in the name (e.g. "SF26"),
   // then the stored rate_type; fall back to "Public".
@@ -3431,21 +3431,21 @@ function showPlayerTooltip(e, player, slot) {
     : '';
 
   const rateLC = effectiveRate.toLowerCase();
-  const cartStr = /cart/.test(rateLC) ? 'â Included' : /walk/.test(rateLC) ? 'â Walking' : null;
+  const cartStr = /cart/.test(rateLC) ? '✓ Included' : /walk/.test(rateLC) ? '✗ Walking' : null;
 
   // Status: use checkedIn field for accuracy (Quick18 marks everything "paid" at booking time)
   const statusStr = player.checkedIn === true
-    ? 'Checked In â'
+    ? 'Checked In ✓'
     : player.status === 'checked_in'
-      ? 'Checked In â'
+      ? 'Checked In ✓'
       : player.status === 'pending'
         ? 'Pending'
         : player.status === 'no_show'
           ? 'No Show'
           : 'Paid';
 
-  const movNote = player.consolidationDir === 'up'   ? 'â Moved earlier'
-                : player.consolidationDir === 'down'  ? 'â Moved later'
+  const movNote = player.consolidationDir === 'up'   ? '↑ Moved earlier'
+                : player.consolidationDir === 'down'  ? '↓ Moved later'
                 : null;
 
   // Locked rate & SF discount
@@ -3462,7 +3462,7 @@ function showPlayerTooltip(e, player, slot) {
   if (cartStr) rows += `<span class="ntt-k">Cart</span><span class="ntt-v">${cartStr}</span>`;
   if (player.priceSchedule) rows += `<span class="ntt-k">Schedule</span><span class="ntt-v">${player.priceSchedule}</span>`;
 
-  // Rate lock section â show when we have a locked rate
+  // Rate lock section — show when we have a locked rate
   if (lockedCents) {
     rows += `<div class="ntt-sep"></div>`;
     rows += `<span class="ntt-k">Locked rate</span><span class="ntt-v">${money(lockedCents)}</span>`;
@@ -3505,7 +3505,7 @@ function showPlayerTooltip(e, player, slot) {
   });
 }
 
-// âââ Player context menu âââââââââââââââââââââââââââââââââââââââââ
+// ─── Player context menu ─────────────────────────────────────────
 const playerCtxEl = document.getElementById("playerCtx");
 let playerCtxTarget = null;
 
@@ -3517,7 +3517,7 @@ function openPlayerCtx(e, slot, pi) {
 
   document.getElementById("pctxEyebrow").textContent = "Player";
   document.getElementById("pctxName").textContent    = player.name;
-  document.getElementById("pctxTime").textContent    = fmt12(slot.hour, slot.minute) + " Â· " + player.rateType + " Â· " + money(slot.rateCents);
+  document.getElementById("pctxTime").textContent    = fmt12(slot.hour, slot.minute) + " · " + player.rateType + " · " + money(slot.rateCents);
 
   // Copy/Cut/Paste visibility
   const pshow = (id, vis) => { document.getElementById(id).style.display = vis ? "" : "none"; };
@@ -3529,8 +3529,8 @@ function openPlayerCtx(e, slot, pi) {
   pshow("pctxPaste", canPaste);
   if (_clipboard) {
     const label = _clipboard.type === 'player'
-      ? `Paste â ${_clipboard.player.name.split(" ")[0]}`
-      : `Paste â ${_clipboard.players.filter(Boolean).map(p=>p.name.split(" ")[0]).join(", ")}`;
+      ? `Paste — ${_clipboard.player.name.split(" ")[0]}`
+      : `Paste — ${_clipboard.players.filter(Boolean).map(p=>p.name.split(" ")[0]).join(", ")}`;
     document.getElementById("pctxPasteLabel").textContent = label;
   }
 
@@ -3557,7 +3557,7 @@ document.getElementById("pctxCopy").addEventListener("click", () => {
   const player = slot.players[pi];
   if (!player) { closePlayerCtx(); return; }
   _clipboard = { type: 'player', player: {...player} };
-  toast(`ð Copied ${player.name}. Right-click any tee time with an open spot to paste.`);
+  toast(`📋 Copied ${player.name}. Right-click any tee time with an open spot to paste.`);
   closePlayerCtx();
 });
 document.getElementById("pctxCut").addEventListener("click", () => {
@@ -3569,23 +3569,23 @@ document.getElementById("pctxCut").addEventListener("click", () => {
   pushUndo(`Cut ${player.name} from ${fmt12(slot.hour, slot.minute)}`);
   slot.players[pi] = null;
   recordActivity(`Player cut: <b>${player.name}</b> from ${fmt12(slot.hour, slot.minute)}`);
-  toast(`âï¸ Cut ${player.name}. Right-click any tee time with an open spot to paste.`);
+  toast(`✂️ Cut ${player.name}. Right-click any tee time with an open spot to paste.`);
   renderRows(); closePlayerCtx();
 });
 document.getElementById("pctxPaste").addEventListener("click", () => {
   if (!playerCtxTarget || !_clipboard) { closePlayerCtx(); return; }
   const { slot } = playerCtxTarget;
   const emptyIdx = slot.players.findIndex(p => !p);
-  if (emptyIdx === -1) { toast('â  No empty player positions here.'); closePlayerCtx(); return; }
+  if (emptyIdx === -1) { toast('⚠ No empty player positions here.'); closePlayerCtx(); return; }
   pushUndo(`Paste player @ ${fmt12(slot.hour, slot.minute)}`);
   if (_clipboard.type === 'player') {
     slot.players[emptyIdx] = {..._clipboard.player, bookingId: null, bpId: null};
-    toast(`ð Pasted ${_clipboard.player.name} â ${fmt12(slot.hour, slot.minute)}`);
+    toast(`📋 Pasted ${_clipboard.player.name} → ${fmt12(slot.hour, slot.minute)}`);
   } else {
     // Paste next available player from booking clipboard
     const nextPlayer = _clipboard.players.find(Boolean);
     if (nextPlayer) slot.players[emptyIdx] = {...nextPlayer, bookingId: null, bpId: null};
-    toast(`ð Pasted â ${fmt12(slot.hour, slot.minute)}`);
+    toast(`📋 Pasted → ${fmt12(slot.hour, slot.minute)}`);
   }
   _clipboard = null;
   renderRows(); closePlayerCtx();
@@ -3600,7 +3600,7 @@ document.addEventListener("click", e => {
   if (!playerCtxEl.contains(e.target)) closePlayerCtx();
 });
 
-// âââ Global undo stack âââââââââââââââââââââââââââââââââââââââââââ
+// ─── Global undo stack ───────────────────────────────────────────
 const UNDO_MAX   = 20;
 const undoStack  = [];
 
@@ -3615,7 +3615,7 @@ function undoLast() {
   if (!entry) return;
   state.slots = entry.slots;
   sel.slotId = null; sel.indices.clear(); updateSelBar();
-  toast(`â© Undone: ${entry.label}`);
+  toast(`↩ Undone: ${entry.label}`);
   updateUndoBtn();
   renderRows();
 }
@@ -3625,22 +3625,22 @@ function updateUndoBtn() {
   if (!btn) return;
   const top = undoStack[undoStack.length - 1];
   btn.disabled = !top;
-  btn.title    = top ? `Undo: ${top.label} (âZ)` : 'Nothing to undo';
-  btn.textContent = top ? `â© ${top.label}` : 'â© Undo';
+  btn.title    = top ? `Undo: ${top.label} (⌘Z)` : 'Nothing to undo';
+  btn.textContent = top ? `↩ ${top.label}` : '↩ Undo';
 }
 
-// âââ Sync Pause/Resume âââââââââââââââââââââââââââââââââââââââââââââââ
+// ─── Sync Pause/Resume ───────────────────────────────────────────────
 function updateSyncBtn() {
   const btn = document.getElementById('syncToggleBtn');
   if (!btn) return;
   if (!_facilitySlug) { btn.style.display = 'none'; return; }
   btn.style.display = '';
   if (_syncPaused) {
-    btn.textContent = 'â¶ Resume Sync';
+    btn.textContent = '▶ Resume Sync';
     btn.className   = 'sync-toggle-btn sync-paused';
-    btn.title       = 'Sync is paused â staff edits are preserved. Click to resume syncing from Quick18.';
+    btn.title       = 'Sync is paused — staff edits are preserved. Click to resume syncing from Quick18.';
   } else {
-    btn.textContent = 'â¸ Pause Sync';
+    btn.textContent = '⏸ Pause Sync';
     btn.className   = 'sync-toggle-btn sync-live';
     btn.title       = 'Sync is live (every 30 min). Click to pause so staff edits are preserved.';
   }
@@ -3662,14 +3662,14 @@ async function toggleSync() {
     _dbCourses.forEach(c => { if (c.facility_slug === _facilitySlug) c.sync_paused = newPaused; });
   } catch(e) {
     console.error('toggleSync PATCH failed:', e);
-    toast('â ï¸ Failed to update sync state: ' + e.message);
+    toast('⚠️ Failed to update sync state: ' + e.message);
     // Revert optimistic UI
     _syncPaused = !newPaused;
     updateSyncBtn();
     return;
   }
   if (!newPaused) {
-    toast('â¶ Sync resumed â refreshing from Quick18â¦');
+    toast('▶ Sync resumed — refreshing from Quick18…');
     // Trigger immediate sync, then reload the sheet
     try {
       const SB_FUNC_URL = SB_URL.replace('/rest/v1', '') + '/functions/v1/sync-tee-sheet';
@@ -3681,11 +3681,11 @@ async function toggleSync() {
     } catch(e) { console.warn('Immediate sync trigger failed:', e); }
     await loadSheetFromSupabase();
   } else {
-    toast('â¸ Sync paused â your changes will be preserved');
+    toast('⏸ Sync paused — your changes will be preserved');
   }
 }
 
-// âââ Cancel player with undo ââââââââââââââââââââââââââââââââââââââ
+// ─── Cancel player with undo ──────────────────────────────────────
 let undoBuffer = null;
 let undoTimer  = null;
 
@@ -3695,11 +3695,11 @@ function cancelPlayer(slot, pi) {
   // Clear any pending undo
   if (undoTimer) { clearTimeout(undoTimer); undoTimer = null; }
   undoBuffer = { slot, pi, player: {...player} };
-  pushUndo(`Remove ${player.name} â ${fmt12(slot.hour, slot.minute)}`);
+  pushUndo(`Remove ${player.name} — ${fmt12(slot.hour, slot.minute)}`);
   slot.players[pi] = null;
-  recordActivity(`Player removed: <b>${player.name}</b> â ${fmt12(slot.hour, slot.minute)}`);
+  recordActivity(`Player removed: <b>${player.name}</b> — ${fmt12(slot.hour, slot.minute)}`);
   renderRows();
-  // Write cancellation to DB immediately â undo reverses it in DB if clicked
+  // Write cancellation to DB immediately — undo reverses it in DB if clicked
   _persistCancelPlayer(player, slot);
   // Show undo bar
   document.getElementById("undoBarText").textContent = `${player.name} removed`;
@@ -3720,7 +3720,7 @@ async function _persistCancelPlayer(player, slot) {
       headers: { ...SB_H, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
       body: JSON.stringify({ status: 'cancelled' }),
     });
-    // Check if all players in this booking are now cancelled â if so cancel the booking too
+    // Check if all players in this booking are now cancelled — if so cancel the booking too
     if (player.bookingId) {
       const r = await fetch(`${SB_URL}/rest/v1/booking_players?booking_id=eq.${player.bookingId}&status=neq.cancelled&select=id`, { headers: SB_H });
       const remaining = await r.json();
@@ -3734,7 +3734,7 @@ async function _persistCancelPlayer(player, slot) {
     }
   } catch(e) {
     console.error('cancelPlayer persist error:', e);
-    toast('â ï¸ Could not save cancellation to database');
+    toast('⚠️ Could not save cancellation to database');
   }
   updateTrashBadge();
 }
@@ -3745,8 +3745,8 @@ document.getElementById("undoBarBtn").addEventListener("click", () => {
   const { slot, pi, player } = undoBuffer;
   slot.players[pi] = player;
   undoBuffer = null;
-  recordActivity(`Restored: <b>${player.name}</b> â ${fmt12(slot.hour, slot.minute)}`);
-  toast(`â© ${player.name} restored`);
+  recordActivity(`Restored: <b>${player.name}</b> — ${fmt12(slot.hour, slot.minute)}`);
+  toast(`↩ ${player.name} restored`);
   document.getElementById("undoBar").classList.remove("show");
   renderRows();
   // Undo the DB cancel if it was already persisted (best-effort restore)
@@ -3766,12 +3766,12 @@ document.getElementById("undoBarBtn").addEventListener("click", () => {
   }
 });
 
-// âââ Edit booking (navigate to edit page) ââââââââââââââââââââââââ
+// ─── Edit booking (navigate to edit page) ────────────────────────
 function editBooking(slot, pi) {
   const player = slot.players[pi];
   if (!player) return;
 
-  // ââ Detect group slot: all filled positions share the same name ââ
+  // ── Detect group slot: all filled positions share the same name ──
   const filled = slot.players.filter(Boolean);
   if (filled.length >= 1 && filled.every(p => p.name === player.name)) {
     // Gather all slots on this sheet where every filled position has the same name
@@ -3803,7 +3803,7 @@ function editBooking(slot, pi) {
   window.open("swingfirst-edit-booking.html", "_blank");
 }
 
-// âââ Group Edit Modal ââââââââââââââââââââââââââââââââââââââââââââ
+// ─── Group Edit Modal ────────────────────────────────────────────
 let _grpEditSlots = [];
 
 function openGrpEditModal(grpName, slots) {
@@ -3811,12 +3811,12 @@ function openGrpEditModal(grpName, slots) {
   const totalPlayers = slots.reduce((n, s) => n + s.players.filter(Boolean).length, 0);
   const first = slots[0], last = slots[slots.length - 1];
   const rangeStr = slots.length > 1
-    ? `${fmt12(first.hour, first.minute)} â ${fmt12(last.hour, last.minute)}`
+    ? `${fmt12(first.hour, first.minute)} – ${fmt12(last.hour, last.minute)}`
     : fmt12(first.hour, first.minute);
 
   document.getElementById('grpEditTitle').textContent = grpName;
   document.getElementById('grpEditMeta').textContent =
-    `${slots.length} tee time${slots.length !== 1 ? 's' : ''} Â· ${totalPlayers} player${totalPlayers !== 1 ? 's' : ''} Â· ${rangeStr}`;
+    `${slots.length} tee time${slots.length !== 1 ? 's' : ''} · ${totalPlayers} player${totalPlayers !== 1 ? 's' : ''} · ${rangeStr}`;
   document.getElementById('grpEditName').value = grpName;
 
   // Pre-fill status/rateType from first player found
@@ -3916,7 +3916,7 @@ document.getElementById('grpPlayersSave').addEventListener('click', async () => 
         }
       } catch(err) {
         console.error('Player name save failed:', err);
-        toast('â ï¸ Saved locally but failed to sync: ' + err.message);
+        toast('⚠️ Saved locally but failed to sync: ' + err.message);
       } finally {
         _writeInFlight--;
         loadSheetFromSupabase();
@@ -3932,7 +3932,7 @@ document.getElementById('grpEditSave').addEventListener('click', async () => {
   if (!newName) { document.getElementById('grpEditName').focus(); return; }
 
   const oldName = document.getElementById('grpEditTitle').textContent;
-  pushUndo(`Edit group "${oldName}" â "${newName}"`);
+  pushUndo(`Edit group "${oldName}" → "${newName}"`);
 
   _grpEditSlots.forEach(slot => {
     slot.players.forEach((p, i) => {
@@ -3943,8 +3943,8 @@ document.getElementById('grpEditSave').addEventListener('click', async () => {
   });
 
   const totalPlayers = _grpEditSlots.reduce((n,s) => n + s.players.filter(Boolean).length, 0);
-  toast(`${newName} â ${totalPlayers} players updated`);
-  recordActivity(`Group updated: <b>${newName}</b> â ${totalPlayers} players across ${_grpEditSlots.length} tee times`);
+  toast(`${newName} — ${totalPlayers} players updated`);
+  recordActivity(`Group updated: <b>${newName}</b> — ${totalPlayers} players across ${_grpEditSlots.length} tee times`);
   closeGrpEditModal();
   renderRows();
 
@@ -3961,7 +3961,7 @@ document.getElementById('grpEditSave').addEventListener('click', async () => {
       }
     } catch(err) {
       console.error('Group save failed:', err);
-      toast('â ï¸ Saved locally but failed to sync: ' + err.message);
+      toast('⚠️ Saved locally but failed to sync: ' + err.message);
     } finally {
       _writeInFlight--;
       loadSheetFromSupabase();
@@ -3986,7 +3986,7 @@ document.getElementById('grpEditDelete').addEventListener('click', async () => {
   });
 
   toast(`${grpName} deleted`);
-  recordActivity(`Group deleted: <b>${grpName}</b> â ${totalPlayers} players`);
+  recordActivity(`Group deleted: <b>${grpName}</b> — ${totalPlayers} players`);
   closeGrpEditModal();
   renderRows();
 
@@ -4001,7 +4001,7 @@ document.getElementById('grpEditDelete').addEventListener('click', async () => {
         });
       } catch(err) {
         console.error('Group delete failed:', err);
-        toast('â ï¸ Deleted locally but failed to sync: ' + err.message);
+        toast('⚠️ Deleted locally but failed to sync: ' + err.message);
       } finally {
         _writeInFlight--;
       }
@@ -4009,7 +4009,7 @@ document.getElementById('grpEditDelete').addEventListener('click', async () => {
   }
 });
 
-// âââ Receive saved edits back from edit page âââââââââââââââââââââ
+// ─── Receive saved edits back from edit page ─────────────────────
 window.addEventListener("storage", e => {
   if (e.key !== "sf_edit_result") return;
   if (!e.newValue) return;
@@ -4020,26 +4020,26 @@ window.addEventListener("storage", e => {
     pushUndo(`Edit booking ${fmt12(slot.hour, slot.minute)}`);
     result.players.forEach((p, i) => { slot.players[i] = p; });
     if (result.notes !== undefined) slot.bookingNotes = result.notes;
-    recordActivity(`Booking updated â ${fmt12(slot.hour, slot.minute)}`);
+    recordActivity(`Booking updated — ${fmt12(slot.hour, slot.minute)}`);
     renderRows();
     localStorage.removeItem("sf_edit_result");
   } catch(err) { console.error(err); }
 });
 
-// âââ Auto check-ins (keeps feed alive) ââââââââââââââââââââââââââ
+// ─── Auto check-ins (keeps feed alive) ──────────────────────────
 function autoCheckIn() {
   for(const s of state.slots){
     const pi=s.players.findIndex(p=>p&&p.status==="paid");
     if(pi>=0){
       const p=s.players[pi]; p.status="checked_in";
       recordActivity(null,'checkin',fmtActivityName(p.name),fmtActivityDate(getSelectedDate(),s.hour,s.minute),state.dayOffset);
-      toast(`â ${p.name} checked in`);
+      toast(`✓ ${p.name} checked in`);
       renderRows(); return;
     }
   }
 }
 
-// âââ Week-strip / date nav âââââââââââââââââââââââââââââââââââââââ
+// ─── Week-strip / date nav ───────────────────────────────────────
 function renderWeekStrip() {
   const MO_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const WD_SHORT = ['Su','Mo','Tu','We','Th','Fr','Sa'];
@@ -4083,7 +4083,7 @@ function jumpToOffset(offset) {
 document.getElementById('prevDay').onclick = () => jumpToOffset(state.dayOffset - 7);
 document.getElementById('nextDay').onclick = () => jumpToOffset(state.dayOffset + 7);
 
-// âââ Search ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─── Search ──────────────────────────────────────────────────────
 let opSearchQuery = '';
 let _opDrawerTimer = null;
 
@@ -4184,7 +4184,7 @@ async function showTeeSheetMatches(matched, query) {
     const div = document.createElement('div');
     div.className = 'cust-result';
     div.innerHTML = line1 + line2 +
-      (timeStr ? `<div style="font-size:10px;color:var(--accent);margin-top:2px">â³ ${timeStr} today</div>` : '');
+      (timeStr ? `<div style="font-size:10px;color:var(--accent);margin-top:2px">⛳ ${timeStr} today</div>` : '');
     div.addEventListener('click', () => custShowProfile(p.name, q18));
     listEl.appendChild(div);
   });
@@ -4192,16 +4192,16 @@ async function showTeeSheetMatches(matched, query) {
   // Q18-wide search fallback
   const footer = document.createElement('div');
   footer.style.cssText = 'padding:10px 14px;border-top:1px solid var(--line);margin-top:4px';
-  footer.innerHTML = `<button style="background:none;border:none;color:var(--accent);font-size:12px;cursor:pointer;padding:0" id="q18SearchBtn">Search all Q18 players for "${_escCust(query)}" â</button>`;
+  footer.innerHTML = `<button style="background:none;border:none;color:var(--accent);font-size:12px;cursor:pointer;padding:0" id="q18SearchBtn">Search all Q18 players for "${_escCust(query)}" →</button>`;
   body.appendChild(footer);
   document.getElementById('q18SearchBtn').addEventListener('click', () => custSearch(query));
 }
 
 // Look up a tee-sheet player name ("First Last") in q18_customers then show profile
 async function custShowProfileByTeeSheetName(fullName) {
-  document.getElementById('custBody').innerHTML = '<div class="cust-empty">Loadingâ¦</div>';
+  document.getElementById('custBody').innerHTML = '<div class="cust-empty">Loading…</div>';
   try {
-    // Strip Q18 asterisks before lookup (e.g. "Sharon* Wilson" â "Sharon Wilson")
+    // Strip Q18 asterisks before lookup (e.g. "Sharon* Wilson" → "Sharon Wilson")
     const parts = fullName.replace(/\*/g, '').trim().split(/\s+/);
     const lastName  = parts.length > 1 ? parts[parts.length - 1] : parts[0];
     const firstName = parts.length > 1 ? parts.slice(0, -1).join(' ') : '';
@@ -4219,22 +4219,22 @@ async function custShowProfileByTeeSheetName(fullName) {
   }
 }
 
-// âââ Clock âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─── Clock ───────────────────────────────────────────────────────
 function tickClock() {
   document.getElementById("clock").textContent =
-    new Date().toLocaleDateString(undefined,{month:"short",day:"numeric"})+" Â· "+
+    new Date().toLocaleDateString(undefined,{month:"short",day:"numeric"})+" · "+
     new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});
 }
 tickClock(); setInterval(tickClock,30000);
 
-// âââ Toast âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─── Toast ───────────────────────────────────────────────────────
 function toast(text) {
   const el=document.getElementById("toast");
   el.textContent=text; el.classList.add("show");
   clearTimeout(window.__t); window.__t=setTimeout(()=>el.classList.remove("show"),2400);
 }
 
-// âââ Tee Off Modal âââââââââââââââââââââââââââââââââââââââââââââââ
+// ─── Tee Off Modal ───────────────────────────────────────────────
 let teeOffTarget = null;
 function pad2(n) { return String(n).padStart(2, "0"); }
 function parseTime12(val) {
@@ -4268,13 +4268,13 @@ document.getElementById("teeOffSave").addEventListener("click", () => {
   const occ = slot.players.filter(Boolean);
   const names = occ.map(p => p.name.split(" ")[0]).join(", ");
   const note = actualTime !== scheduled ? ` (sched. ${scheduled})` : "";
-  recordActivity(`ðï¸ Tee Off: <b>${names}</b> â ${actualTime}${note}`);
-  toast(`Tee Off recorded â ${actualTime}`);
+  recordActivity(`🏌️ Tee Off: <b>${names}</b> — ${actualTime}${note}`);
+  toast(`Tee Off recorded — ${actualTime}`);
   closeTeeOffModal();
 });
 document.getElementById("teeOffTimeInput").addEventListener("keydown", e => { if (e.key === "Enter") document.getElementById("teeOffSave").click(); });
 
-// âââ Block Times Modal âââââââââââââââââââââââââââââââââââââââââââ
+// ─── Block Times Modal ───────────────────────────────────────────
 let blockTarget = null;
 let blockTargets = []; // always an array now
 function openBlockModal(slotOrSlots) {
@@ -4282,7 +4282,7 @@ function openBlockModal(slotOrSlots) {
   blockTarget  = blockTargets[0]; // keep legacy ref for blockSave
   const sorted = [...blockTargets].sort((a,b)=>(a.hour*60+a.minute)-(b.hour*60+b.minute));
   document.getElementById("blockSlotLabel").textContent = blockTargets.length > 1
-    ? `${blockTargets.length} tee times (${fmt12(sorted[0].hour,sorted[0].minute)} â ${fmt12(sorted[sorted.length-1].hour,sorted[sorted.length-1].minute)})`
+    ? `${blockTargets.length} tee times (${fmt12(sorted[0].hour,sorted[0].minute)} – ${fmt12(sorted[sorted.length-1].hour,sorted[sorted.length-1].minute)})`
     : fmt12(sorted[0].hour, sorted[0].minute);
   document.getElementById("blockLabel").value = blockTargets.length === 1 ? (blockTargets[0].block_label || "") : "";
   document.getElementById("blockModal").classList.add("open");
@@ -4309,7 +4309,7 @@ document.getElementById("blockSave").addEventListener("click", () => {
   const label = document.getElementById("blockLabel").value.trim() || "Blocked";
   const sorted = [...blockTargets].sort((a,b)=>(a.hour*60+a.minute)-(b.hour*60+b.minute));
   const rangeStr = blockTargets.length > 1
-    ? `${fmt12(sorted[0].hour,sorted[0].minute)} â ${fmt12(sorted[sorted.length-1].hour,sorted[sorted.length-1].minute)}`
+    ? `${fmt12(sorted[0].hour,sorted[0].minute)} – ${fmt12(sorted[sorted.length-1].hour,sorted[sorted.length-1].minute)}`
     : fmt12(sorted[0].hour, sorted[0].minute);
   pushUndo(`Block ${rangeStr}`);
   for (const slot of blockTargets) {
@@ -4324,14 +4324,14 @@ document.getElementById("blockSave").addEventListener("click", () => {
       }).catch(e => console.warn('Block save failed:', e));
     }
   }
-  recordActivity(`Time${blockTargets.length > 1 ? 's' : ''} blocked: <b>${label}</b> â ${rangeStr}`);
+  recordActivity(`Time${blockTargets.length > 1 ? 's' : ''} blocked: <b>${label}</b> — ${rangeStr}`);
   toast(`${blockTargets.length > 1 ? blockTargets.length + ' tee times' : rangeStr} blocked`);
   clearBSel();
   closeBlockModal(); renderRows();
 });
 document.getElementById("blockLabel").addEventListener("keydown", e => { if (e.key === "Enter") document.getElementById("blockSave").click(); });
 
-// âââ Override Price Modal ââââââââââââââââââââââââââââââââââââââââ
+// ─── Override Price Modal ────────────────────────────────────────
 let priceTarget = null;
 function openPriceModal(slot) {
   priceTarget = slot;
@@ -4351,15 +4351,15 @@ document.getElementById("priceSave").addEventListener("click", () => {
   const val = parseInt(document.getElementById("priceInput").value, 10);
   if (isNaN(val) || val < 0) { document.getElementById("priceInput").focus(); return; }
   const oldPrice = money(priceTarget.rateCents);
-  pushUndo(`Price ${fmt12(priceTarget.hour, priceTarget.minute)}: ${oldPrice} â ${money(val*100)}`);
+  pushUndo(`Price ${fmt12(priceTarget.hour, priceTarget.minute)}: ${oldPrice} → ${money(val*100)}`);
   priceTarget.rateCents = val * 100;
-  recordActivity(`Price override: ${fmt12(priceTarget.hour, priceTarget.minute)} â ${oldPrice} â ${money(priceTarget.rateCents)}`);
-  toast(`Rate updated to ${money(priceTarget.rateCents)} â ${fmt12(priceTarget.hour, priceTarget.minute)}`);
+  recordActivity(`Price override: ${fmt12(priceTarget.hour, priceTarget.minute)} — ${oldPrice} → ${money(priceTarget.rateCents)}`);
+  toast(`Rate updated to ${money(priceTarget.rateCents)} — ${fmt12(priceTarget.hour, priceTarget.minute)}`);
   closePriceModal(); renderRows();
 });
 document.getElementById("priceInput").addEventListener("keydown", e => { if (e.key === "Enter") document.getElementById("priceSave").click(); });
 
-// âââ Staff user ââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─── Staff user ──────────────────────────────────────────────────
 const SF_USER_KEY = "sf_staff_user";
 
 function getInitials(name) {
@@ -4416,7 +4416,7 @@ document.addEventListener("click", e => {
   if (!userPop.contains(e.target)) userPop.classList.remove("open");
 });
 
-// âââ Init ââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─── Init ────────────────────────────────────────────────────────
 renderWeekStrip();
 renderActivity();
 applyCourseBanner(currentCourseSlug, currentCourseName);
@@ -4431,7 +4431,7 @@ setInterval(() => {
   }
 }, 30000);
 
-// âââ Trash / Cancel Recovery âââââââââââââââââââââââââââââââââââââ
+// ─── Trash / Cancel Recovery ─────────────────────────────────────
 async function updateTrashBadge() {
   try {
     if (!selectedDate || !currentCourseId) return;
@@ -4463,7 +4463,7 @@ function closeTrash() {
 
 async function loadTrash() {
   const list = document.getElementById('trashList');
-  list.innerHTML = '<div class="trash-empty">Loadingâ¦</div>';
+  list.innerHTML = '<div class="trash-empty">Loading…</div>';
   try {
     const url = `${SB_URL}/rest/v1/booking_players?status=eq.cancelled&select=id,name,rate_type,price_cents,booking_id,bookings(id,lead_name,booking_ref,status,tee_times(id,hour,minute,date,course_id))&order=id.desc&limit=150`;
     const r = await fetch(url, { headers: SB_H });
@@ -4480,9 +4480,9 @@ async function loadTrash() {
     list.innerHTML = '';
     for (const bp of filtered) {
       const tt = bp.bookings?.tee_times;
-      const time = tt ? fmt12(tt.hour, tt.minute) : 'â';
-      const price = bp.price_cents ? ' Â· $' + (bp.price_cents / 100).toFixed(2) : '';
-      const rate  = bp.rate_type ? ' Â· ' + bp.rate_type : '';
+      const time = tt ? fmt12(tt.hour, tt.minute) : '—';
+      const price = bp.price_cents ? ' · $' + (bp.price_cents / 100).toFixed(2) : '';
+      const rate  = bp.rate_type ? ' · ' + bp.rate_type : '';
       const row = document.createElement('div');
       row.className = 'trash-row';
       row.dataset.bpId = bp.id;
@@ -4491,7 +4491,7 @@ async function loadTrash() {
           <div class="trash-row-name">${bp.name || 'Unknown'}</div>
           <div class="trash-row-meta">${time}${price}${rate}</div>
         </div>
-        <button class="trash-restore-btn" data-bp="${bp.id}" data-booking="${bp.booking_id || ''}">â© Restore</button>`;
+        <button class="trash-restore-btn" data-bp="${bp.id}" data-booking="${bp.booking_id || ''}">↩ Restore</button>`;
       row.querySelector('.trash-restore-btn').addEventListener('click', function() {
         restorePlayer(bp.id, bp.booking_id, bp.name, this);
       });
@@ -4504,7 +4504,7 @@ async function loadTrash() {
 
 async function restorePlayer(bpId, bookingId, playerName, btn) {
   btn.disabled = true;
-  btn.textContent = 'â¦';
+  btn.textContent = '…';
   try {
     await fetch(`${SB_URL}/rest/v1/booking_players?id=eq.${bpId}`, {
       method: 'PATCH',
@@ -4519,7 +4519,7 @@ async function restorePlayer(bpId, bookingId, playerName, btn) {
       });
     }
     recordActivity(`Restored from trash: <b>${playerName}</b>`);
-    toast(`â© ${playerName} restored`);
+    toast(`↩ ${playerName} restored`);
     const row = btn.closest('.trash-row');
     row.style.opacity = '0';
     row.style.transform = 'translateX(20px)';
@@ -4528,8 +4528,8 @@ async function restorePlayer(bpId, bookingId, playerName, btn) {
     setTimeout(loadTrash, 350);
   } catch(e) {
     btn.disabled = false;
-    btn.textContent = 'â© Restore';
-    toast('â ï¸ Could not restore player');
+    btn.textContent = '↩ Restore';
+    toast('⚠️ Could not restore player');
   }
 }
 
@@ -4543,8 +4543,8 @@ async function restorePlayer(bpId, bookingId, playerName, btn) {
   if (overlay) overlay.addEventListener('click', closeTrash);
 })();
 
-// âââ Customer Drawer âââââââââââââââââââââââââââââââââââââââââââââ
-// Membership type definitions â keyed by type code.
+// ─── Customer Drawer ─────────────────────────────────────────────
+// Membership type definitions — keyed by type code.
 // Rate type formats used by Quick18: SF<yy>, SP<yy>, <COURSE>AP<yy>, BWP<yy>, BWC<yy>
 // Legacy formats (no year suffix): STSP, STAP
 const PASS_TYPES = {
@@ -4563,7 +4563,7 @@ const PASS_TYPES = {
     color:  '#0f766e',
     bg:     '#ccfbf1',
     border: '#5eead4',
-    note:   'Plays for $20/round, MayâSeptember only. Cards expire Sept 30.',
+    note:   'Plays for $20/round, May–September only. Cards expire Sept 30.',
     window: false,
   },
   AP: {
@@ -4596,14 +4596,14 @@ const PASS_TYPES = {
 };
 const SF_WINDOW_DAYS = 7; // SF rate requires booking within 7 days of tee time
 
-// getPassType â returns membership info for a single rate_type string, or null.
+// getPassType — returns membership info for a single rate_type string, or null.
 // For AP, abbr is course-specific (e.g. STAP, CLAP). Unrecognised member-looking
-// codes (CL26, UH26, PM25â¦) return key:'UNKNOWN' with a grey badge.
+// codes (CL26, UH26, PM25…) return key:'UNKNOWN' with a grey badge.
 function getPassType(rateType) {
   if (!rateType) return null;
   const r = rateType.trim();
 
-  // SwingFirst Card: SF26, SF27â¦
+  // SwingFirst Card: SF26, SF27…
   if (/^SF\d+$/i.test(r)) return { key: 'SF', ...PASS_TYPES.SF };
 
   // Summer Pass: SP26, SP27, STSP (legacy San Tan Summer Pass)
@@ -4616,19 +4616,19 @@ function getPassType(rateType) {
     return { key: 'AP', ...PASS_TYPES.AP, abbr: `${cc}AP`, label: `Annual Passholder (${cc})` };
   }
 
-  // Briarwood Premier: BWP26, BWP27â¦
+  // Briarwood Premier: BWP26, BWP27…
   if (/^BWP\d+$/i.test(r)) return { key: 'BWP', ...PASS_TYPES.BWP };
 
-  // Briarwood Champion: BWC26, BWC27â¦
+  // Briarwood Champion: BWC26, BWC27…
   if (/^BWC\d+$/i.test(r)) return { key: 'BWC', ...PASS_TYPES.BWC };
 
-  // Unclassified member-looking code: 2â5 uppercase letters + 2-digit year (e.g. CL26, UH26, PM25)
+  // Unclassified member-looking code: 2–5 uppercase letters + 2-digit year (e.g. CL26, UH26, PM25)
   if (/^[A-Z]{2,5}\d{2}$/i.test(r)) {
     return {
       key: 'UNKNOWN', abbr: r.toUpperCase(),
       label: `Member (${r.toUpperCase()})`,
       color: '#374151', bg: '#f3f4f6', border: '#d1d5db',
-      note:  'Unclassified membership type â check with management.',
+      note:  'Unclassified membership type — check with management.',
       window: false,
     };
   }
@@ -4636,7 +4636,7 @@ function getPassType(rateType) {
   return null;
 }
 
-// âââ Name / rate parsing ââââââââââââââââââââââââââââââââââââââââââ
+// ─── Name / rate parsing ──────────────────────────────────────────
 // Quick18 embeds membership codes in the player name: "Kevin Treece SF26"
 // This helper extracts the clean display name and the rate code.
 function parseNameAndRate(rawName, storedRateType) {
@@ -4657,7 +4657,7 @@ function parseNameAndRate(rawName, storedRateType) {
   return { cleanName: rawName.trim(), rateCode: null };
 }
 
-// âââ Membership history lookup ââââââââââââââââââââââââââââââââââââ
+// ─── Membership history lookup ────────────────────────────────────
 // Returns all distinct membership types a player has ever used, deduplicated by abbr.
 // Searches by clean name (strips trailing rate code) with ILIKE prefix match.
 // Also picks up any code embedded in the current booking's name suffix.
@@ -4687,7 +4687,7 @@ async function getPlayerMemberships(rawName, rateCode) {
       `${SB_URL}/rest/v1/booking_players?name=ilike.${encoded}&select=name,rate_type&limit=500`,
       { headers: SB_H }
     ).then(r => r.json());
-    const seen = new Map(); // abbr â pt
+    const seen = new Map(); // abbr → pt
     for (const { name: n, rate_type } of rows) {
       // Check rate_type field
       if (rate_type) {
@@ -4714,7 +4714,7 @@ async function getPlayerMemberships(rawName, rateCode) {
   } catch { return []; }
 }
 
-// âââ Batch membership load ââââââââââââââââââââââââââââââââââââââââ
+// ─── Batch membership load ────────────────────────────────────────
 // Called after renderRows() to pre-warm membership cache for all visible
 // players, then re-render any cells that gained rate chips.
 let _batchMemberVersion = 0;
@@ -4764,13 +4764,13 @@ document.querySelectorAll('.nav-item').forEach(link => {
   }
 });
 
-// âââ Drawer sort state âââââââââââââââââââââââââââââââââââââââââââ
+// ─── Drawer sort state ───────────────────────────────────────────
 let _custSortCol = 'plays';  // 'name' | 'plays'
 let _custSortDir = 'desc';   // 'asc' | 'desc'
 let _custGnOnly  = false;    // GolfNow filter toggle
 let _lastCustQuery = '';
 
-// âââ Create new player ââââââââââââââââââââââââââââââââââââââââââââ
+// ─── Create new player ────────────────────────────────────────────
 async function submitCreatePlayer() {
   const first = (document.getElementById('ccfFirst')?.value || '').trim();
   const last  = (document.getElementById('ccfLast')?.value  || '').trim();
@@ -4795,7 +4795,7 @@ async function submitCreatePlayer() {
     return;
   }
 
-  saveBtn.textContent = 'Savingâ¦';
+  saveBtn.textContent = 'Saving…';
   saveBtn.disabled = true;
 
   // Use a negative unix-seconds value as synthetic q18_id (won't collide with real Q18 IDs which are positive)
@@ -4836,8 +4836,8 @@ function _setCustSort(col) {
   // Update button styles and arrows
   document.getElementById('custSortName').classList.toggle('active', _custSortCol === 'name');
   document.getElementById('custSortPlays').classList.toggle('active', _custSortCol === 'plays');
-  document.getElementById('custSortNameArrow').textContent  = _custSortCol === 'name'  ? (_custSortDir === 'asc' ? 'â' : 'â') : 'â';
-  document.getElementById('custSortPlaysArrow').textContent = _custSortCol === 'plays' ? (_custSortDir === 'asc' ? 'â' : 'â') : 'â';
+  document.getElementById('custSortNameArrow').textContent  = _custSortCol === 'name'  ? (_custSortDir === 'asc' ? '↑' : '↓') : '↕';
+  document.getElementById('custSortPlaysArrow').textContent = _custSortCol === 'plays' ? (_custSortDir === 'asc' ? '↑' : '↓') : '↕';
   // Re-run search
   const q = document.getElementById('custSearchInput').value.trim();
   if (q.length >= 2 || _custGnOnly) custSearch(q);
@@ -4845,7 +4845,7 @@ function _setCustSort(col) {
 
 document.getElementById('custSortName').addEventListener('click',  () => _setCustSort('name'));
 document.getElementById('custSortPlays').addEventListener('click', () => _setCustSort('plays'));
-// Min-plays filter â debounced, triggers search, highlights when active
+// Min-plays filter — debounced, triggers search, highlights when active
 let _minPlaysTimer = null;
 document.getElementById('custMinPlays').addEventListener('input', function() {
   const active = this.value.trim() !== '' && parseInt(this.value, 10) > 0;
@@ -4883,13 +4883,13 @@ document.getElementById('custSearchInput').addEventListener('input', e => {
     document.getElementById('custBody').innerHTML = '<div class="cust-empty">Type at least 2 characters to search.</div>';
     return;
   }
-  document.getElementById('custBody').innerHTML = '<div class="cust-empty">Searchingâ¦</div>';
+  document.getElementById('custBody').innerHTML = '<div class="cust-empty">Searching…</div>';
   _custLastQuery = q;
   _custSearchTimer = setTimeout(() => custSearch(q), 300);
 });
 
 // Batch-fetch pass-type badges from booking_players for a list of Q18 customers.
-// Returns a map: "first last" (lowercase) â [passType, ...]
+// Returns a map: "first last" (lowercase) → [passType, ...]
 async function _fetchBadgesForQ18(customers) {
   if (!customers.length) return {};
   // Build OR filter: name.eq.First Last, ...
@@ -4920,7 +4920,7 @@ function _parseCustQuery(query) {
   }
   const parts = q.split(/\s+/);
   if (parts.length >= 2) {
-    // "Smith John" â last=Smith, first=John
+    // "Smith John" → last=Smith, first=John
     return { last: parts[0], first: parts.slice(1).join(' ') };
   }
   return { last: parts[0], first: null };
@@ -5004,7 +5004,7 @@ async function custSearch(query) {
     const total    = totalCount ?? shown;
     const sortLabel = _custSortCol === 'plays' ? 'by play count' : 'alphabetically';
     const countMsg = total > shown
-      ? `${total.toLocaleString()} players found â showing top ${shown} ${sortLabel}`
+      ? `${total.toLocaleString()} players found — showing top ${shown} ${sortLabel}`
       : `${total.toLocaleString()} player${total !== 1 ? 's' : ''} found`;
 
     const body = document.getElementById('custBody');
@@ -5039,7 +5039,7 @@ function _escCust(s) {
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
-// âââ Shared customer display helpers âââââââââââââââââââââââââââââ
+// ─── Shared customer display helpers ─────────────────────────────
 function _fmtPhone(raw) {
   if (!raw) return null;
   const digits = String(raw).replace(/\D/g, '');
@@ -5064,7 +5064,7 @@ function _custLines(c, badges) {
 
   const isGolfNow = (c.email || '').toLowerCase().endsWith('@noreply-golfnow.com');
   const gnBadge   = isGolfNow
-    ? ' <span class="cust-badge" style="background:#fef3c7;color:#92400e;border:1px solid #fcd34d" title="GolfNow booker â encourage direct booking">GN</span>'
+    ? ' <span class="cust-badge" style="background:#fef3c7;color:#92400e;border:1px solid #fcd34d" title="GolfNow booker — encourage direct booking">GN</span>'
     : '';
 
   const badgeHtml = (badges && badges.length)
@@ -5099,9 +5099,9 @@ function _custLines(c, badges) {
 }
 
 async function custShowProfile(name, q18 = null) {
-  document.getElementById('custBody').innerHTML = '<div class="cust-empty">Loading profileâ¦</div>';
+  document.getElementById('custBody').innerHTML = '<div class="cust-empty">Loading profile…</div>';
   try {
-    // Strip Q18 asterisks (e.g. "Sharon* Wilson" â "Sharon Wilson") then build
+    // Strip Q18 asterisks (e.g. "Sharon* Wilson" → "Sharon Wilson") then build
     // a fuzzy pattern "Sharon% Wilson" that matches both forms in booking_players.
     const cleanName = name.replace(/\*/g, '').trim();
     const _bpParts  = cleanName.split(/\s+/);
@@ -5114,7 +5114,7 @@ async function custShowProfile(name, q18 = null) {
     const resp = await fetch(url, { headers: SB_H });
     const rows = await resp.json();
 
-    // Build sorted history â deduplicate by tee time so Q18 group bookings
+    // Build sorted history — deduplicate by tee time so Q18 group bookings
     // (where all 4 slots share the same name) count as 1 play, not 4.
     const _seenTT = new Set();
     const history = rows.map(row => {
@@ -5145,7 +5145,7 @@ async function custShowProfile(name, q18 = null) {
       return true;
     }).sort((a, b) => b.date.localeCompare(a.date));
 
-    // ââ Play analytics (computed from local booking history) âââââââââ
+    // ── Play analytics (computed from local booking history) ─────────
     // Per-course counts
     const _courseMap = {};
     history.forEach(h => {
@@ -5155,7 +5155,7 @@ async function custShowProfile(name, q18 = null) {
     });
     const _courseSorted = Object.values(_courseMap).sort((a, b) => b.count - a.count);
 
-    // Day-of-week counts (0=Sun â¦ 6=Sat)
+    // Day-of-week counts (0=Sun … 6=Sat)
     const _DOW_LABELS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
     const _dowCounts = [0,0,0,0,0,0,0];
     history.forEach(h => {
@@ -5179,7 +5179,7 @@ async function custShowProfile(name, q18 = null) {
         <div class="cust-section-head">Play Patterns</div>
         <div style="color:var(--ink-muted);font-size:12px;font-style:italic;margin-bottom:14px;padding:10px 12px;background:var(--surface-2,#1a2218);border-radius:8px;border:1px solid var(--line)">
           No booking history in current system.<br>
-          <span style="font-size:11px;opacity:.7">This player's ${(q18?.reservation_count||0).toLocaleString()} Q18 plays predate our records â pattern data will accumulate as they continue to play.</span>
+          <span style="font-size:11px;opacity:.7">This player's ${(q18?.reservation_count||0).toLocaleString()} Q18 plays predate our records — pattern data will accumulate as they continue to play.</span>
         </div>`;
       const courseRows = _courseSorted.map(c => {
         const pct = Math.round((c.count / history.length) * 100);
@@ -5215,12 +5215,12 @@ async function custShowProfile(name, q18 = null) {
         <div style="margin-bottom:14px">
           <div style="font-size:11px;color:var(--ink-muted);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:.05em">Tee Time Preference</div>
           <div style="display:flex;border-radius:6px;overflow:hidden;height:20px;gap:1px">
-            ${mPct > 0 ? `<div style="flex:${mPct};background:var(--accent);display:flex;align-items:center;justify-content:center"><span style="font-size:10px;color:#fff;font-weight:600">âï¸ Morning ${mPct}%</span></div>` : ''}
-            ${aPct > 0 ? `<div style="flex:${aPct};background:var(--green-200);display:flex;align-items:center;justify-content:center"><span style="font-size:10px;color:var(--green-900);font-weight:600">ð Afternoon ${aPct}%</span></div>` : ''}
+            ${mPct > 0 ? `<div style="flex:${mPct};background:var(--accent);display:flex;align-items:center;justify-content:center"><span style="font-size:10px;color:#fff;font-weight:600">☀️ Morning ${mPct}%</span></div>` : ''}
+            ${aPct > 0 ? `<div style="flex:${aPct};background:var(--green-200);display:flex;align-items:center;justify-content:center"><span style="font-size:10px;color:var(--green-900);font-weight:600">🌅 Afternoon ${aPct}%</span></div>` : ''}
           </div>
         </div>`;
     })();
-    // âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+    // ─────────────────────────────────────────────────────────────────
 
     // Rate type frequency + pass type detection
     const rateCounts = {};
@@ -5236,15 +5236,15 @@ async function custShowProfile(name, q18 = null) {
     let membershipHtml = '';
     if (detectedTypes.size === 0) {
       membershipHtml = `<div class="cust-member-card public">
-        <div class="cust-member-type" style="color:var(--ink-muted)">âª No pass/membership on file</div>
+        <div class="cust-member-type" style="color:var(--ink-muted)">⚪ No pass/membership on file</div>
         <div class="cust-member-note">Books at public rates. No booking window restriction.</div>
       </div>`;
     } else {
       [...detectedTypes].forEach(key => {
         const t = PASS_TYPES[key];
         const expiredNote = (key !== 'AP' && expired)
-          ? ` Â· <b style="color:var(--rose-700)">EXPIRED</b> (Sept 30, ${now.getFullYear()})`
-          : (key !== 'AP' ? ` Â· Active through Sept 30, ${now.getFullYear()}` : '');
+          ? ` · <b style="color:var(--rose-700)">EXPIRED</b> (Sept 30, ${now.getFullYear()})`
+          : (key !== 'AP' ? ` · Active through Sept 30, ${now.getFullYear()}` : '');
 
         // For AP: collect unique course-specific abbrs from AP-rate bookings (e.g. STAP, CLAP)
         let abbrHtml = '';
@@ -5264,7 +5264,7 @@ async function custShowProfile(name, q18 = null) {
         }
 
         membershipHtml += `<div class="cust-member-card" style="border-color:${t.border};background:${t.bg};margin-bottom:8px">
-          <div class="cust-member-type" style="color:${t.color}">â ${t.label} ${abbrHtml}${expiredNote}</div>
+          <div class="cust-member-type" style="color:${t.color}">✅ ${t.label} ${abbrHtml}${expiredNote}</div>
           <div class="cust-member-note" style="color:${t.color};opacity:.8">${t.note}</div>
         </div>`;
       });
@@ -5275,8 +5275,8 @@ async function custShowProfile(name, q18 = null) {
     body.innerHTML = `
       <div class="cust-profile">
         <div class="cust-profile-topbar">
-          <button class="cust-back" id="custBackBtn">â Back to results</button>
-          ${q18?.q18_id != null ? `<button class="cust-del-btn" id="custDelBtn" title="Delete this record">ð Delete record</button>` : ''}
+          <button class="cust-back" id="custBackBtn">← Back to results</button>
+          ${q18?.q18_id != null ? `<button class="cust-del-btn" id="custDelBtn" title="Delete this record">🗑 Delete record</button>` : ''}
         </div>
         <div id="custDelConfirm" style="display:none" class="cust-del-confirm">
           Delete <b>${_escCust(displayName)}</b>? This is permanent.
@@ -5286,9 +5286,9 @@ async function custShowProfile(name, q18 = null) {
         <div class="cust-profile-name">${_escCust(displayName)}</div>
         ${q18 ? `<div style="font-size:12px;color:var(--ink-muted);margin:-6px 0 10px;display:flex;flex-wrap:wrap;gap:6px 14px">
           ${q18.email ? `<a href="mailto:${_escCust(q18.email)}" style="color:inherit;text-decoration:none" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${_escCust(q18.email)}</a>` : `<span style="color:#f87171;font-style:italic">need email</span>`}
-          <span style="opacity:.4">Â·</span>
+          <span style="opacity:.4">·</span>
           ${q18.phone ? `<a href="tel:${_escCust((_fmtPhone(q18.phone)||'').replace(/\s/g,''))}" style="color:inherit;text-decoration:none" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${_escCust(_fmtPhone(q18.phone))}</a>` : `<span style="color:#f87171;font-style:italic">need phone</span>`}
-          <span style="opacity:.4">Â·</span>
+          <span style="opacity:.4">·</span>
           <span>${(q18.reservation_count||0).toLocaleString()} Q18 plays total</span>
         </div>` : ''}
 
@@ -5300,7 +5300,7 @@ async function custShowProfile(name, q18 = null) {
           </div>
           <div class="cust-stat-card">
             <div class="k">Last Visit</div>
-            <div class="v" style="font-size:13px;padding-top:5px">${history[0] ? custFmtDate(history[0].date) : 'â'}</div>
+            <div class="v" style="font-size:13px;padding-top:5px">${history[0] ? custFmtDate(history[0].date) : '—'}</div>
             <div class="sub">${history[0]?.course || ''}</div>
           </div>
         </div>
@@ -5309,8 +5309,8 @@ async function custShowProfile(name, q18 = null) {
 
         ${q18 && (q18.email||'').toLowerCase().endsWith('@noreply-golfnow.com') ? `
         <div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#92400e;line-height:1.5">
-          ð° <strong>GolfNow booker</strong> â ${(q18.reservation_count||0)} plays booked via GolfNow.
-          Encourage them to book directly at <strong>swingfirst.co</strong> â no booking fee for them.
+          💰 <strong>GolfNow booker</strong> — ${(q18.reservation_count||0)} plays booked via GolfNow.
+          Encourage them to book directly at <strong>swingfirst.co</strong> — no booking fee for them.
         </div>` : ''}
         <div class="cust-section-head">Membership / Pass</div>
         ${membershipHtml}
@@ -5328,10 +5328,10 @@ async function custShowProfile(name, q18 = null) {
 
         <div class="cust-section-head">Notes</div>
         <div class="cust-notes-wrap">
-          <textarea class="cust-notes-textarea" id="custNotesTA" placeholder="Allergies, accessibility needs, VIP status, preferred tee times, complaints, anything usefulâ¦">${_escCust(q18?.notes || '')}</textarea>
+          <textarea class="cust-notes-textarea" id="custNotesTA" placeholder="Allergies, accessibility needs, VIP status, preferred tee times, complaints, anything useful…">${_escCust(q18?.notes || '')}</textarea>
           <div style="display:flex;align-items:center">
             <button class="cust-notes-save" id="custNotesSave">Save note</button>
-            <span class="cust-notes-saved" id="custNotesSaved">â Saved</span>
+            <span class="cust-notes-saved" id="custNotesSaved">✓ Saved</span>
           </div>
         </div>
 
@@ -5350,7 +5350,7 @@ async function custShowProfile(name, q18 = null) {
     });
     _notesSave?.addEventListener('click', async () => {
       if (!q18?.q18_id) return;
-      _notesSave.textContent = 'Savingâ¦';
+      _notesSave.textContent = 'Saving…';
       _notesSave.disabled = true;
       try {
         const r = await fetch(`${SB_URL}/rest/v1/q18_customers?q18_id=eq.${encodeURIComponent(q18.q18_id)}`, {
@@ -5369,7 +5369,7 @@ async function custShowProfile(name, q18 = null) {
       } catch(e) {
         _notesSave.textContent = 'Save note';
         _notesSave.disabled = false;
-        toast('â ï¸ Could not save note: ' + e.message);
+        toast('⚠️ Could not save note: ' + e.message);
       }
     });
 
@@ -5390,7 +5390,7 @@ async function custShowProfile(name, q18 = null) {
     });
     document.getElementById('custDelYes')?.addEventListener('click', async () => {
       const btn = document.getElementById('custDelYes');
-      btn.textContent = 'Deletingâ¦';
+      btn.textContent = 'Deleting…';
       btn.disabled = true;
       try {
         const resp = await fetch(`${SB_URL}/rest/v1/q18_customers?q18_id=eq.${encodeURIComponent(q18.q18_id)}`, {
@@ -5404,7 +5404,7 @@ async function custShowProfile(name, q18 = null) {
           custSearch(q);
         } else {
           document.getElementById('custBody').innerHTML =
-            `<div class="cust-empty" style="color:var(--green-700)">â Record deleted.</div>`;
+            `<div class="cust-empty" style="color:var(--green-700)">✓ Record deleted.</div>`;
         }
       } catch(e) {
         btn.textContent = 'Delete';
@@ -5425,9 +5425,9 @@ async function custShowProfile(name, q18 = null) {
           if (pt?.window) {
             // SF: booking window check (must book within 7 days for SF rate)
             if (h.daysOut <= SF_WINDOW_DAYS) {
-              windowEl = `<div class="cust-window-ok">â ${h.daysOut}d out â eligible</div>`;
+              windowEl = `<div class="cust-window-ok">✓ ${h.daysOut}d out — eligible</div>`;
             } else {
-              windowEl = `<div class="cust-window-warn">â  ${h.daysOut}d out â outside ${SF_WINDOW_DAYS}d window</div>`;
+              windowEl = `<div class="cust-window-warn">⚠ ${h.daysOut}d out — outside ${SF_WINDOW_DAYS}d window</div>`;
             }
           } else {
             windowEl = `<div class="cust-window-na">${h.daysOut}d advance</div>`;
@@ -5442,7 +5442,7 @@ async function custShowProfile(name, q18 = null) {
         div.className = 'cust-booking-row';
         div.innerHTML =
           `<div class="cust-booking-left">` +
-            `<div class="cust-booking-date">${custFmtDate(h.date)}${h.hour !== undefined ? ' Â· ' + fmt12(h.hour, h.minute ?? 0) : ''}</div>` +
+            `<div class="cust-booking-date">${custFmtDate(h.date)}${h.hour !== undefined ? ' · ' + fmt12(h.hour, h.minute ?? 0) : ''}</div>` +
             `<div class="cust-booking-course">${h.course}</div>` +
           `</div>` +
           `<div class="cust-booking-right">` +
@@ -5459,13 +5459,13 @@ async function custShowProfile(name, q18 = null) {
 }
 
 function custFmtDate(dateStr) {
-  if (!dateStr) return 'â';
+  if (!dateStr) return '—';
   const [y, m, d] = dateStr.split('-').map(Number);
   const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   return `${months[m-1]} ${d}, ${y}`;
 }
 
-// âââ Charge Player overlay ââââââââââââââââââââââââââââââââââââââââ
+// ─── Charge Player overlay ────────────────────────────────────────
 document.getElementById("pctxCharge").addEventListener("click", () => {
   if (!playerCtxTarget) { closePlayerCtx(); return; }
   const { slot, pi } = playerCtxTarget;
@@ -5487,20 +5487,20 @@ function closeChargeOverlay() {
   document.getElementById('chargePosIframe').src = '';
   document.body.style.overflow = '';
 }
-// âââ Add Player (context menu) ââââââââââââââââââââââââââââââââââââ
+// ─── Add Player (context menu) ────────────────────────────────────
 document.getElementById("pctxAddPlayer").addEventListener("click", () => {
   if (!playerCtxTarget) { closePlayerCtx(); return; }
   const { slot } = playerCtxTarget;
   closePlayerCtx();
   openAddModal(slot);
 });
-// âââ Edit Booking / Players modal âââââââââââââââââââââââââââââââââ
+// ─── Edit Booking / Players modal ─────────────────────────────────
 let _editBPSlot = null, _editBPQ18 = {};
 async function openEditBPModal(slot, pi) {
   _editBPSlot = slot; _editBPQ18 = {};
   document.getElementById('editBPBookingNotes').value = slot.bookingNotes || '';
   const body = document.getElementById('editBPBody');
-  body.innerHTML = '<div class="editbp-loading">Loading player infoâ¦</div>';
+  body.innerHTML = '<div class="editbp-loading">Loading player info…</div>';
   document.getElementById('editBPOverlay').style.display = '';
   document.body.style.overflow = 'hidden';
   await Promise.all(slot.players.map(async (player, i) => {
@@ -5519,15 +5519,15 @@ async function openEditBPModal(slot, pi) {
     if (!player) return '';
     num++;
     const q18 = _editBPQ18[i], inSys = !!q18, dis = inSys ? '' : ' disabled';
-    const warn = inSys ? '' : '<span class="editbp-warn">â  Not registered</span>';
+    const warn = inSys ? '' : '<span class="editbp-warn">⚠ Not registered</span>';
     const phone = (q18 && q18.phone) ? q18.phone : '';
     const notes = (q18 && q18.notes) ? q18.notes : '';
     const name = (player.name||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;');
     return '<div class="editbp-player-card" data-pi="'+i+'">' +
       '<div class="editbp-player-hd"><span class="editbp-player-num">Player '+num+'</span>'+warn+'</div>' +
       '<div class="editbp-field"><label class="editbp-label">Name</label><input type="text" class="editbp-input" data-field="name" data-pi="'+i+'" value="'+name+'" /></div>' +
-      '<div class="editbp-field"><label class="editbp-label">Phone</label><input type="tel" class="editbp-input" data-field="phone" data-pi="'+i+'" value="'+phone+'"'+dis+' placeholder="â" /></div>' +
-      '<div class="editbp-field"><label class="editbp-label">Player Notes</label><textarea class="editbp-textarea" data-field="notes" data-pi="'+i+'"'+dis+' placeholder="â">'+notes+'</textarea></div>' +
+      '<div class="editbp-field"><label class="editbp-label">Phone</label><input type="tel" class="editbp-input" data-field="phone" data-pi="'+i+'" value="'+phone+'"'+dis+' placeholder="—" /></div>' +
+      '<div class="editbp-field"><label class="editbp-label">Player Notes</label><textarea class="editbp-textarea" data-field="notes" data-pi="'+i+'"'+dis+' placeholder="—">'+notes+'</textarea></div>' +
       '</div>';
   }).join('');
 }
@@ -5536,7 +5536,7 @@ async function saveEditBP() {
   const slot = _editBPSlot;
   const topBtn = document.querySelector('.editbp-save-top');
   const wideBtn = document.querySelector('.editbp-save-wide');
-  if (topBtn) { topBtn.textContent = 'Savingâ¦'; topBtn.disabled = true; }
+  if (topBtn) { topBtn.textContent = 'Saving…'; topBtn.disabled = true; }
   if (wideBtn) wideBtn.disabled = true;
   const errs = [];
   for (let i = 0; i < slot.players.length; i++) {
@@ -5572,7 +5572,7 @@ async function saveEditBP() {
     } catch(e) { errs.push('booking notes'); }
   }
   renderRows();
-  toast(errs.length ? 'â  Some changes could not be saved' : 'â Changes saved');
+  toast(errs.length ? '⚠ Some changes could not be saved' : '✅ Changes saved');
   closeEditBPModal();
 }
 function closeEditBPModal() {
