@@ -5598,9 +5598,9 @@ function closeEditBPModal() {
       <button id="swBookBtn"       class="ctx-item" style="padding:11px 14px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;text-align:left;cursor:pointer;font-size:14px">📅  Book</button>
       <button id="swBlockBtn"      class="ctx-item" style="padding:11px 14px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;text-align:left;cursor:pointer;font-size:14px">🚫  Block</button>
       <button id="swPriceBtn"      class="ctx-item" style="padding:11px 14px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;text-align:left;cursor:pointer;font-size:14px">💰  Override $</button>
-      <button id="swTeeOffBtn"     class="ctx-item" style="padding:11px 14px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;text-align:left;cursor:pointer;font-size:14px">🏌️  Tee Off</button>
-      <button id="swSqueezeBtn"    class="ctx-item" style="padding:11px 14px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;text-align:left;cursor:pointer;font-size:14px">⏱️  Squeeze</button>
-      <button id="swDelSqueezeBtn" class="ctx-item" style="padding:11px 14px;border:1px solid #fca5a5;border-radius:8px;background:#fff;text-align:left;cursor:pointer;font-size:14px;display:none">🗑️  Delete Squeeze</button>
+      <button id="swTeeOffBtn"     class="ctx-item" style="padding:11px 14px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;text-align:left;cursor:pointer;font-size:14px">🏷  Tee Off</button>
+      <button id="swSqueezeBtn"    class="ctx-item" style="padding:11px 14px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;text-align:left;cursor:pointer;font-size:14px">⏱  Squeeze</button>
+      <button id="swDelSqueezeBtn" class="ctx-item" style="padding:11px 14px;border:1px solid #fca5a5;border-radius:8px;background:#fff;text-align:left;cursor:pointer;font-size:14px;display:none">🗑  Delete Squeeze</button>
     </div>
   </div>
 </div>
@@ -5632,224 +5632,220 @@ function closeEditBPModal() {
 
   function _getDate() {
     var a = document.querySelector(".ws-pill.ws-active"); if (!a) return null;
-    var t = a.textContent.trim().replace(/\s+/g," ");
-    var M={Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12};
-    var p=t.split(" "); var mon=M[p[0]],day=parseInt(p[1]); if(!mon||!day) return null;
-    return new Date().getFullYear()+"-"+String(mon).padStart(2,"0")+"-"+String(day).padStart(2,"0");
+    var t = a.textContent.trim().replace(/\s+/g, " ");
+    var M = {Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12};
+    var p = t.split(" "); var mon = M[p[0]], day = parseInt(p[1]); if (!mon || !day) return null;
+    return new Date().getFullYear() + "-" + String(mon).padStart(2,"0") + "-" + String(day).padStart(2,"0");
   }
 
   function _parseRowTime(idx) {
-    var row=rowsEl&&rowsEl.children[idx];
-    var txt=(row&&row.querySelector(".row-time")&&row.querySelector(".row-time").textContent.trim())||"";
-    var m=txt.match(/(\d+):(\d+)\s*(AM|PM)/i); if(!m) return null;
-    var h=parseInt(m[1]),min=parseInt(m[2]);
-    if(m[3].toUpperCase()==="PM"&&h<12) h+=12;
-    if(m[3].toUpperCase()==="AM"&&h===12) h=0;
-    return {hour:h,minute:min,label:txt};
+    var row = rowsEl && rowsEl.children[idx];
+    var txt = (row && row.querySelector(".row-time") && row.querySelector(".row-time").textContent.trim()) || "";
+    var m = txt.match(/(\d+):(\d+)\s*(AM|PM)/i); if (!m) return null;
+    var h = parseInt(m[1]), min = parseInt(m[2]);
+    if (m[3].toUpperCase() === "PM" && h < 12) h += 12;
+    if (m[3].toUpperCase() === "AM" && h === 12) h = 0;
+    return {hour: h, minute: min, label: txt};
   }
 
   async function _getRowTeeTimeIds(rowIndices) {
-    var date=_getDate(); if(!date) return [];
-    var resp=await fetch(_SB+"/rest/v1/tee_times?date=eq."+date+"&select=id,hour,minute",{headers:_SH});
-    var tts=await resp.json(); var result=[];
-    rowIndices.forEach(function(idx){
-      var t=_parseRowTime(idx); if(!t) return;
-      var tt=tts.find(function(r){return r.hour===t.hour&&r.minute===t.minute;});
-      if(tt) result.push(tt.id);
+    var date = _getDate(); if (!date) return [];
+    var resp = await fetch(_SB + "/rest/v1/tee_times?date=eq." + date + "&select=id,hour,minute", {headers: _SH});
+    var tts = await resp.json(); var result = [];
+    rowIndices.forEach(function(idx) {
+      var t = _parseRowTime(idx); if (!t) return;
+      var tt = tts.find(function(r) { return r.hour === t.hour && r.minute === t.minute; });
+      if (tt) result.push(tt.id);
     });
     return result;
   }
 
   function _showActionModal() {
-    var modal=document.getElementById("swActionModal"); if(!modal) return;
-    var isDrag=_actionMode==="drag";
-    var row0=rowsEl&&rowsEl.children[_actionRows[0]];
-    var isSq=row0&&row0.classList.contains("squeezed");
-    var title=document.getElementById("swActionTitle");
-    if(title){
-      if(isDrag&&_actionRows.length>1){
-        var f=_parseRowTime(_actionRows[0]),l=_parseRowTime(_actionRows[_actionRows.length-1]);
-        title.textContent=(f?f.label:"")+" – "+(l?l.label:"");
-      } else { var t=_parseRowTime(_actionRows[0]); title.textContent=t?t.label:"Tee Time"; }
+    var modal = document.getElementById("swActionModal"); if (!modal) return;
+    var isDrag = _actionMode === "drag";
+    var row0 = rowsEl && rowsEl.children[_actionRows[0]];
+    var isSq = row0 && row0.classList.contains("squeezed");
+    var title = document.getElementById("swActionTitle");
+    if (title) {
+      if (isDrag && _actionRows.length > 1) {
+        var f = _parseRowTime(_actionRows[0]), l = _parseRowTime(_actionRows[_actionRows.length - 1]);
+        title.textContent = (f ? f.label : "") + " - " + (l ? l.label : "");
+      } else {
+        var t = _parseRowTime(_actionRows[0]); title.textContent = t ? t.label : "Tee Time";
+      }
     }
-    var teeOffBtn=document.getElementById("swTeeOffBtn");
-    var sqBtn=document.getElementById("swSqueezeBtn");
-    var delSqBtn=document.getElementById("swDelSqueezeBtn");
-    if(teeOffBtn) teeOffBtn.style.display=isDrag?"none":"";
-    if(sqBtn)     sqBtn.style.display=(isDrag||isSq)?"none":"";
-    if(delSqBtn)  delSqBtn.style.display=(!isDrag&&isSq)?"":"none";
-    modal.style.display="flex";
+    var teeOffBtn = document.getElementById("swTeeOffBtn");
+    var sqBtn     = document.getElementById("swSqueezeBtn");
+    var delSqBtn  = document.getElementById("swDelSqueezeBtn");
+    if (teeOffBtn) teeOffBtn.style.display = isDrag ? "none" : "";
+    if (sqBtn)     sqBtn.style.display     = (isDrag || isSq) ? "none" : "";
+    if (delSqBtn)  delSqBtn.style.display  = (!isDrag && isSq) ? "" : "none";
+    modal.style.display = "flex";
   }
 
   function _hideActionModal() {
-    var m=document.getElementById("swActionModal"); if(m) m.style.display="none";
+    var m = document.getElementById("swActionModal"); if (m) m.style.display = "none";
   }
 
-  /* Autocomplete suppression */
-  var ni=document.getElementById("grpEditName"); if(ni) ni.setAttribute("autocomplete","off");
+  var ni = document.getElementById("grpEditName"); if (ni) ni.setAttribute("autocomplete", "off");
 
-  /* Single TIME click — capture phase */
   document.addEventListener("click", function(e) {
-    if(_inDragIntercept) return;
-    var tc=e.target.closest(".row-time"); if(!tc) return;
-    var row=tc.closest(".row"); if(!row||!rowsEl) return;
-    var idx=Array.from(rowsEl.children).indexOf(row);
-    _actionRows=[idx]; _actionMode="single";
-    /* Hide ctxMenu after existing handler opens it */
-    setTimeout(function(){ if(ctxMenu) ctxMenu.style.display="none"; },0);
+    if (_inDragIntercept) return;
+    var tc = e.target.closest(".row-time"); if (!tc) return;
+    var row = tc.closest(".row"); if (!row || !rowsEl) return;
+    var idx = Array.from(rowsEl.children).indexOf(row);
+    _actionRows = [idx]; _actionMode = "single";
+    setTimeout(function() { if (ctxMenu) ctxMenu.style.display = "none"; }, 0);
     _showActionModal();
   }, true);
 
-  /* Close on outside click */
-  document.addEventListener("click",function(e){
-    var m=document.getElementById("swActionModal");
-    if(!m||m.style.display==="none") return;
-    if(e.target.closest(".row-time")) return;
-    if(!m.contains(e.target)) _hideActionModal();
+  document.addEventListener("click", function(e) {
+    var m = document.getElementById("swActionModal");
+    if (!m || m.style.display === "none") return;
+    if (e.target.closest(".row-time")) return;
+    if (!m.contains(e.target)) _hideActionModal();
   });
 
-  var ac=document.getElementById("swActionClose"); if(ac) ac.addEventListener("click",_hideActionModal);
+  var ac = document.getElementById("swActionClose"); if (ac) ac.addEventListener("click", _hideActionModal);
 
-  /* Drag tracking */
-  if(rowsEl){
-    rowsEl.addEventListener("pointerdown",function(e){
-      if(!e.target.closest(".row-time")) return;
-      _dragActive=true; _dragRowSet=[];
-      var row=e.target.closest(".row");
-      if(row) _dragRowSet=[Array.from(rowsEl.children).indexOf(row)];
-    },true);
-    rowsEl.addEventListener("pointermove",function(e){
-      if(!_dragActive||!e.buttons) return;
-      var row=e.target.closest(".row"); if(!row) return;
-      var idx=Array.from(rowsEl.children).indexOf(row);
-      if(idx>=0&&_dragRowSet.indexOf(idx)<0) _dragRowSet.push(idx);
-    },true);
+  if (rowsEl) {
+    rowsEl.addEventListener("pointerdown", function(e) {
+      if (!e.target.closest(".row-time")) return;
+      _dragActive = true; _dragRowSet = [];
+      var row = e.target.closest(".row");
+      if (row) _dragRowSet = [Array.from(rowsEl.children).indexOf(row)];
+    }, true);
+    rowsEl.addEventListener("pointermove", function(e) {
+      if (!_dragActive || !e.buttons) return;
+      var row = e.target.closest(".row"); if (!row) return;
+      var idx = Array.from(rowsEl.children).indexOf(row);
+      if (idx >= 0 && _dragRowSet.indexOf(idx) < 0) _dragRowSet.push(idx);
+    }, true);
   }
 
-  document.addEventListener("pointerup",function(e){
-    if(!_dragActive) return;
-    _dragActive=false;
-    if(_dragRowSet.length<2) return;
-    _actionRows=_dragRowSet.slice().sort(function(a,b){return a-b;});
-    _actionMode="drag"; _inDragIntercept=true; _dragModalId=null;
-    setTimeout(function(){
-      if(!_inDragIntercept) return;
-      _inDragIntercept=false; _showActionModal();
-    },300);
-  },true);
+  document.addEventListener("pointerup", function(e) {
+    if (!_dragActive) return;
+    _dragActive = false;
+    if (_dragRowSet.length < 2) return;
+    _actionRows = _dragRowSet.slice().sort(function(a, b) { return a - b; });
+    _actionMode = "drag"; _inDragIntercept = true; _dragModalId = null;
+    setTimeout(function() {
+      if (!_inDragIntercept) return;
+      _inDragIntercept = false; _showActionModal();
+    }, 300);
+  }, true);
 
-  ["addModal","groupModal"].forEach(function(id){
-    var m=document.getElementById(id); if(!m) return;
-    new MutationObserver(function(){
-      if(!_inDragIntercept) return;
-      if(window.getComputedStyle(m).display==="none") return;
-      _dragModalId=id; m.style.display="none"; _inDragIntercept=false; _showActionModal();
-    }).observe(m,{attributes:true,attributeFilter:["style","class"]});
+  ["addModal", "groupModal"].forEach(function(id) {
+    var m = document.getElementById(id); if (!m) return;
+    new MutationObserver(function() {
+      if (!_inDragIntercept) return;
+      if (window.getComputedStyle(m).display === "none") return;
+      _dragModalId = id; m.style.display = "none"; _inDragIntercept = false; _showActionModal();
+    }).observe(m, {attributes: true, attributeFilter: ["style", "class"]});
   });
 
-  /* Action buttons */
-  function _wire(id,fn){var el=document.getElementById(id);if(el) el.addEventListener("click",fn);}
+  function _wire(id, fn) { var el = document.getElementById(id); if (el) el.addEventListener("click", fn); }
 
-  _wire("swBookBtn",function(){
+  _wire("swBookBtn", function() {
     _hideActionModal();
-    if(_actionMode==="drag"&&_dragModalId){
-      var m=document.getElementById(_dragModalId); if(m) m.style.display="flex"; _dragModalId=null;
-    } else { var ci=document.getElementById("ctxGroupItem"); if(ci) ci.click(); }
+    if (_actionMode === "drag" && _dragModalId) {
+      var m = document.getElementById(_dragModalId); if (m) m.style.display = "flex"; _dragModalId = null;
+    } else { var ci = document.getElementById("ctxGroupItem"); if (ci) ci.click(); }
   });
 
-  _wire("swBlockBtn",function(){
+  _wire("swBlockBtn", function() {
     _hideActionModal();
-    if(_actionMode==="drag"&&_actionRows.length>1){
-      if(window.confirm("Block "+_actionRows.length+" tee times?")) _bulkBlock(_actionRows);
-    } else { var ci=document.getElementById("ctxBlockItem"); if(ci) ci.click(); }
+    if (_actionMode === "drag" && _actionRows.length > 1) {
+      if (window.confirm("Block " + _actionRows.length + " tee times?")) _bulkBlock(_actionRows);
+    } else { var ci = document.getElementById("ctxBlockItem"); if (ci) ci.click(); }
   });
 
-  _wire("swPriceBtn",function(){
+  _wire("swPriceBtn", function() {
     _hideActionModal();
-    if(_actionMode==="drag"&&_actionRows.length>1){
-      var info=document.getElementById("swBulkPriceSlotInfo");
-      var f=_parseRowTime(_actionRows[0]),l=_parseRowTime(_actionRows[_actionRows.length-1]);
-      if(info) info.textContent=_actionRows.length+" tee times: "+(f?f.label:"")+" – "+(l?l.label:"");
-      var sv=document.getElementById("swBulkPriceSave");
-      if(sv) sv.textContent="Apply to "+_actionRows.length+" Tee Times";
-      var inp=document.getElementById("swBulkPriceInput"); if(inp) inp.value="";
-      var pm=document.getElementById("swBulkPriceModal"); if(pm) pm.style.display="flex";
-    } else { var ci=document.getElementById("ctxPriceItem"); if(ci) ci.click(); }
+    if (_actionMode === "drag" && _actionRows.length > 1) {
+      var info = document.getElementById("swBulkPriceSlotInfo");
+      var f = _parseRowTime(_actionRows[0]), l = _parseRowTime(_actionRows[_actionRows.length - 1]);
+      if (info) info.textContent = _actionRows.length + " tee times: " + (f ? f.label : "") + " - " + (l ? l.label : "");
+      var sv = document.getElementById("swBulkPriceSave");
+      if (sv) sv.textContent = "Apply to " + _actionRows.length + " Tee Times";
+      var inp = document.getElementById("swBulkPriceInput"); if (inp) inp.value = "";
+      var pm = document.getElementById("swBulkPriceModal"); if (pm) pm.style.display = "flex";
+    } else { var ci = document.getElementById("ctxPriceItem"); if (ci) ci.click(); }
   });
 
-  _wire("swTeeOffBtn",function(){_hideActionModal();var ci=document.getElementById("ctxTeeOffItem");if(ci) ci.click();});
-  _wire("swSqueezeBtn",function(){
-    _hideActionModal();
-    var ai=document.getElementById("addSqueezeItem"); if(ai) ai.click();
-  });
-  _wire("swDelSqueezeBtn",function(){_hideActionModal();var ci=document.getElementById("deleteSqueezeItem");if(ci) ci.click();});
+  _wire("swTeeOffBtn",     function() { _hideActionModal(); var ci = document.getElementById("ctxTeeOffItem");     if (ci) ci.click(); });
+  _wire("swSqueezeBtn",    function() { _hideActionModal(); var ai = document.getElementById("addSqueezeItem");    if (ai) ai.click(); });
+  _wire("swDelSqueezeBtn", function() { _hideActionModal(); var ci = document.getElementById("deleteSqueezeItem"); if (ci) ci.click(); });
 
-  /* Bulk Block */
-  async function _bulkBlock(rowIndices){
-    try{
-      var ids=await _getRowTeeTimeIds(rowIndices);
-      if(!ids.length){alert("Could not identify tee times.");return;}
-      await fetch(_SB+"/rest/v1/tee_times?id=in.("+ids.join(",")+")",{
-        method:"PATCH",headers:Object.assign({},_SH,{"Content-Type":"application/json","Prefer":"return=minimal"}),
-        body:JSON.stringify({status:"blocked"})
+  async function _bulkBlock(rowIndices) {
+    try {
+      var ids = await _getRowTeeTimeIds(rowIndices);
+      if (!ids.length) { alert("Could not identify tee times."); return; }
+      await fetch(_SB + "/rest/v1/tee_times?id=in.(" + ids.join(",") + ")", {
+        method: "PATCH",
+        headers: Object.assign({}, _SH, {"Content-Type": "application/json", "Prefer": "return=minimal"}),
+        body: JSON.stringify({status: "blocked"})
       });
       location.reload();
-    }catch(e){alert("Block error: "+e.message);}
+    } catch(e) { alert("Block error: " + e.message); }
   }
 
-  /* Bulk Price */
-  _wire("swBulkPriceCancel",function(){var m=document.getElementById("swBulkPriceModal");if(m) m.style.display="none";});
-  _wire("swBulkPriceClose", function(){var m=document.getElementById("swBulkPriceModal");if(m) m.style.display="none";});
-  _wire("swBulkPriceSave",async function(){
-    var inp=document.getElementById("swBulkPriceInput");
-    var dollars=parseFloat(inp?inp.value:"");
-    if(isNaN(dollars)||dollars<0){alert("Enter a valid price.");return;}
-    var cents=Math.round(dollars*100);
-    var bm=document.getElementById("swBulkPriceModal"); if(bm) bm.style.display="none";
-    try{
-      var ids=await _getRowTeeTimeIds(_actionRows);
-      if(!ids.length){alert("Could not identify tee times.");return;}
-      await fetch(_SB+"/rest/v1/tee_times?id=in.("+ids.join(",")+")",{
-        method:"PATCH",headers:Object.assign({},_SH,{"Content-Type":"application/json","Prefer":"return=minimal"}),
-        body:JSON.stringify({rack_cents:cents})
+  _wire("swBulkPriceCancel", function() { var m = document.getElementById("swBulkPriceModal"); if (m) m.style.display = "none"; });
+  _wire("swBulkPriceClose",  function() { var m = document.getElementById("swBulkPriceModal"); if (m) m.style.display = "none"; });
+  _wire("swBulkPriceSave", async function() {
+    var inp = document.getElementById("swBulkPriceInput");
+    var dollars = parseFloat(inp ? inp.value : "");
+    if (isNaN(dollars) || dollars < 0) { alert("Enter a valid price."); return; }
+    var cents = Math.round(dollars * 100);
+    var bm = document.getElementById("swBulkPriceModal"); if (bm) bm.style.display = "none";
+    try {
+      var ids = await _getRowTeeTimeIds(_actionRows);
+      if (!ids.length) { alert("Could not identify tee times."); return; }
+      await fetch(_SB + "/rest/v1/tee_times?id=in.(" + ids.join(",") + ")", {
+        method: "PATCH",
+        headers: Object.assign({}, _SH, {"Content-Type": "application/json", "Prefer": "return=minimal"}),
+        body: JSON.stringify({rack_cents: cents})
       });
       location.reload();
-    }catch(e){alert("Price error: "+e.message);}
+    } catch(e) { alert("Price error: " + e.message); }
   });
 
-  /* Delete Group */
-  async function _persistGroupDelete(leadName){
-    var date=_getDate();
-    if(!date){alert("Could not detect date.");return;}
-    try{
-      var resp=await fetch(_SB+"/rest/v1/tee_times?date=eq."+date+"&select=id,bookings(id,lead_name,status)&order=hour.asc",{headers:_SH});
-      var all=await resp.json(); var ttIds=[];
-      all.forEach(function(tt){
-        if((tt.bookings||[]).some(function(b){return b.status!=="cancelled"&&b.lead_name===leadName;})) ttIds.push(tt.id);
+  async function _persistGroupDelete(leadName) {
+    var date = _getDate();
+    if (!date) { alert("Could not detect date."); return; }
+    try {
+      var resp = await fetch(_SB + "/rest/v1/tee_times?date=eq." + date + "&select=id,bookings(id,lead_name,status)&order=hour.asc", {headers: _SH});
+      var all = await resp.json(); var ttIds = [];
+      all.forEach(function(tt) {
+        if ((tt.bookings || []).some(function(b) { return b.status !== "cancelled" && b.lead_name === leadName; })) ttIds.push(tt.id);
       });
-      if(!ttIds.length){location.reload();return;}
-      await fetch(_SB+"/rest/v1/bookings?tee_time_id=in.("+ttIds.join(",")+")"+"&status=neq.cancelled",{
-        method:"PATCH",headers:Object.assign({},_SH,{"Content-Type":"application/json","Prefer":"return=minimal"}),body:JSON.stringify({status:"cancelled"})
+      if (!ttIds.length) { location.reload(); return; }
+      await fetch(_SB + "/rest/v1/bookings?tee_time_id=in.(" + ttIds.join(",") + ")&status=neq.cancelled", {
+        method: "PATCH",
+        headers: Object.assign({}, _SH, {"Content-Type": "application/json", "Prefer": "return=minimal"}),
+        body: JSON.stringify({status: "cancelled"})
       });
-      await fetch(_SB+"/rest/v1/tee_times?id=in.("+ttIds.join(",")+")",{
-        method:"PATCH",headers:Object.assign({},_SH,{"Content-Type":"application/json","Prefer":"return=minimal"}),body:JSON.stringify({status:"open"})
+      await fetch(_SB + "/rest/v1/tee_times?id=in.(" + ttIds.join(",") + ")", {
+        method: "PATCH",
+        headers: Object.assign({}, _SH, {"Content-Type": "application/json", "Prefer": "return=minimal"}),
+        body: JSON.stringify({status: "open"})
       });
       location.reload();
-    }catch(err){alert("Delete Group error: "+err.message);}
+    } catch(err) { alert("Delete Group error: " + err.message); }
   }
 
-  document.addEventListener("click",function(e){
-    var btn=e.target.closest("#grpEditDelete"); if(!btn) return;
+  document.addEventListener("click", function(e) {
+    var btn = e.target.closest("#grpEditDelete"); if (!btn) return;
     e.stopImmediatePropagation();
-    var nameEl=document.getElementById("grpEditName"),titleEl=document.getElementById("grpEditTitle");
-    var leadName=(nameEl?nameEl.value:(titleEl?titleEl.textContent:"")).trim();
-    var meta=((document.getElementById("grpEditMeta")||{}).textContent||"").trim();
-    var msg="Delete \""+leadName+"\"?\n"+meta;
-    if(!window.confirm(msg)) return;
-    btn.disabled=true; btn.textContent="Deleting…";
-    var overlay=document.getElementById("grpEditModal"); if(overlay) overlay.style.display="none";
+    var nameEl = document.getElementById("grpEditName"), titleEl = document.getElementById("grpEditTitle");
+    var leadName = (nameEl ? nameEl.value : (titleEl ? titleEl.textContent : "")).trim();
+    var meta = ((document.getElementById("grpEditMeta") || {}).textContent || "").trim();
+    var msg = "Delete \"" + leadName + "\"?\n" + meta;
+    if (!window.confirm(msg)) return;
+    btn.disabled = true; btn.textContent = "Deleting...";
+    var overlay = document.getElementById("grpEditModal"); if (overlay) overlay.style.display = "none";
     _persistGroupDelete(leadName);
-  },true);
+  }, true);
 
 })();
 </script>
