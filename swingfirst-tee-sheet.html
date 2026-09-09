@@ -5595,6 +5595,7 @@ function closeEditBPModal() {
   var rowsEl = document.getElementById("rows");
   var ctxMenu = document.getElementById("ctxMenu");
 
+  // Track last-clicked row index
   if (rowsEl) {
     rowsEl.addEventListener("click", function(e) {
       var rowEl = e.target.closest(".row");
@@ -5602,22 +5603,24 @@ function closeEditBPModal() {
     }, true);
   }
 
-  if (ctxMenu) {
-    new MutationObserver(function() {
-      var vis = ctxMenu.style.display !== "none" && ctxMenu.style.display !== "";
-      if (!vis) return;
-      setTimeout(function() {
-        var delItem    = document.getElementById("deleteSqueezeItem");
-        var addItem    = document.getElementById("addSqueezeItem");
-        var cancelItem = document.getElementById("ctxCancelItem");
-        var blockItem  = document.getElementById("cancelContiguousBlockItem");
-        var isSqueeze  = delItem  && delItem.style.display  !== "none";
-        var hasBooking = cancelItem && cancelItem.style.display !== "none";
-        if (addItem)   addItem.style.display   = isSqueeze  ? "none" : "";
-        if (blockItem) blockItem.style.display  = hasBooking ? ""     : "none";
-      }, 0);
-    }).observe(ctxMenu, { attributes: true, attributeFilter: ["style"] });
-  }
+  // After any click, check if ctx menu is now visible and sync our custom items
+  document.addEventListener("click", function() {
+    setTimeout(function() {
+      if (!ctxMenu) return;
+      var computed = window.getComputedStyle(ctxMenu);
+      var menuVisible = computed.display !== "none" && computed.visibility !== "hidden" && parseFloat(computed.opacity || 1) > 0;
+      if (!menuVisible) return;
+
+      var delItem    = document.getElementById("deleteSqueezeItem");
+      var addItem    = document.getElementById("addSqueezeItem");
+      var cancelItem = document.getElementById("ctxCancelItem");
+      var blockItem  = document.getElementById("cancelContiguousBlockItem");
+      var isSqueeze  = delItem  && window.getComputedStyle(delItem).display  !== "none";
+      var hasBooking = cancelItem && window.getComputedStyle(cancelItem).display !== "none";
+      if (addItem)   addItem.style.display   = isSqueeze  ? "none" : "";
+      if (blockItem) blockItem.style.display  = hasBooking ? ""     : "none";
+    }, 50);
+  }, true);
 
   // Add Squeeze Below
   var addBtn = document.getElementById("addSqueezeItem");
@@ -5640,74 +5643,61 @@ function closeEditBPModal() {
     var a = document.querySelector(".ws-pill.ws-active");
     if (!a) return null;
     var t = a.textContent.trim().replace(/\s+/g," ");
-    var M = {Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12};
-    var p = t.split(" ");
-    var mon = M[p[0]], day = parseInt(p[1]);
-    if (!mon || !day) return null;
-    var yr = new Date().getFullYear();
+    var M={Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12};
+    var p=t.split(" "); var mon=M[p[0]], day=parseInt(p[1]);
+    if (!mon||!day) return null;
+    var yr=new Date().getFullYear();
     return yr+"-"+String(mon).padStart(2,"0")+"-"+String(day).padStart(2,"0");
   }
 
   function _getCtxTime() {
-    var h = document.getElementById("ctxHead");
-    if (!h) return null;
-    var s = h.textContent.split("·")[0].trim();
-    var m = s.match(/(\d+):(\d+)\s*(AM|PM)/i);
-    if (!m) return null;
-    var hr = parseInt(m[1]), min = parseInt(m[2]);
-    if (/pm/i.test(m[3]) && hr !== 12) hr += 12;
-    if (/am/i.test(m[3]) && hr === 12) hr = 0;
-    return { hour: hr, minute: min };
+    var h=document.getElementById("ctxHead"); if(!h) return null;
+    var s=h.textContent.split("·")[0].trim();
+    var m=s.match(/(\d+):(\d+)\s*(AM|PM)/i); if(!m) return null;
+    var hr=parseInt(m[1]),min=parseInt(m[2]);
+    if(/pm/i.test(m[3])&&hr!==12) hr+=12;
+    if(/am/i.test(m[3])&&hr===12) hr=0;
+    return {hour:hr,minute:min};
   }
 
   var cancelBlockBtn = document.getElementById("cancelContiguousBlockItem");
   if (cancelBlockBtn) {
     cancelBlockBtn.addEventListener("click", async function() {
-      var date = _getDate();
-      var t = _getCtxTime();
-      if (ctxMenu) ctxMenu.style.display = "none";
-      if (!date || !t) { alert("Could not read date or time"); return; }
+      var date=_getDate(), t=_getCtxTime();
+      if (ctxMenu) ctxMenu.style.display="none";
+      if (!date||!t) { alert("Could not read date or time"); return; }
       try {
-        // Fetch tee times with nested bookings for the day
         var resp = await fetch(
           _SB+"/rest/v1/tee_times?date=eq."+date+"&select=id,hour,minute,bookings(id,lead_name,status)&order=hour.asc,minute.asc",
           { headers: _SH }
         );
         var all = await resp.json();
-
-        // Find clicked tee time and its lead_name
-        var clicked = all.find(function(r) { return r.hour === t.hour && r.minute === t.minute; });
+        var clicked = all.find(function(r){return r.hour===t.hour&&r.minute===t.minute;});
         if (!clicked) { alert("Tee time not found"); return; }
-        var activeBookings = (clicked.bookings||[]).filter(function(b){return b.status!=="cancelled";});
-        if (!activeBookings.length) { alert("No active booking found on this tee time"); return; }
-        var leadName = activeBookings[0].lead_name;
+        var active=(clicked.bookings||[]).filter(function(b){return b.status!=="cancelled";});
+        if (!active.length) { alert("No active booking on this tee time"); return; }
+        var leadName=active[0].lead_name;
         if (!leadName) { alert("Could not determine booking name"); return; }
-
-        // Find all tee times on this date with same lead_name
-        var toCancel = [];
-        all.forEach(function(tt) {
-          var match = (tt.bookings||[]).filter(function(b){
-            return b.status !== "cancelled" && b.lead_name === leadName;
-          });
-          if (match.length) toCancel.push({ ttId: tt.id, bookingIds: match.map(function(b){return b.id;}) });
+        var toCancel=[];
+        all.forEach(function(tt){
+          var match=(tt.bookings||[]).filter(function(b){return b.status!=="cancelled"&&b.lead_name===leadName;});
+          if (match.length) toCancel.push({ttId:tt.id,bookingIds:match.map(function(b){return b.id;})});
         });
-
-        if (!confirm("Cancel "+toCancel.length+' tee time'+(toCancel.length!==1?"s":"")+' booked as "'+leadName+'"?')) return;
-
-        var errs = 0;
-        for (var i = 0; i < toCancel.length; i++) {
-          for (var j = 0; j < toCancel[i].bookingIds.length; j++) {
-            var r = await fetch(_SB+"/rest/v1/bookings?id=eq."+toCancel[i].bookingIds[j], {
-              method: "PATCH",
-              headers: Object.assign({}, _SH, {"Content-Type":"application/json","Prefer":"return=minimal"}),
-              body: JSON.stringify({ status: "cancelled" })
+        if (!confirm("Cancel "+toCancel.length+" tee time"+(toCancel.length!==1?"s":"")+" booked as \""+leadName+"\"?")) return;
+        var errs=0;
+        for (var i=0;i<toCancel.length;i++) {
+          for (var j=0;j<toCancel[i].bookingIds.length;j++) {
+            var r=await fetch(_SB+"/rest/v1/bookings?id=eq."+toCancel[i].bookingIds[j],{
+              method:"PATCH",
+              headers:Object.assign({},_SH,{"Content-Type":"application/json","Prefer":"return=minimal"}),
+              body:JSON.stringify({status:"cancelled"})
             });
-            if (!r.ok) errs++;
+            if(!r.ok) errs++;
           }
         }
-        if (errs) alert(errs+" booking(s) could not be cancelled");
+        if(errs) alert(errs+" booking(s) could not be cancelled");
         else location.reload();
-      } catch(err) { alert("Error: "+err.message); }
+      } catch(err){alert("Error: "+err.message);}
     });
   }
 })();
