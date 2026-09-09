@@ -3547,12 +3547,7 @@ document.getElementById("pctxEditBP").addEventListener("click", () => {
   const { slot, pi } = playerCtxTarget;
   const player = slot.players[pi];
   if (!player) { closePlayerCtx(); return; }
-  const filled = slot.players.filter(Boolean);
-  if (filled.length >= 1 && filled.every(p => p.name === player.name)) {
-    editBooking(slot, pi);
-  } else {
-    openEditBPModal(slot, pi);
-  }
+  openEditBPModal(slot, pi);
   closePlayerCtx();
 });
 document.getElementById("pctxCopy").addEventListener("click", () => {
@@ -5556,9 +5551,10 @@ async function saveEditBP() {
       if (notesEl) upd.notes = notesEl.value.trim();
       if (Object.keys(upd).length) {
         try {
-          await fetch(SB_URL+'/rest/v1/q18_customers?q18_id=eq.'+q18.q18_id, {
+          const _r1 = await fetch(SB_URL+'/rest/v1/q18_customers?q18_id=eq.'+q18.q18_id, {
             method:'PATCH', headers:{...SB_H,'Content-Type':'application/json','Prefer':'return=minimal'}, body:JSON.stringify(upd)
           });
+          if (!_r1.ok) throw new Error(await _r1.text());
         } catch(e) { errs.push(player.name); }
       }
     }
@@ -5567,9 +5563,10 @@ async function saveEditBP() {
   const bookingId = slot.players.find(Boolean)?.bookingId;
   if (bookingId) {
     try {
-      await fetch(SB_URL+'/rest/v1/bookings?id=eq.'+bookingId, {
+      const _r2 = await fetch(SB_URL+'/rest/v1/bookings?id=eq.'+bookingId, {
         method:'PATCH', headers:{...SB_H,'Content-Type':'application/json','Prefer':'return=minimal'}, body:JSON.stringify({booking_notes:bookingNotes})
       });
+      if (!_r2.ok) throw new Error(await _r2.text());
       slot.bookingNotes = bookingNotes;
     } catch(e) { errs.push('booking notes'); }
   }
