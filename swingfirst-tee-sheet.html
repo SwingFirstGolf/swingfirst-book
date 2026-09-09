@@ -5588,120 +5588,330 @@ function closeEditBPModal() {
 </script>
 </body>
 
+<!-- SwingFirst Action Chooser Modal -->
+<div class="modal-overlay" id="swActionModal" style="display:none">
+  <div class="modal-card" style="max-width:300px;width:90%">
+    <div class="modal-head">
+      <h2 id="swActionTitle" style="font-size:15px;font-weight:600;margin:0"></h2>
+      <button class="modal-close" id="swActionClose">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px;padding:14px 16px">
+      <button id="swBookBtn"      class="ctx-item" style="padding:11px 14px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;text-align:left;cursor:pointer;font-size:14px">📅  Book</button>
+      <button id="swBlockBtn"     class="ctx-item" style="padding:11px 14px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;text-align:left;cursor:pointer;font-size:14px">🚫  Block</button>
+      <button id="swPriceBtn"     class="ctx-item" style="padding:11px 14px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;text-align:left;cursor:pointer;font-size:14px">💰  Override $</button>
+      <button id="swTeeOffBtn"    class="ctx-item" style="padding:11px 14px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;text-align:left;cursor:pointer;font-size:14px">🏌️  Tee Off</button>
+      <button id="swSqueezeBtn"   class="ctx-item" style="padding:11px 14px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;text-align:left;cursor:pointer;font-size:14px">⏱️  Squeeze</button>
+      <button id="swDelSqueezeBtn" class="ctx-item ctx-danger" style="padding:11px 14px;border:1px solid #fca5a5;border-radius:8px;background:#fff;text-align:left;cursor:pointer;font-size:14px;display:none">🗑️  Delete Squeeze</button>
+    </div>
+  </div>
+</div>
+
+<!-- SwingFirst Bulk Override Price Modal -->
+<div class="modal-overlay" id="swBulkPriceModal" style="display:none">
+  <div class="modal-card">
+    <div class="modal-head"><h2>💰 Override Price</h2><button class="modal-close" id="swBulkPriceClose">✕</button></div>
+    <div class="modal-body">
+      <div id="swBulkPriceSlotInfo" class="slot-info" style="margin-bottom:12px"></div>
+      <div class="form-group">
+        <label style="font-size:13px;font-weight:500;color:#374151">New price per player (USD)</label>
+        <input type="number" id="swBulkPriceInput" class="form-control" min="0" step="1" placeholder="e.g. 39" style="margin-top:6px;width:100%">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" id="swBulkPriceCancel">Cancel</button>
+      <button class="btn-save"   id="swBulkPriceSave">Apply Price</button>
+    </div>
+  </div>
+</div>
+
 <script>
 (function() {
-  var _sqCtxIdx = -1;
-  var rowsEl  = document.getElementById("rows");
-  var ctxMenu = document.getElementById("ctxMenu");
-
-  if (rowsEl) {
-    rowsEl.addEventListener("click", function(e) {
-      var rowEl = e.target.closest(".row");
-      if (rowEl) _sqCtxIdx = Array.from(rowsEl.children).indexOf(rowEl);
-    }, true);
-  }
-
-  document.addEventListener("click", function() {
-    setTimeout(function() {
-      if (!ctxMenu) return;
-      var cs = window.getComputedStyle(ctxMenu);
-      if (cs.display === "none" || cs.visibility === "hidden") return;
-      var delItem = document.getElementById("deleteSqueezeItem");
-      var addItem = document.getElementById("addSqueezeItem");
-      var isSqueeze = delItem && window.getComputedStyle(delItem).display !== "none";
-      if (addItem) addItem.style.display = isSqueeze ? "none" : "";
-    }, 50);
-  }, true);
-
-  var addBtn = document.getElementById("addSqueezeItem");
-  if (addBtn) {
-    addBtn.addEventListener("click", function() {
-      if (_sqCtxIdx >= 0 && typeof squeezeTeeTime === "function") {
-        squeezeTeeTime(_sqCtxIdx);
-        if (ctxMenu) ctxMenu.style.display = "none";
-        _sqCtxIdx = -1;
-      }
-    });
-  }
-
-  /* Suppress browser autocomplete on group name input */
-  var nameInput = document.getElementById("grpEditName");
-  if (nameInput) nameInput.setAttribute("autocomplete", "off");
-
-  /* ── Delete Group persistence fix ── */
+  /* ── Supabase ── */
   var _SB = "https://ojgxfeaesnaohskxdvam.supabase.co";
   var _SK = "sb_publishable_4UVFMXQWGOt4XNgHVNzWoQ_Id6TBqcu";
   var _SH = { apikey: _SK, "Authorization": "Bearer " + _SK };
 
+  var rowsEl  = document.getElementById("rows");
+  var ctxMenu = document.getElementById("ctxMenu");
+
+  /* ── State ── */
+  var _actionRows = [];
+  var _actionMode = "single";
+  var _dragModalId = null;
+  var _inDragIntercept = false;
+  var _dragActive = false;
+  var _dragRowSet = [];
+
+  /* ── Helpers ── */
   function _getDate() {
     var a = document.querySelector(".ws-pill.ws-active");
     if (!a) return null;
     var t = a.textContent.trim().replace(/\s+/g, " ");
     var M = {Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12};
-    var p = t.split(" ");
-    var mon = M[p[0]], day = parseInt(p[1]);
+    var p = t.split(" "); var mon = M[p[0]], day = parseInt(p[1]);
     if (!mon || !day) return null;
     var yr = new Date().getFullYear();
-    return yr + "-" + String(mon).padStart(2,"0") + "-" + String(day).padStart(2,"0");
+    return yr+"-"+String(mon).padStart(2,"0")+"-"+String(day).padStart(2,"0");
   }
 
-  async function _persistGroupDelete(leadName) {
-    var date = _getDate();
-    if (!date) { alert("Delete Group: couldn\'t detect date."); return; }
+  function _parseRowTime(idx) {
+    var row = rowsEl && rowsEl.children[idx];
+    var txt = (row && row.querySelector(".row-time") && row.querySelector(".row-time").textContent.trim()) || "";
+    var m = txt.match(/(\d+):(\d+)\s*(AM|PM)/i);
+    if (!m) return null;
+    var h = parseInt(m[1]), min = parseInt(m[2]);
+    if (m[3].toUpperCase() === "PM" && h < 12) h += 12;
+    if (m[3].toUpperCase() === "AM" && h === 12) h = 0;
+    return { hour: h, minute: min, label: txt };
+  }
+
+  async function _getRowTeeTimeIds(rowIndices) {
+    var date = _getDate(); if (!date) return [];
+    var resp = await fetch(_SB+"/rest/v1/tee_times?date=eq."+date+"&select=id,hour,minute", { headers: _SH });
+    var tts = await resp.json();
+    var result = [];
+    rowIndices.forEach(function(idx) {
+      var t = _parseRowTime(idx); if (!t) return;
+      var tt = tts.find(function(r){ return r.hour===t.hour && r.minute===t.minute; });
+      if (tt) result.push(tt.id);
+    });
+    return result;
+  }
+
+  /* ── Action Modal ── */
+  function _showActionModal() {
+    var modal = document.getElementById("swActionModal"); if (!modal) return;
+    var isDrag = _actionMode === "drag";
+    var row0   = rowsEl && rowsEl.children[_actionRows[0]];
+    var isSq   = row0 && row0.classList.contains("squeezed");
+
+    var title = document.getElementById("swActionTitle");
+    if (title) {
+      if (isDrag && _actionRows.length > 1) {
+        var f = _parseRowTime(_actionRows[0]);
+        var l = _parseRowTime(_actionRows[_actionRows.length-1]);
+        title.textContent = (f?f.label:"") + " – " + (l?l.label:"");
+      } else {
+        var t = _parseRowTime(_actionRows[0]);
+        title.textContent = t ? t.label : "Tee Time";
+      }
+    }
+    _show("swTeeOffBtn",     !isDrag);
+    _show("swSqueezeBtn",    !isDrag && !isSq);
+    _show("swDelSqueezeBtn", !isDrag && isSq);
+    modal.style.display = "flex";
+  }
+
+  function _show(id, visible) {
+    var el = document.getElementById(id);
+    if (el) el.style.display = visible ? "" : "none";
+  }
+
+  function _hideActionModal() {
+    var m = document.getElementById("swActionModal");
+    if (m) m.style.display = "none";
+  }
+
+  /* ── Suppress browser autocomplete on group name input ── */
+  var nameInput = document.getElementById("grpEditName");
+  if (nameInput) nameInput.setAttribute("autocomplete","off");
+
+  /* ── Single TIME click — bubble (fires after existing handler sets ctxIdx) ── */
+  document.addEventListener("click", function(e) {
+    if (_inDragIntercept) return;
+    var tc = e.target.closest(".row-time");
+    if (!tc) return;
+    var row = tc.closest(".row");
+    if (!row || !rowsEl) return;
+    var idx = Array.from(rowsEl.children).indexOf(row);
+    _actionRows = [idx];
+    _actionMode = "single";
+    if (ctxMenu) ctxMenu.style.display = "none";
+    _showActionModal();
+  }, false);
+
+  /* ── Close action modal on outside click ── */
+  document.addEventListener("click", function(e) {
+    var m = document.getElementById("swActionModal");
+    if (!m || m.style.display === "none") return;
+    if (!m.contains(e.target)) _hideActionModal();
+  });
+  var _ac = document.getElementById("swActionClose");
+  if (_ac) _ac.addEventListener("click", _hideActionModal);
+
+  /* ── Drag tracking ── */
+  if (rowsEl) {
+    rowsEl.addEventListener("pointerdown", function(e) {
+      if (!e.target.closest(".row-time")) return;
+      _dragActive = true; _dragRowSet = [];
+      var row = e.target.closest(".row");
+      if (row) _dragRowSet = [Array.from(rowsEl.children).indexOf(row)];
+    }, true);
+    rowsEl.addEventListener("pointermove", function(e) {
+      if (!_dragActive || !e.buttons) return;
+      var row = e.target.closest(".row"); if (!row) return;
+      var idx = Array.from(rowsEl.children).indexOf(row);
+      if (idx >= 0 && _dragRowSet.indexOf(idx) < 0) _dragRowSet.push(idx);
+    }, true);
+  }
+
+  document.addEventListener("pointerup", function(e) {
+    if (!_dragActive) return;
+    _dragActive = false;
+    if (_dragRowSet.length < 2) return;
+    _actionRows = _dragRowSet.slice().sort(function(a,b){return a-b;});
+    _actionMode = "drag";
+    _inDragIntercept = true;
+    _dragModalId = null;
+    setTimeout(function() {
+      if (!_inDragIntercept) return;
+      _inDragIntercept = false;
+      _showActionModal();
+    }, 300);
+  }, true);
+
+  /* ── Watch addModal / groupModal for drag interception ── */
+  ["addModal","groupModal"].forEach(function(id) {
+    var m = document.getElementById(id); if (!m) return;
+    new MutationObserver(function() {
+      if (!_inDragIntercept) return;
+      if (window.getComputedStyle(m).display === "none") return;
+      _dragModalId = id;
+      m.style.display = "none";
+      _inDragIntercept = false;
+      _showActionModal();
+    }).observe(m, { attributes: true, attributeFilter: ["style","class"] });
+  });
+
+  /* ── Action button wiring ── */
+  function _wire(id, fn) {
+    var el = document.getElementById(id); if (el) el.addEventListener("click", fn);
+  }
+
+  _wire("swBookBtn", function() {
+    _hideActionModal();
+    if (_actionMode === "drag" && _dragModalId) {
+      var m = document.getElementById(_dragModalId);
+      if (m) m.style.display = "flex";
+      _dragModalId = null;
+    } else {
+      var ci = document.getElementById("ctxGroupItem"); if (ci) ci.click();
+    }
+  });
+
+  _wire("swBlockBtn", function() {
+    _hideActionModal();
+    if (_actionMode === "drag" && _actionRows.length > 1) {
+      if (window.confirm("Block " + _actionRows.length + " tee times?")) _bulkBlock(_actionRows);
+    } else {
+      var ci = document.getElementById("ctxBlockItem"); if (ci) ci.click();
+    }
+  });
+
+  _wire("swPriceBtn", function() {
+    _hideActionModal();
+    if (_actionMode === "drag" && _actionRows.length > 1) {
+      var info = document.getElementById("swBulkPriceSlotInfo");
+      var f = _parseRowTime(_actionRows[0]);
+      var l = _parseRowTime(_actionRows[_actionRows.length-1]);
+      if (info) info.textContent = _actionRows.length + " tee times: " + (f?f.label:"") + " – " + (l?l.label:"");
+      var sv = document.getElementById("swBulkPriceSave");
+      if (sv) sv.textContent = "Apply to " + _actionRows.length + " Tee Times";
+      document.getElementById("swBulkPriceInput").value = "";
+      var pm = document.getElementById("swBulkPriceModal");
+      if (pm) pm.style.display = "flex";
+    } else {
+      var ci = document.getElementById("ctxPriceItem"); if (ci) ci.click();
+    }
+  });
+
+  _wire("swTeeOffBtn", function() {
+    _hideActionModal();
+    var ci = document.getElementById("ctxTeeOffItem"); if (ci) ci.click();
+  });
+
+  _wire("swSqueezeBtn", function() {
+    _hideActionModal();
+    if (_actionRows.length > 0 && typeof squeezeTeeTime === "function") squeezeTeeTime(_actionRows[0]);
+  });
+
+  _wire("swDelSqueezeBtn", function() {
+    _hideActionModal();
+    var ci = document.getElementById("deleteSqueezeItem"); if (ci) ci.click();
+  });
+
+  /* ── Bulk Block ── */
+  async function _bulkBlock(rowIndices) {
     try {
-      /* 1. Find tee_time IDs that have any non-cancelled booking for this lead */
-      var resp = await fetch(
-        _SB + "/rest/v1/tee_times?date=eq." + date +
-        "&select=id,bookings(id,lead_name,status)&order=hour.asc",
-        { headers: _SH }
-      );
+      var ids = await _getRowTeeTimeIds(rowIndices);
+      if (!ids.length) { alert("Could not identify tee times."); return; }
+      await fetch(_SB+"/rest/v1/tee_times?id=in.("+ids.join(",")+")", {
+        method:"PATCH",
+        headers: Object.assign({},_SH,{"Content-Type":"application/json","Prefer":"return=minimal"}),
+        body: JSON.stringify({status:"blocked"})
+      });
+      location.reload();
+    } catch(e) { alert("Block error: "+e.message); }
+  }
+
+  /* ── Bulk Price Override ── */
+  _wire("swBulkPriceCancel", function() {
+    var m = document.getElementById("swBulkPriceModal"); if (m) m.style.display = "none";
+  });
+  _wire("swBulkPriceClose", function() {
+    var m = document.getElementById("swBulkPriceModal"); if (m) m.style.display = "none";
+  });
+  _wire("swBulkPriceSave", async function() {
+    var inp = document.getElementById("swBulkPriceInput");
+    var dollars = parseFloat(inp ? inp.value : "");
+    if (isNaN(dollars) || dollars < 0) { alert("Enter a valid price."); return; }
+    var cents = Math.round(dollars * 100);
+    var m = document.getElementById("swBulkPriceModal"); if (m) m.style.display = "none";
+    try {
+      var ids = await _getRowTeeTimeIds(_actionRows);
+      if (!ids.length) { alert("Could not identify tee times."); return; }
+      await fetch(_SB+"/rest/v1/tee_times?id=in.("+ids.join(",")+")", {
+        method:"PATCH",
+        headers: Object.assign({},_SH,{"Content-Type":"application/json","Prefer":"return=minimal"}),
+        body: JSON.stringify({rack_cents: cents})
+      });
+      location.reload();
+    } catch(e) { alert("Price error: "+e.message); }
+  });
+
+  /* ── Delete Group persistence (keep from prev commit) ── */
+  function _getDateDG() { return _getDate(); }
+
+  async function _persistGroupDelete(leadName) {
+    var date = _getDateDG(); if (!date) { alert("Couldn\'t detect date."); return; }
+    try {
+      var resp = await fetch(_SB+"/rest/v1/tee_times?date=eq."+date+"&select=id,bookings(id,lead_name,status)&order=hour.asc", { headers: _SH });
       var all = await resp.json();
       var ttIds = [];
       all.forEach(function(tt) {
-        var hasLead = (tt.bookings || []).some(function(b) {
-          return b.status !== "cancelled" && b.lead_name === leadName;
-        });
-        if (hasLead) ttIds.push(tt.id);
+        if ((tt.bookings||[]).some(function(b){ return b.status!=="cancelled" && b.lead_name===leadName; })) ttIds.push(tt.id);
       });
       if (!ttIds.length) { location.reload(); return; }
-
-      /* 2. Cancel ALL non-cancelled bookings on those tee_times (clears overlapping groups too) */
-      await fetch(
-        _SB + "/rest/v1/bookings?tee_time_id=in.(" + ttIds.join(",") + ")&status=neq.cancelled",
-        {
-          method: "PATCH",
-          headers: Object.assign({}, _SH, { "Content-Type": "application/json", "Prefer": "return=minimal" }),
-          body: JSON.stringify({ status: "cancelled" })
-        }
-      );
-
-      /* 3. Set those tee_times back to open */
-      await fetch(
-        _SB + "/rest/v1/tee_times?id=in.(" + ttIds.join(",") + ")",
-        {
-          method: "PATCH",
-          headers: Object.assign({}, _SH, { "Content-Type": "application/json", "Prefer": "return=minimal" }),
-          body: JSON.stringify({ status: "open" })
-        }
-      );
-
+      await fetch(_SB+"/rest/v1/bookings?tee_time_id=in.("+ttIds.join(",")+")" + "&status=neq.cancelled", {
+        method:"PATCH", headers:Object.assign({},_SH,{"Content-Type":"application/json","Prefer":"return=minimal"}), body:JSON.stringify({status:"cancelled"})
+      });
+      await fetch(_SB+"/rest/v1/tee_times?id=in.("+ttIds.join(",")+")", {
+        method:"PATCH", headers:Object.assign({},_SH,{"Content-Type":"application/json","Prefer":"return=minimal"}), body:JSON.stringify({status:"open"})
+      });
       location.reload();
-    } catch(e) { alert("Delete Group error: " + e.message); }
+    } catch(e) { alert("Delete Group error: "+e.message); }
   }
 
   document.addEventListener("click", function(e) {
-    var btn = e.target.closest("#grpEditDelete");
-    if (!btn) return;
+    var btn = e.target.closest("#grpEditDelete"); if (!btn) return;
     e.stopImmediatePropagation();
     var nameEl = document.getElementById("grpEditName");
     var titleEl = document.getElementById("grpEditTitle");
     var leadName = (nameEl ? nameEl.value : (titleEl ? titleEl.textContent : "")).trim();
-    var meta = ((document.getElementById("grpEditMeta") || {}).textContent || "").trim();
-    if (!window.confirm('Delete "' + leadName + '"?\n' + meta)) return;
-    btn.disabled = true;
-    btn.textContent = "Deleting…";
-    var overlay = document.getElementById("grpEditModal");
-    if (overlay) overlay.style.display = "none";
+    var meta = ((document.getElementById("grpEditMeta")||{}).textContent||"").trim();
+    if (!window.confirm(\'Delete "\' + leadName + \'"?\\n\' + meta)) return;
+    btn.disabled = true; btn.textContent = "Deleting…";
+    var overlay = document.getElementById("grpEditModal"); if (overlay) overlay.style.display = "none";
     _persistGroupDelete(leadName);
   }, true);
 
