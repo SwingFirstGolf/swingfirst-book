@@ -940,7 +940,7 @@
   <div class="ctx-sep" id="ctxDangerSep"></div>
   <div class="ctx-item" data-action="groupBooking" id="ctxGroupItem"><span class="ctx-ico">👥</span> Group Booking</div>
   <div class="ctx-item ctx-danger" data-action="cancelResv" id="ctxCancelItem"><span class="ctx-ico">✕</span> Cancel Booking</div>
-  <div class="ctx-item" id="addSqueezeItem" style="display:none"><span class="ctx-ico">⏱️</span> Add Squeeze Below</div>
+  <div class="ctx-item" id="addSqueezeItem"><span class="ctx-ico">⏱️</span> Add Squeeze Below</div>
   <div class="ctx-item ctx-danger" data-action="deleteSqueeze" id="deleteSqueezeItem" style="display:none"><span class="ctx-ico">🗑️</span> Delete Squeeze</div>
 </div>
 
@@ -5592,26 +5592,36 @@ function closeEditBPModal() {
 /* Squeeze tee time context menu wiring */
 (function() {
   let _sqCtxIdx = -1;
-  const rowsEl = document.getElementById('rows');
+  const rowsEl = document.getElementById("rows");
+
+  // Track last-clicked row index (fires on click that opens the menu)
   if (rowsEl) {
-    rowsEl.addEventListener('contextmenu', function(e) {
-      const rowEl = e.target.closest('.row');
-      if (!rowEl) { _sqCtxIdx = -1; return; }
-      _sqCtxIdx = Array.from(rowsEl.children).indexOf(rowEl);
-      const isSqueezeRow = rowEl.classList.contains('squeezed');
-      const addItem = document.getElementById('addSqueezeItem');
-      const delItem = document.getElementById('deleteSqueezeItem');
-      if (addItem) addItem.style.display = isSqueezeRow ? 'none' : '';
-      if (delItem) delItem.style.display = isSqueezeRow ? '' : 'none';
+    rowsEl.addEventListener("click", function(e) {
+      const rowEl = e.target.closest(".row");
+      if (rowEl) _sqCtxIdx = Array.from(rowsEl.children).indexOf(rowEl);
     }, true);
   }
-  const addBtn = document.getElementById('addSqueezeItem');
+
+  // When ctxMenu becomes visible, sync addSqueezeItem / deleteSqueezeItem
+  const ctxMenu = document.getElementById("ctxMenu");
+  if (ctxMenu) {
+    new MutationObserver(function() {
+      const visible = ctxMenu.style.display !== "none" && ctxMenu.style.display !== "";
+      if (!visible) return;
+      const delItem = document.getElementById("deleteSqueezeItem");
+      const addItem = document.getElementById("addSqueezeItem");
+      const isSqueezeRow = delItem && delItem.style.display !== "none";
+      if (addItem) addItem.style.display = isSqueezeRow ? "none" : "";
+    }).observe(ctxMenu, { attributes: true, attributeFilter: ["style"] });
+  }
+
+  // Add Squeeze Below click handler
+  const addBtn = document.getElementById("addSqueezeItem");
   if (addBtn) {
-    addBtn.addEventListener('click', function() {
-      if (_sqCtxIdx >= 0 && typeof squeezeTeeTime === 'function') {
+    addBtn.addEventListener("click", function() {
+      if (_sqCtxIdx >= 0 && typeof squeezeTeeTime === "function") {
         squeezeTeeTime(_sqCtxIdx);
-        const menu = document.getElementById('ctxMenu');
-        if (menu) menu.style.display = 'none';
+        if (ctxMenu) ctxMenu.style.display = "none";
         _sqCtxIdx = -1;
       }
     });
