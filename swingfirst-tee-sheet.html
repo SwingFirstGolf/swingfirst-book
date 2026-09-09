@@ -5590,13 +5590,11 @@ function closeEditBPModal() {
 </body>
 
 <script>
-/* === Squeeze + Cancel Contiguous Block — ctx menu wiring === */
 (function() {
   var _sqCtxIdx = -1;
   var rowsEl = document.getElementById("rows");
   var ctxMenu = document.getElementById("ctxMenu");
 
-  /* Track last-clicked row (fires on the click that opens the menu) */
   if (rowsEl) {
     rowsEl.addEventListener("click", function(e) {
       var rowEl = e.target.closest(".row");
@@ -5604,25 +5602,24 @@ function closeEditBPModal() {
     }, true);
   }
 
-  /* MutationObserver: when ctx menu becomes visible, sync item visibility */
   if (ctxMenu) {
     new MutationObserver(function() {
       var vis = ctxMenu.style.display !== "none" && ctxMenu.style.display !== "";
       if (!vis) return;
       setTimeout(function() {
-        var delItem = document.getElementById("deleteSqueezeItem");
-        var addItem = document.getElementById("addSqueezeItem");
-        var unblockItem = document.getElementById("ctxUnblockItem");
-        var cancelBlockItem = document.getElementById("cancelContiguousBlockItem");
-        var isSqueeze = delItem && delItem.style.display !== "none";
-        var isBlocked = unblockItem && unblockItem.style.display !== "none";
-        if (addItem) addItem.style.display = isSqueeze ? "none" : "";
-        if (cancelBlockItem) cancelBlockItem.style.display = isBlocked ? "" : "none";
+        var delItem    = document.getElementById("deleteSqueezeItem");
+        var addItem    = document.getElementById("addSqueezeItem");
+        var cancelItem = document.getElementById("ctxCancelItem");
+        var blockItem  = document.getElementById("cancelContiguousBlockItem");
+        var isSqueeze  = delItem  && delItem.style.display  !== "none";
+        var hasBooking = cancelItem && cancelItem.style.display !== "none";
+        if (addItem)   addItem.style.display   = isSqueeze  ? "none" : "";
+        if (blockItem) blockItem.style.display  = hasBooking ? ""     : "none";
       }, 0);
     }).observe(ctxMenu, { attributes: true, attributeFilter: ["style"] });
   }
 
-  /* Add Squeeze Below */
+  // Add Squeeze Below
   var addBtn = document.getElementById("addSqueezeItem");
   if (addBtn) {
     addBtn.addEventListener("click", function() {
@@ -5634,7 +5631,7 @@ function closeEditBPModal() {
     });
   }
 
-  /* Cancel This Block */
+  // Cancel This Block
   var _SB = "https://ojgxfeaesnaohskxdvam.supabase.co";
   var _SK = "sb_publishable_4UVFMXQWGOt4XNgHVNzWoQ_Id6TBqcu";
   var _SH = { apikey: _SK, "Authorization": "Bearer " + _SK };
@@ -5648,7 +5645,7 @@ function closeEditBPModal() {
     var mon = M[p[0]], day = parseInt(p[1]);
     if (!mon || !day) return null;
     var yr = new Date().getFullYear();
-    return yr + "-" + String(mon).padStart(2,"0") + "-" + String(day).padStart(2,"0");
+    return yr+"-"+String(mon).padStart(2,"0")+"-"+String(day).padStart(2,"0");
   }
 
   function _getCtxTime() {
@@ -5671,31 +5668,46 @@ function closeEditBPModal() {
       if (ctxMenu) ctxMenu.style.display = "none";
       if (!date || !t) { alert("Could not read date or time"); return; }
       try {
+        // Fetch tee times with nested bookings for the day
         var resp = await fetch(
-          _SB + "/rest/v1/tee_times?date=eq." + date + "&select=id,hour,minute,status&order=hour.asc,minute.asc",
+          _SB+"/rest/v1/tee_times?date=eq."+date+"&select=id,hour,minute,bookings(id,lead_name,status)&order=hour.asc,minute.asc",
           { headers: _SH }
         );
         var all = await resp.json();
-        var ci = all.findIndex(function(r) { return r.hour === t.hour && r.minute === t.minute; });
-        if (ci < 0) { alert("Tee time not found in database"); return; }
-        var s = ci, e = ci;
-        while (s > 0 && all[s-1].status === "blocked") s--;
-        while (e < all.length-1 && all[e+1].status === "blocked") e++;
-        var group = all.slice(s, e+1).filter(function(r) { return r.status === "blocked"; });
-        if (!group.length) { alert("No blocked tee times found"); return; }
-        if (!confirm("Cancel " + group.length + " blocked tee time" + (group.length !== 1 ? "s" : "") + "?")) return;
-        var errs = 0;
-        for (var i = 0; i < group.length; i++) {
-          var r = await fetch(_SB + "/rest/v1/tee_times?id=eq." + group[i].id, {
-            method: "PATCH",
-            headers: Object.assign({}, _SH, { "Content-Type": "application/json", "Prefer": "return=minimal" }),
-            body: JSON.stringify({ status: "open" })
+
+        // Find clicked tee time and its lead_name
+        var clicked = all.find(function(r) { return r.hour === t.hour && r.minute === t.minute; });
+        if (!clicked) { alert("Tee time not found"); return; }
+        var activeBookings = (clicked.bookings||[]).filter(function(b){return b.status!=="cancelled";});
+        if (!activeBookings.length) { alert("No active booking found on this tee time"); return; }
+        var leadName = activeBookings[0].lead_name;
+        if (!leadName) { alert("Could not determine booking name"); return; }
+
+        // Find all tee times on this date with same lead_name
+        var toCancel = [];
+        all.forEach(function(tt) {
+          var match = (tt.bookings||[]).filter(function(b){
+            return b.status !== "cancelled" && b.lead_name === leadName;
           });
-          if (!r.ok) errs++;
+          if (match.length) toCancel.push({ ttId: tt.id, bookingIds: match.map(function(b){return b.id;}) });
+        });
+
+        if (!confirm("Cancel "+toCancel.length+' tee time'+(toCancel.length!==1?"s":"")+' booked as "'+leadName+'"?')) return;
+
+        var errs = 0;
+        for (var i = 0; i < toCancel.length; i++) {
+          for (var j = 0; j < toCancel[i].bookingIds.length; j++) {
+            var r = await fetch(_SB+"/rest/v1/bookings?id=eq."+toCancel[i].bookingIds[j], {
+              method: "PATCH",
+              headers: Object.assign({}, _SH, {"Content-Type":"application/json","Prefer":"return=minimal"}),
+              body: JSON.stringify({ status: "cancelled" })
+            });
+            if (!r.ok) errs++;
+          }
         }
-        if (errs) alert(errs + " tee time(s) could not be unblocked");
+        if (errs) alert(errs+" booking(s) could not be cancelled");
         else location.reload();
-      } catch(err) { alert("Error: " + err.message); }
+      } catch(err) { alert("Error: "+err.message); }
     });
   }
 })();
