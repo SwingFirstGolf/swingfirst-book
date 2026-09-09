@@ -940,6 +940,7 @@
   <div class="ctx-sep" id="ctxDangerSep"></div>
   <div class="ctx-item" data-action="groupBooking" id="ctxGroupItem"><span class="ctx-ico">👥</span> Group Booking</div>
   <div class="ctx-item ctx-danger" data-action="cancelResv" id="ctxCancelItem"><span class="ctx-ico">✕</span> Cancel Booking</div>
+  <div class="ctx-item ctx-danger" id="cancelContiguousBlockItem" style="display:none"><span class="ctx-ico">🚫</span> Cancel This Block</div>
   <div class="ctx-item" id="addSqueezeItem"><span class="ctx-ico">⏱️</span> Add Squeeze Below</div>
   <div class="ctx-item ctx-danger" data-action="deleteSqueeze" id="deleteSqueezeItem" style="display:none"><span class="ctx-ico">🗑️</span> Delete Squeeze</div>
 </div>
@@ -5589,34 +5590,40 @@ function closeEditBPModal() {
 </body>
 
 <script>
-/* Squeeze tee time context menu wiring */
+/* === Squeeze + Cancel Contiguous Block — ctx menu wiring === */
 (function() {
-  let _sqCtxIdx = -1;
-  const rowsEl = document.getElementById("rows");
+  var _sqCtxIdx = -1;
+  var rowsEl = document.getElementById("rows");
+  var ctxMenu = document.getElementById("ctxMenu");
 
-  // Track last-clicked row index (fires on click that opens the menu)
+  /* Track last-clicked row (fires on the click that opens the menu) */
   if (rowsEl) {
     rowsEl.addEventListener("click", function(e) {
-      const rowEl = e.target.closest(".row");
+      var rowEl = e.target.closest(".row");
       if (rowEl) _sqCtxIdx = Array.from(rowsEl.children).indexOf(rowEl);
     }, true);
   }
 
-  // When ctxMenu becomes visible, sync addSqueezeItem / deleteSqueezeItem
-  const ctxMenu = document.getElementById("ctxMenu");
+  /* MutationObserver: when ctx menu becomes visible, sync item visibility */
   if (ctxMenu) {
     new MutationObserver(function() {
-      const visible = ctxMenu.style.display !== "none" && ctxMenu.style.display !== "";
-      if (!visible) return;
-      const delItem = document.getElementById("deleteSqueezeItem");
-      const addItem = document.getElementById("addSqueezeItem");
-      const isSqueezeRow = delItem && delItem.style.display !== "none";
-      if (addItem) addItem.style.display = isSqueezeRow ? "none" : "";
+      var vis = ctxMenu.style.display !== "none" && ctxMenu.style.display !== "";
+      if (!vis) return;
+      setTimeout(function() {
+        var delItem = document.getElementById("deleteSqueezeItem");
+        var addItem = document.getElementById("addSqueezeItem");
+        var unblockItem = document.getElementById("ctxUnblockItem");
+        var cancelBlockItem = document.getElementById("cancelContiguousBlockItem");
+        var isSqueeze = delItem && delItem.style.display !== "none";
+        var isBlocked = unblockItem && unblockItem.style.display !== "none";
+        if (addItem) addItem.style.display = isSqueeze ? "none" : "";
+        if (cancelBlockItem) cancelBlockItem.style.display = isBlocked ? "" : "none";
+      }, 0);
     }).observe(ctxMenu, { attributes: true, attributeFilter: ["style"] });
   }
 
-  // Add Squeeze Below click handler
-  const addBtn = document.getElementById("addSqueezeItem");
+  /* Add Squeeze Below */
+  var addBtn = document.getElementById("addSqueezeItem");
   if (addBtn) {
     addBtn.addEventListener("click", function() {
       if (_sqCtxIdx >= 0 && typeof squeezeTeeTime === "function") {
@@ -5624,6 +5631,71 @@ function closeEditBPModal() {
         if (ctxMenu) ctxMenu.style.display = "none";
         _sqCtxIdx = -1;
       }
+    });
+  }
+
+  /* Cancel This Block */
+  var _SB = "https://ojgxfeaesnaohskxdvam.supabase.co";
+  var _SK = "sb_publishable_4UVFMXQWGOt4XNgHVNzWoQ_Id6TBqcu";
+  var _SH = { apikey: _SK, "Authorization": "Bearer " + _SK };
+
+  function _getDate() {
+    var a = document.querySelector(".ws-pill.ws-active");
+    if (!a) return null;
+    var t = a.textContent.trim().replace(/\s+/g," ");
+    var M = {Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12};
+    var p = t.split(" ");
+    var mon = M[p[0]], day = parseInt(p[1]);
+    if (!mon || !day) return null;
+    var yr = new Date().getFullYear();
+    return yr + "-" + String(mon).padStart(2,"0") + "-" + String(day).padStart(2,"0");
+  }
+
+  function _getCtxTime() {
+    var h = document.getElementById("ctxHead");
+    if (!h) return null;
+    var s = h.textContent.split("·")[0].trim();
+    var m = s.match(/(\d+):(\d+)\s*(AM|PM)/i);
+    if (!m) return null;
+    var hr = parseInt(m[1]), min = parseInt(m[2]);
+    if (/pm/i.test(m[3]) && hr !== 12) hr += 12;
+    if (/am/i.test(m[3]) && hr === 12) hr = 0;
+    return { hour: hr, minute: min };
+  }
+
+  var cancelBlockBtn = document.getElementById("cancelContiguousBlockItem");
+  if (cancelBlockBtn) {
+    cancelBlockBtn.addEventListener("click", async function() {
+      var date = _getDate();
+      var t = _getCtxTime();
+      if (ctxMenu) ctxMenu.style.display = "none";
+      if (!date || !t) { alert("Could not read date or time"); return; }
+      try {
+        var resp = await fetch(
+          _SB + "/rest/v1/tee_times?date=eq." + date + "&select=id,hour,minute,status&order=hour.asc,minute.asc",
+          { headers: _SH }
+        );
+        var all = await resp.json();
+        var ci = all.findIndex(function(r) { return r.hour === t.hour && r.minute === t.minute; });
+        if (ci < 0) { alert("Tee time not found in database"); return; }
+        var s = ci, e = ci;
+        while (s > 0 && all[s-1].status === "blocked") s--;
+        while (e < all.length-1 && all[e+1].status === "blocked") e++;
+        var group = all.slice(s, e+1).filter(function(r) { return r.status === "blocked"; });
+        if (!group.length) { alert("No blocked tee times found"); return; }
+        if (!confirm("Cancel " + group.length + " blocked tee time" + (group.length !== 1 ? "s" : "") + "?")) return;
+        var errs = 0;
+        for (var i = 0; i < group.length; i++) {
+          var r = await fetch(_SB + "/rest/v1/tee_times?id=eq." + group[i].id, {
+            method: "PATCH",
+            headers: Object.assign({}, _SH, { "Content-Type": "application/json", "Prefer": "return=minimal" }),
+            body: JSON.stringify({ status: "open" })
+          });
+          if (!r.ok) errs++;
+        }
+        if (errs) alert(errs + " tee time(s) could not be unblocked");
+        else location.reload();
+      } catch(err) { alert("Error: " + err.message); }
     });
   }
 })();
