@@ -5594,7 +5594,6 @@ function closeEditBPModal() {
   var rowsEl  = document.getElementById("rows");
   var ctxMenu = document.getElementById("ctxMenu");
 
-  /* Track last-clicked row for squeeze */
   if (rowsEl) {
     rowsEl.addEventListener("click", function(e) {
       var rowEl = e.target.closest(".row");
@@ -5602,7 +5601,6 @@ function closeEditBPModal() {
     }, true);
   }
 
-  /* After any click, if ctx menu became visible, sync addSqueezeItem visibility */
   document.addEventListener("click", function() {
     setTimeout(function() {
       if (!ctxMenu) return;
@@ -5615,7 +5613,6 @@ function closeEditBPModal() {
     }, 50);
   }, true);
 
-  /* Add Squeeze Below click */
   var addBtn = document.getElementById("addSqueezeItem");
   if (addBtn) {
     addBtn.addEventListener("click", function() {
@@ -5635,53 +5632,66 @@ function closeEditBPModal() {
   function _getDate() {
     var a = document.querySelector(".ws-pill.ws-active");
     if (!a) return null;
-    var t = a.textContent.trim().replace(/\s+/g," ");
-    var M={Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12};
-    var p=t.split(" "); var mon=M[p[0]], day=parseInt(p[1]);
-    if (!mon||!day) return null;
-    var yr=new Date().getFullYear();
-    return yr+"-"+String(mon).padStart(2,"0")+"-"+String(day).padStart(2,"0");
+    var t = a.textContent.trim().replace(/\s+/g, " ");
+    var M = {Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12};
+    var p = t.split(" ");
+    var mon = M[p[0]], day = parseInt(p[1]);
+    if (!mon || !day) return null;
+    var yr = new Date().getFullYear();
+    return yr + "-" + String(mon).padStart(2,"0") + "-" + String(day).padStart(2,"0");
   }
 
-  async function _persistGroupDelete(date, leadName) {
+  async function _persistGroupDelete(leadName) {
+    var date = _getDate();
+    if (!date) { alert("Delete Group: couldn\'t detect date."); return; }
     try {
       var resp = await fetch(
-        _SB+"/rest/v1/tee_times?date=eq."+date+"&select=id,bookings(id,lead_name,status)&order=hour.asc",
+        _SB + "/rest/v1/tee_times?date=eq." + date + "&select=id,bookings(id,lead_name,status)&order=hour.asc",
         { headers: _SH }
       );
       var all = await resp.json();
-      var bookingIds = [];
+      var bookingIds = [], ttIds = [];
       all.forEach(function(tt) {
-        (tt.bookings||[]).forEach(function(b) {
-          if (b.status !== "cancelled" && b.lead_name === leadName) bookingIds.push(b.id);
+        var hasGroup = false;
+        (tt.bookings || []).forEach(function(b) {
+          if (b.status !== "cancelled" && b.lead_name === leadName) {
+            bookingIds.push(b.id);
+            hasGroup = true;
+          }
         });
+        if (hasGroup) ttIds.push(tt.id);
       });
       for (var i = 0; i < bookingIds.length; i++) {
-        await fetch(_SB+"/rest/v1/bookings?id=eq."+bookingIds[i], {
-          method:"PATCH",
-          headers:Object.assign({},_SH,{"Content-Type":"application/json","Prefer":"return=minimal"}),
-          body:JSON.stringify({status:"cancelled"})
+        await fetch(_SB + "/rest/v1/bookings?id=eq." + bookingIds[i], {
+          method: "PATCH",
+          headers: Object.assign({}, _SH, { "Content-Type": "application/json", "Prefer": "return=minimal" }),
+          body: JSON.stringify({ status: "cancelled" })
+        });
+      }
+      for (var j = 0; j < ttIds.length; j++) {
+        await fetch(_SB + "/rest/v1/tee_times?id=eq." + ttIds[j], {
+          method: "PATCH",
+          headers: Object.assign({}, _SH, { "Content-Type": "application/json", "Prefer": "return=minimal" }),
+          body: JSON.stringify({ status: "open" })
         });
       }
       location.reload();
-    } catch(e) { alert("Delete Group error: "+e.message); }
+    } catch(e) { alert("Delete Group error: " + e.message); }
   }
 
-  /* Override window.confirm to intercept Delete Group */
-  var _origConfirm = window.confirm;
-  window.confirm = function(msg) {
-    var m = String(msg).match(/^Delete "(.+?)"/);
-    if (!m) return _origConfirm.call(window, msg);
-    var result = _origConfirm.call(window, msg);
-    if (!result) return false;
-    /* User confirmed — close modals for immediate feedback, then persist */
-    document.querySelectorAll(".modal-overlay").forEach(function(el) {
-      if (window.getComputedStyle(el).display !== "none") el.style.display = "none";
-    });
-    var date = _getDate();
-    if (date && m[1]) _persistGroupDelete(date, m[1]);
-    return false; /* prevent existing broken handler */
-  };
+  document.addEventListener("click", function(e) {
+    var btn = e.target.closest("#grpEditDelete");
+    if (!btn) return;
+    e.stopImmediatePropagation();
+    var leadName = (document.getElementById("grpEditName")
+      ? document.getElementById("grpEditName").value
+      : (document.getElementById("grpEditTitle") || {}).textContent || "").trim();
+    var meta = ((document.getElementById("grpEditMeta") || {}).textContent || "").trim();
+    if (!window.confirm('Delete "' + leadName + '"?\n' + meta)) return;
+    var overlay = document.getElementById("grpEditModal");
+    if (overlay) overlay.style.display = "none";
+    _persistGroupDelete(leadName);
+  }, true);
 
 })();
 </script>
