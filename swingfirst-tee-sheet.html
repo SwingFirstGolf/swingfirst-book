@@ -940,7 +940,6 @@
   <div class="ctx-sep" id="ctxDangerSep"></div>
   <div class="ctx-item" data-action="groupBooking" id="ctxGroupItem"><span class="ctx-ico">👥</span> Group Booking</div>
   <div class="ctx-item ctx-danger" data-action="cancelResv" id="ctxCancelItem"><span class="ctx-ico">✕</span> Cancel Booking</div>
-  <div class="ctx-item ctx-danger" id="cancelContiguousBlockItem" style="display:none"><span class="ctx-ico">🚫</span> Cancel This Block</div>
   <div class="ctx-item" id="addSqueezeItem"><span class="ctx-ico">⏱️</span> Add Squeeze Below</div>
   <div class="ctx-item ctx-danger" data-action="deleteSqueeze" id="deleteSqueezeItem" style="display:none"><span class="ctx-ico">🗑️</span> Delete Squeeze</div>
 </div>
@@ -5592,10 +5591,10 @@ function closeEditBPModal() {
 <script>
 (function() {
   var _sqCtxIdx = -1;
-  var rowsEl = document.getElementById("rows");
+  var rowsEl  = document.getElementById("rows");
   var ctxMenu = document.getElementById("ctxMenu");
 
-  // Track last-clicked row index
+  /* Track last-clicked row for squeeze */
   if (rowsEl) {
     rowsEl.addEventListener("click", function(e) {
       var rowEl = e.target.closest(".row");
@@ -5603,26 +5602,20 @@ function closeEditBPModal() {
     }, true);
   }
 
-  // After any click, check if ctx menu is now visible and sync our custom items
+  /* After any click, if ctx menu became visible, sync addSqueezeItem visibility */
   document.addEventListener("click", function() {
     setTimeout(function() {
       if (!ctxMenu) return;
-      var computed = window.getComputedStyle(ctxMenu);
-      var menuVisible = computed.display !== "none" && computed.visibility !== "hidden" && parseFloat(computed.opacity || 1) > 0;
-      if (!menuVisible) return;
-
-      var delItem    = document.getElementById("deleteSqueezeItem");
-      var addItem    = document.getElementById("addSqueezeItem");
-      var cancelItem = document.getElementById("ctxCancelItem");
-      var blockItem  = document.getElementById("cancelContiguousBlockItem");
-      var isSqueeze  = delItem  && window.getComputedStyle(delItem).display  !== "none";
-      var hasBooking = cancelItem && window.getComputedStyle(cancelItem).display !== "none";
-      if (addItem)   addItem.style.display   = isSqueeze  ? "none" : "";
-      if (blockItem) blockItem.style.display  = hasBooking ? ""     : "none";
+      var cs = window.getComputedStyle(ctxMenu);
+      if (cs.display === "none" || cs.visibility === "hidden") return;
+      var delItem = document.getElementById("deleteSqueezeItem");
+      var addItem = document.getElementById("addSqueezeItem");
+      var isSqueeze = delItem && window.getComputedStyle(delItem).display !== "none";
+      if (addItem) addItem.style.display = isSqueeze ? "none" : "";
     }, 50);
   }, true);
 
-  // Add Squeeze Below
+  /* Add Squeeze Below click */
   var addBtn = document.getElementById("addSqueezeItem");
   if (addBtn) {
     addBtn.addEventListener("click", function() {
@@ -5634,7 +5627,7 @@ function closeEditBPModal() {
     });
   }
 
-  // Cancel This Block
+  /* ── Delete Group persistence fix ── */
   var _SB = "https://ojgxfeaesnaohskxdvam.supabase.co";
   var _SK = "sb_publishable_4UVFMXQWGOt4XNgHVNzWoQ_Id6TBqcu";
   var _SH = { apikey: _SK, "Authorization": "Bearer " + _SK };
@@ -5650,56 +5643,46 @@ function closeEditBPModal() {
     return yr+"-"+String(mon).padStart(2,"0")+"-"+String(day).padStart(2,"0");
   }
 
-  function _getCtxTime() {
-    var h=document.getElementById("ctxHead"); if(!h) return null;
-    var s=h.textContent.split("·")[0].trim();
-    var m=s.match(/(\d+):(\d+)\s*(AM|PM)/i); if(!m) return null;
-    var hr=parseInt(m[1]),min=parseInt(m[2]);
-    if(/pm/i.test(m[3])&&hr!==12) hr+=12;
-    if(/am/i.test(m[3])&&hr===12) hr=0;
-    return {hour:hr,minute:min};
+  async function _persistGroupDelete(date, leadName) {
+    try {
+      var resp = await fetch(
+        _SB+"/rest/v1/tee_times?date=eq."+date+"&select=id,bookings(id,lead_name,status)&order=hour.asc",
+        { headers: _SH }
+      );
+      var all = await resp.json();
+      var bookingIds = [];
+      all.forEach(function(tt) {
+        (tt.bookings||[]).forEach(function(b) {
+          if (b.status !== "cancelled" && b.lead_name === leadName) bookingIds.push(b.id);
+        });
+      });
+      for (var i = 0; i < bookingIds.length; i++) {
+        await fetch(_SB+"/rest/v1/bookings?id=eq."+bookingIds[i], {
+          method:"PATCH",
+          headers:Object.assign({},_SH,{"Content-Type":"application/json","Prefer":"return=minimal"}),
+          body:JSON.stringify({status:"cancelled"})
+        });
+      }
+      location.reload();
+    } catch(e) { alert("Delete Group error: "+e.message); }
   }
 
-  var cancelBlockBtn = document.getElementById("cancelContiguousBlockItem");
-  if (cancelBlockBtn) {
-    cancelBlockBtn.addEventListener("click", async function() {
-      var date=_getDate(), t=_getCtxTime();
-      if (ctxMenu) ctxMenu.style.display="none";
-      if (!date||!t) { alert("Could not read date or time"); return; }
-      try {
-        var resp = await fetch(
-          _SB+"/rest/v1/tee_times?date=eq."+date+"&select=id,hour,minute,bookings(id,lead_name,status)&order=hour.asc,minute.asc",
-          { headers: _SH }
-        );
-        var all = await resp.json();
-        var clicked = all.find(function(r){return r.hour===t.hour&&r.minute===t.minute;});
-        if (!clicked) { alert("Tee time not found"); return; }
-        var active=(clicked.bookings||[]).filter(function(b){return b.status!=="cancelled";});
-        if (!active.length) { alert("No active booking on this tee time"); return; }
-        var leadName=active[0].lead_name;
-        if (!leadName) { alert("Could not determine booking name"); return; }
-        var toCancel=[];
-        all.forEach(function(tt){
-          var match=(tt.bookings||[]).filter(function(b){return b.status!=="cancelled"&&b.lead_name===leadName;});
-          if (match.length) toCancel.push({ttId:tt.id,bookingIds:match.map(function(b){return b.id;})});
-        });
-        if (!confirm("Cancel "+toCancel.length+" tee time"+(toCancel.length!==1?"s":"")+" booked as \""+leadName+"\"?")) return;
-        var errs=0;
-        for (var i=0;i<toCancel.length;i++) {
-          for (var j=0;j<toCancel[i].bookingIds.length;j++) {
-            var r=await fetch(_SB+"/rest/v1/bookings?id=eq."+toCancel[i].bookingIds[j],{
-              method:"PATCH",
-              headers:Object.assign({},_SH,{"Content-Type":"application/json","Prefer":"return=minimal"}),
-              body:JSON.stringify({status:"cancelled"})
-            });
-            if(!r.ok) errs++;
-          }
-        }
-        if(errs) alert(errs+" booking(s) could not be cancelled");
-        else location.reload();
-      } catch(err){alert("Error: "+err.message);}
+  /* Override window.confirm to intercept Delete Group */
+  var _origConfirm = window.confirm;
+  window.confirm = function(msg) {
+    var m = String(msg).match(/^Delete "(.+?)"/);
+    if (!m) return _origConfirm.call(window, msg);
+    var result = _origConfirm.call(window, msg);
+    if (!result) return false;
+    /* User confirmed — close modals for immediate feedback, then persist */
+    document.querySelectorAll(".modal-overlay").forEach(function(el) {
+      if (window.getComputedStyle(el).display !== "none") el.style.display = "none";
     });
-  }
+    var date = _getDate();
+    if (date && m[1]) _persistGroupDelete(date, m[1]);
+    return false; /* prevent existing broken handler */
+  };
+
 })();
 </script>
 </html>
