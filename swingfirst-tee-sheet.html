@@ -5588,7 +5588,7 @@ function closeEditBPModal() {
 </script>
 </body>
 
-<div class="modal-overlay" id="swActionModal" style="display:none">
+<div class="modal-overlay" id="swActionModal">
   <div class="modal-card" style="max-width:300px;width:90%">
     <div class="modal-head">
       <h2 id="swActionTitle" style="font-size:15px;font-weight:600;margin:0"></h2>
@@ -5604,7 +5604,7 @@ function closeEditBPModal() {
     </div>
   </div>
 </div>
-<div class="modal-overlay" id="swBulkPriceModal" style="display:none">
+<div class="modal-overlay" id="swBulkPriceModal">
   <div class="modal-card">
     <div class="modal-head"><h2>💰 Override Price</h2><button class="modal-close" id="swBulkPriceClose">✕</button></div>
     <div class="modal-body">
@@ -5680,11 +5680,11 @@ function closeEditBPModal() {
     if (teeOffBtn) teeOffBtn.style.display = isDrag ? "none" : "";
     if (sqBtn)     sqBtn.style.display     = (isDrag || isSq) ? "none" : "";
     if (delSqBtn)  delSqBtn.style.display  = (!isDrag && isSq) ? "" : "none";
-    modal.style.display = "flex";
+    modal.classList.add("open");
   }
 
   function _hideActionModal() {
-    var m = document.getElementById("swActionModal"); if (m) m.style.display = "none";
+    var m = document.getElementById("swActionModal"); if (m) m.classList.remove("open");
   }
 
   /* Autocomplete suppression */
@@ -5704,7 +5704,7 @@ function closeEditBPModal() {
   /* Close on outside click */
   document.addEventListener("click", function(e) {
     var m = document.getElementById("swActionModal");
-    if (!m || m.style.display === "none") return;
+    if (!m || !m.classList.contains("open")) return;
     if (e.target.closest(".row-time")) return;
     if (!m.contains(e.target)) _hideActionModal();
   });
@@ -5754,7 +5754,7 @@ function closeEditBPModal() {
   _wire("swBookBtn", function() {
     _hideActionModal();
     if (_actionMode === "drag" && _dragModalId) {
-      var m = document.getElementById(_dragModalId); if (m) m.style.display = "flex"; _dragModalId = null;
+      var m = document.getElementById(_dragModalId); if (m) m.classList.add("open"); _dragModalId = null;
     } else {
       var ci = document.getElementById("ctxGroupItem"); if (ci) ci.click();
     }
@@ -5778,7 +5778,7 @@ function closeEditBPModal() {
       var sv = document.getElementById("swBulkPriceSave");
       if (sv) sv.textContent = "Apply to " + _actionRows.length + " Tee Times";
       var inp = document.getElementById("swBulkPriceInput"); if (inp) inp.value = "";
-      var pm = document.getElementById("swBulkPriceModal"); if (pm) pm.style.display = "flex";
+      var pm = document.getElementById("swBulkPriceModal"); if (pm) pm.classList.add("open");
     } else {
       var ci = document.getElementById("ctxPriceItem"); if (ci) ci.click();
     }
@@ -5803,14 +5803,14 @@ function closeEditBPModal() {
   }
 
   /* Bulk Price */
-  _wire("swBulkPriceCancel", function() { var m = document.getElementById("swBulkPriceModal"); if (m) m.style.display = "none"; });
-  _wire("swBulkPriceClose",  function() { var m = document.getElementById("swBulkPriceModal"); if (m) m.style.display = "none"; });
+  _wire("swBulkPriceCancel", function() { var m = document.getElementById("swBulkPriceModal"); if (m) m.classList.remove("open"); });
+  _wire("swBulkPriceClose",  function() { var m = document.getElementById("swBulkPriceModal"); if (m) m.classList.remove("open"); });
   _wire("swBulkPriceSave", async function() {
     var inp = document.getElementById("swBulkPriceInput");
     var dollars = parseFloat(inp ? inp.value : "");
     if (isNaN(dollars) || dollars < 0) { alert("Enter a valid price."); return; }
     var cents = Math.round(dollars * 100);
-    var bm = document.getElementById("swBulkPriceModal"); if (bm) bm.style.display = "none";
+    var bm = document.getElementById("swBulkPriceModal"); if (bm) bm.classList.remove("open");
     try {
       var ids = await _getRowTeeTimeIds(_actionRows);
       if (!ids.length) { alert("Could not identify tee times."); return; }
