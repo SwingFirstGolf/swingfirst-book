@@ -5631,6 +5631,7 @@ function closeEditBPModal() {
   var _inDragIntercept = false, _dragActive = false, _dragRowSet = [];
   var _lastClickRect = null, _justOpened = false;
   var _currentSlot = null;
+  var _currentBlockSlot = null, _currentTeeOffSlot = null;
 
   function _getDate() {
     var a = document.querySelector(".ws-pill.ws-active"); if (!a) return null;
@@ -5650,23 +5651,29 @@ function closeEditBPModal() {
     return {hour: h, minute: min, label: txt};
   }
 
-  function _fetchSlot(rowIdx) {
-    var t = _parseRowTime(rowIdx);
-    var date = _getDate();
-    _currentSlot = null;
-    if (!t || !date) return;
-    fetch(_SB + "/rest/v1/tee_times?date=eq." + date + "&hour=eq." + t.hour + "&minute=eq." + t.minute + "&select=*,players:bookings(id,booking_participant_id,lead_name,status)", {headers: _SH})
-      .then(function(r) { return r.json(); })
-      .then(function(rows) {
-        if (!rows || !rows[0]) return;
-        var s = rows[0];
-        if (s.rack_cents !== undefined) s.rateCents = s.rack_cents;
-        if (s.players) s.players = s.players.map(function(p) {
-          p.bpId = p.booking_participant_id; return p;
-        });
-        _currentSlot = s;
-      })
-      .catch(function() {});
+  // Capture the tee sheet's internal slot objects by briefly intercepting its functions
+  function _captureSlots() {
+    _currentSlot = null; _currentBlockSlot = null; _currentTeeOffSlot = null;
+    var origGroup = window.openGroupModal;
+    var origBlock = window.openBlockModal;
+    var origTeeOff = window.openTeeOffModal;
+    var gCaptured = false, bCaptured = false, tCaptured = false;
+
+    window.openGroupModal = function(s) { _currentSlot = s; gCaptured = true; window.openGroupModal = origGroup; };
+    window.openBlockModal = function(s) { _currentBlockSlot = s; bCaptured = true; window.openBlockModal = origBlock; };
+    window.openTeeOffModal = function(s) { _currentTeeOffSlot = s; tCaptured = true; window.openTeeOffModal = origTeeOff; };
+
+    // Fire ctxGroupItem to capture group slot
+    var cgi = document.getElementById("ctxGroupItem"); if (cgi) cgi.click();
+    // Fire ctxBlockItem to capture block slot
+    var cbi = document.getElementById("ctxBlockItem"); if (cbi) cbi.click();
+    // Fire ctxTeeOffItem to capture teeoff slot
+    var cti = document.getElementById("ctxTeeOffItem"); if (cti) cti.click();
+
+    // Restore any not yet restored
+    if (!gCaptured) window.openGroupModal = origGroup;
+    if (!bCaptured) window.openBlockModal = origBlock;
+    if (!tCaptured) window.openTeeOffModal = origTeeOff;
   }
 
   async function _getRowTeeTimeIds(rowIndices) {
@@ -5689,34 +5696,31 @@ function closeEditBPModal() {
     var title = document.getElementById("swActionTitle");
     if (title) {
       if (isDrag && _actionRows.length > 1) {
-        var f = _parseRowTime(_actionRows[0]), l = _parseRowTime(_actionRows[_actionRows.length - 1]);
-        title.textContent = (f ? f.label : "") + " - " + (l ? l.label : "");
+        var f = _parseRowTime(_actionRows[0]), l = _parseRowTime(_actionRows[_actionRows.length-1]);
+        title.textContent = (f?f.label:"") + " - " + (l?l.label:"");
       } else {
-        var t2 = _parseRowTime(_actionRows[0]); title.textContent = t2 ? t2.label : "Tee Time";
+        var t2 = _parseRowTime(_actionRows[0]); title.textContent = t2?t2.label:"Tee Time";
       }
     }
     var teeOffBtn = document.getElementById("swTeeOffBtn");
     var sqBtn     = document.getElementById("swSqueezeBtn");
     var delSqBtn  = document.getElementById("swDelSqueezeBtn");
     if (teeOffBtn) teeOffBtn.style.display = isDrag ? "none" : "";
-    if (sqBtn)     sqBtn.style.display     = (isDrag || isSq) ? "none" : "";
-    if (delSqBtn)  delSqBtn.style.display  = (!isDrag && isSq) ? "" : "none";
+    if (sqBtn)     sqBtn.style.display     = (isDrag||isSq) ? "none" : "";
+    if (delSqBtn)  delSqBtn.style.display  = (!isDrag&&isSq) ? "" : "none";
 
     var card = document.getElementById("swActionCard");
     if (card) {
       if (_lastClickRect && !isDrag) {
-        var vw = window.innerWidth, vh = window.innerHeight;
-        var mw = 310, mh = 290;
-        var left = _lastClickRect.right + 10;
-        if (left + mw > vw - 8) left = _lastClickRect.left - mw - 10;
-        if (left < 8) left = 8;
-        var top = _lastClickRect.top - 10;
-        if (top + mh > vh - 8) top = vh - mh - 8;
-        if (top < 8) top = 8;
-        card.style.cssText = "position:fixed;top:" + top + "px;left:" + left + "px;margin:0";
-      } else {
-        card.style.cssText = "";
-      }
+        var vw=window.innerWidth, vh=window.innerHeight, mw=310, mh=290;
+        var left=_lastClickRect.right+10;
+        if (left+mw>vw-8) left=_lastClickRect.left-mw-10;
+        if (left<8) left=8;
+        var top=_lastClickRect.top-10;
+        if (top+mh>vh-8) top=vh-mh-8;
+        if (top<8) top=8;
+        card.style.cssText = "position:fixed;top:"+top+"px;left:"+left+"px;margin:0";
+      } else { card.style.cssText = ""; }
     }
     _justOpened = true;
     modal.classList.add("open");
@@ -5728,6 +5732,7 @@ function closeEditBPModal() {
     var card = document.getElementById("swActionCard"); if (card) card.style.cssText = "";
   }
 
+  // CAPTURE phase: record which row was clicked, show our modal
   document.addEventListener("click", function(e) {
     if (_inDragIntercept) return;
     var tc = e.target.closest(".row-time"); if (!tc) return;
@@ -5735,11 +5740,18 @@ function closeEditBPModal() {
     var idx = Array.from(rowsEl.children).indexOf(row);
     _actionRows = [idx]; _actionMode = "single";
     _lastClickRect = tc.getBoundingClientRect();
-    setTimeout(function() { if (ctxMenu) ctxMenu.style.display = "none"; }, 0);
-    _fetchSlot(idx);
     _showActionModal();
   }, true);
 
+  // BUBBLE phase: tee sheet has now set its internal state; capture slots from its functions
+  document.addEventListener("click", function(e) {
+    if (_inDragIntercept) return;
+    var tc = e.target.closest(".row-time"); if (!tc) return;
+    setTimeout(function() { if (ctxMenu) ctxMenu.style.display = "none"; }, 0);
+    _captureSlots();
+  }, false);
+
+  // Outside-click closes action modal
   document.addEventListener("click", function(e) {
     if (_justOpened) return;
     var m = document.getElementById("swActionModal");
@@ -5749,6 +5761,7 @@ function closeEditBPModal() {
 
   var ac = document.getElementById("swActionClose"); if (ac) ac.addEventListener("click", _hideActionModal);
 
+  // Drag tracking
   if (rowsEl) {
     rowsEl.addEventListener("pointerdown", function(e) {
       if (!e.target.closest(".row-time")) return;
@@ -5760,7 +5773,7 @@ function closeEditBPModal() {
       if (!_dragActive || !e.buttons) return;
       var row = e.target.closest(".row"); if (!row) return;
       var idx = Array.from(rowsEl.children).indexOf(row);
-      if (idx >= 0 && _dragRowSet.indexOf(idx) < 0) _dragRowSet.push(idx);
+      if (idx>=0 && _dragRowSet.indexOf(idx)<0) _dragRowSet.push(idx);
     }, true);
   }
 
@@ -5770,23 +5783,23 @@ function closeEditBPModal() {
     if (_dragRowSet.length < 2) return;
     _actionRows = _dragRowSet.slice().sort(function(a,b){return a-b;});
     _actionMode = "drag"; _inDragIntercept = true; _dragModalId = null; _lastClickRect = null;
-    setTimeout(function() { if (!_inDragIntercept) return; _inDragIntercept = false; _showActionModal(); }, 300);
+    setTimeout(function() { if (!_inDragIntercept) return; _inDragIntercept=false; _showActionModal(); }, 300);
   }, true);
 
   ["addModal","groupModal"].forEach(function(id) {
     var m = document.getElementById(id); if (!m) return;
     new MutationObserver(function() {
       if (!_inDragIntercept || !m.classList.contains("open")) return;
-      _dragModalId = id; m.classList.remove("open"); _inDragIntercept = false; _showActionModal();
+      _dragModalId = id; m.classList.remove("open"); _inDragIntercept=false; _showActionModal();
     }).observe(m, {attributes:true, attributeFilter:["style","class"]});
   });
 
-  function _wire(id, fn) { var el = document.getElementById(id); if (el) el.addEventListener("click", fn); }
+  function _wire(id, fn) { var el=document.getElementById(id); if (el) el.addEventListener("click", fn); }
 
   _wire("swBookBtn", function() {
     _hideActionModal();
-    if (_actionMode === "drag" && _dragModalId) {
-      var m = document.getElementById(_dragModalId); if (m) m.classList.add("open"); _dragModalId = null;
+    if (_actionMode==="drag" && _dragModalId) {
+      var m=document.getElementById(_dragModalId); if(m) m.classList.add("open"); _dragModalId=null;
     } else if (_currentSlot) {
       openGroupModal(_currentSlot);
     }
@@ -5794,37 +5807,37 @@ function closeEditBPModal() {
 
   _wire("swBlockBtn", function() {
     _hideActionModal();
-    if (_actionMode === "drag" && _actionRows.length > 1) {
-      if (window.confirm("Block " + _actionRows.length + " tee times?")) _bulkBlock(_actionRows);
-    } else if (_currentSlot) {
-      openBlockModal(_currentSlot);
+    if (_actionMode==="drag" && _actionRows.length>1) {
+      if (window.confirm("Block "+_actionRows.length+" tee times?")) _bulkBlock(_actionRows);
+    } else if (_currentBlockSlot) {
+      openBlockModal(_currentBlockSlot);
     }
   });
 
   _wire("swPriceBtn", function() {
     _hideActionModal();
-    var rows = (_actionMode === "drag") ? _actionRows : _actionRows.slice(0,1);
-    var f = _parseRowTime(rows[0]), l = _parseRowTime(rows[rows.length-1]);
-    var info = document.getElementById("swBulkPriceSlotInfo");
-    if (info) info.textContent = rows.length === 1 ? (f ? f.label : "") : rows.length + " tee times: " + (f?f.label:"") + " - " + (l?l.label:"");
-    var sv = document.getElementById("swBulkPriceSave");
-    if (sv) sv.textContent = rows.length === 1 ? "Apply Price" : "Apply to " + rows.length + " Tee Times";
-    var inp = document.getElementById("swBulkPriceInput"); if (inp) inp.value = "";
-    var pm = document.getElementById("swBulkPriceModal"); if (pm) pm.classList.add("open");
+    var rows = (_actionMode==="drag") ? _actionRows : _actionRows.slice(0,1);
+    var f=_parseRowTime(rows[0]), l=_parseRowTime(rows[rows.length-1]);
+    var info=document.getElementById("swBulkPriceSlotInfo");
+    if (info) info.textContent = rows.length===1 ? (f?f.label:"") : rows.length+" tee times: "+(f?f.label:"")+" - "+(l?l.label:"");
+    var sv=document.getElementById("swBulkPriceSave");
+    if (sv) sv.textContent = rows.length===1 ? "Apply Price" : "Apply to "+rows.length+" Tee Times";
+    var inp=document.getElementById("swBulkPriceInput"); if(inp) inp.value="";
+    var pm=document.getElementById("swBulkPriceModal"); if(pm) pm.classList.add("open");
   });
 
   _wire("swTeeOffBtn", function() {
     _hideActionModal();
-    if (_currentSlot) openTeeOffModal(_currentSlot);
+    if (_currentTeeOffSlot) openTeeOffModal(_currentTeeOffSlot);
   });
 
   function _ctxClickDirect(id) {
     setTimeout(function() {
-      var el = document.getElementById(id); if (!el) return;
-      var wasNone = ctxMenu && ctxMenu.style.display === "none";
-      if (wasNone && ctxMenu) { ctxMenu.style.visibility = "hidden"; ctxMenu.style.display = "block"; }
+      var el=document.getElementById(id); if(!el) return;
+      var wasNone=ctxMenu && ctxMenu.style.display==="none";
+      if (wasNone && ctxMenu) { ctxMenu.style.visibility="hidden"; ctxMenu.style.display="block"; }
       el.click();
-      if (wasNone && ctxMenu) { ctxMenu.style.display = "none"; ctxMenu.style.visibility = ""; }
+      if (wasNone && ctxMenu) { ctxMenu.style.display="none"; ctxMenu.style.visibility=""; }
     }, 50);
   }
   _wire("swSqueezeBtn",    function() { _hideActionModal(); _ctxClickDirect("addSqueezeItem"); });
@@ -5832,66 +5845,64 @@ function closeEditBPModal() {
 
   async function _bulkBlock(rowIndices) {
     try {
-      var ids = await _getRowTeeTimeIds(rowIndices);
+      var ids=await _getRowTeeTimeIds(rowIndices);
       if (!ids.length) { alert("Could not identify tee times."); return; }
-      await fetch(_SB + "/rest/v1/tee_times?id=in.(" + ids.join(",") + ")", {
-        method:"PATCH",
-        headers:Object.assign({},_SH,{"Content-Type":"application/json","Prefer":"return=minimal"}),
+      await fetch(_SB+"/rest/v1/tee_times?id=in.("+ids.join(",")+")", {
+        method:"PATCH", headers:Object.assign({},_SH,{"Content-Type":"application/json","Prefer":"return=minimal"}),
         body:JSON.stringify({status:"blocked"})
-      });
-      location.reload();
-    } catch(e) { alert("Block error: " + e.message); }
+      }); location.reload();
+    } catch(e) { alert("Block error: "+e.message); }
   }
 
   _wire("swBulkPriceCancel", function() { var m=document.getElementById("swBulkPriceModal"); if(m) m.classList.remove("open"); });
   _wire("swBulkPriceClose",  function() { var m=document.getElementById("swBulkPriceModal"); if(m) m.classList.remove("open"); });
   _wire("swBulkPriceSave", async function() {
-    var inp = document.getElementById("swBulkPriceInput");
-    var dollars = parseFloat(inp ? inp.value : "");
-    if (isNaN(dollars) || dollars < 0) { alert("Enter a valid price."); return; }
-    var cents = Math.round(dollars * 100);
-    var bm = document.getElementById("swBulkPriceModal"); if(bm) bm.classList.remove("open");
+    var inp=document.getElementById("swBulkPriceInput");
+    var dollars=parseFloat(inp?inp.value:"");
+    if (isNaN(dollars)||dollars<0) { alert("Enter a valid price."); return; }
+    var cents=Math.round(dollars*100);
+    var bm=document.getElementById("swBulkPriceModal"); if(bm) bm.classList.remove("open");
     try {
-      var rows = (_actionMode === "drag") ? _actionRows : _actionRows.slice(0,1);
-      var ids = await _getRowTeeTimeIds(rows);
+      var rows=(_actionMode==="drag")?_actionRows:_actionRows.slice(0,1);
+      var ids=await _getRowTeeTimeIds(rows);
       if (!ids.length) { alert("Could not identify tee times."); return; }
-      await fetch(_SB + "/rest/v1/tee_times?id=in.(" + ids.join(",") + ")", {
-        method:"PATCH",
-        headers:Object.assign({},_SH,{"Content-Type":"application/json","Prefer":"return=minimal"}),
+      await fetch(_SB+"/rest/v1/tee_times?id=in.("+ids.join(",")+")", {
+        method:"PATCH", headers:Object.assign({},_SH,{"Content-Type":"application/json","Prefer":"return=minimal"}),
         body:JSON.stringify({rack_cents:cents})
-      });
-      location.reload();
-    } catch(e) { alert("Price error: " + e.message); }
+      }); location.reload();
+    } catch(e) { alert("Price error: "+e.message); }
   });
 
   async function _persistGroupDelete(leadName) {
-    var date = _getDate(); if (!date) { alert("Could not detect date."); return; }
+    var date=_getDate(); if (!date) { alert("Could not detect date."); return; }
     try {
-      var resp = await fetch(_SB + "/rest/v1/tee_times?date=eq." + date + "&select=id,bookings(id,lead_name,status)&order=hour.asc", {headers:_SH});
-      var all = await resp.json(); var ttIds = [];
+      var resp=await fetch(_SB+"/rest/v1/tee_times?date=eq."+date+"&select=id,bookings(id,lead_name,status)&order=hour.asc",{headers:_SH});
+      var all=await resp.json(); var ttIds=[];
       all.forEach(function(tt) {
-        if ((tt.bookings||[]).some(function(b){return b.status!=="cancelled" && b.lead_name===leadName;})) ttIds.push(tt.id);
+        if ((tt.bookings||[]).some(function(b){return b.status!=="cancelled"&&b.lead_name===leadName;})) ttIds.push(tt.id);
       });
       if (!ttIds.length) { location.reload(); return; }
-      await fetch(_SB + "/rest/v1/bookings?tee_time_id=in.(" + ttIds.join(",") + ")&status=neq.cancelled", {
-        method:"PATCH", headers:Object.assign({},_SH,{"Content-Type":"application/json","Prefer":"return=minimal"}), body:JSON.stringify({status:"cancelled"})
+      await fetch(_SB+"/rest/v1/bookings?tee_time_id=in.("+ttIds.join(",")+")", {
+        method:"PATCH", headers:Object.assign({},_SH,{"Content-Type":"application/json","Prefer":"return=minimal"}),
+        body:JSON.stringify({status:"cancelled"})
       });
-      await fetch(_SB + "/rest/v1/tee_times?id=in.(" + ttIds.join(",") + ")", {
-        method:"PATCH", headers:Object.assign({},_SH,{"Content-Type":"application/json","Prefer":"return=minimal"}), body:JSON.stringify({status:"open"})
+      await fetch(_SB+"/rest/v1/tee_times?id=in.("+ttIds.join(",")+")", {
+        method:"PATCH", headers:Object.assign({},_SH,{"Content-Type":"application/json","Prefer":"return=minimal"}),
+        body:JSON.stringify({status:"open"})
       });
       location.reload();
-    } catch(err) { alert("Delete Group error: " + err.message); }
+    } catch(err) { alert("Delete Group error: "+err.message); }
   }
 
   document.addEventListener("click", function(e) {
-    var btn = e.target.closest("#grpEditDelete"); if (!btn) return;
+    var btn=e.target.closest("#grpEditDelete"); if(!btn) return;
     e.stopImmediatePropagation();
-    var nameEl = document.getElementById("grpEditName"), titleEl = document.getElementById("grpEditTitle");
-    var leadName = (nameEl ? nameEl.value : (titleEl ? titleEl.textContent : "")).trim();
-    var meta = ((document.getElementById("grpEditMeta")||{}).textContent||"").trim();
-    if (!window.confirm('Delete "' + leadName + '"?\n' + meta)) return;
-    btn.disabled = true; btn.textContent = "Deleting...";
-    var overlay = document.getElementById("grpEditModal"); if (overlay) overlay.style.display = "none";
+    var nameEl=document.getElementById("grpEditName"), titleEl=document.getElementById("grpEditTitle");
+    var leadName=(nameEl?nameEl.value:(titleEl?titleEl.textContent:"")).trim();
+    var meta=((document.getElementById("grpEditMeta")||{}).textContent||"").trim();
+    if (!window.confirm('Delete "'+leadName+'"?\n'+meta)) return;
+    btn.disabled=true; btn.textContent="Deleting...";
+    var overlay=document.getElementById("grpEditModal"); if(overlay) overlay.style.display="none";
     _persistGroupDelete(leadName);
   }, true);
 
