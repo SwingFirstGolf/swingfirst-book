@@ -5662,6 +5662,17 @@ function closeEditBPModal() {
     if (el) el.click();
   }
 
+  function _bookSingleSlot() {
+    var orig = window.openGroupModal;
+    window.openGroupModal = function(slot) {
+      window.openGroupModal = orig;
+      if (slot && window.openAddModal) {
+        window.openAddModal(slot, 0, 4);
+      }
+    };
+    _fireCtxItem("ctxGroupItem");
+  }
+
   async function _getRowTeeTimeIds(rowIndices) {
     var date = _getDate(); if (!date) return [];
     var resp = await fetch(_SB + "/rest/v1/tee_times?date=eq." + date + "&select=id,hour,minute", {headers: _SH});
@@ -5774,26 +5785,24 @@ function closeEditBPModal() {
 
   _wire("swBookBtn", function() {
     _hideActionModal();
-    if (_actionMode==="drag" && _dragModalId) {
-      var m=document.getElementById(_dragModalId); if(m) m.classList.add("open");
-      _setGroupPlayerDefault(_actionRows.length);
-      _dragModalId=null;
+    if (_actionMode === "drag") {
+      if (_dragModalId) {
+        var m = document.getElementById(_dragModalId); if (m) m.classList.add("open");
+        _dragModalId = null;
+      } else {
+        _fireCtxItem("ctxGroupItem");
+      }
+      setTimeout(function() {
+        var inp = document.getElementById("groupPlayerCount");
+        if (!inp) return;
+        inp.min = "4";
+        inp.value = _actionRows.length * 4;
+        inp.dispatchEvent(new Event("input", {bubbles: true}));
+      }, 0);
     } else {
-      _fireCtxItem("ctxGroupItem");
-      _setGroupPlayerDefault(_actionRows.length);
+      _bookSingleSlot();
     }
   });
-
-  function _setGroupPlayerDefault(numSlots) {
-    setTimeout(function() {
-      var inp = document.getElementById("groupPlayerCount");
-      if (!inp) return;
-      var target = numSlots * 4;
-      inp.min = "4";
-      inp.value = target;
-      inp.dispatchEvent(new Event("input", {bubbles: true}));
-    }, 0);
-  }
 
   _wire("swBlockBtn", function() {
     _hideActionModal();
