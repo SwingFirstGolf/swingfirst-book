@@ -5635,6 +5635,18 @@ function closeEditBPModal() {
   var _inDragIntercept = false, _dragActive = false, _dragRowSet = [];
   var _lastClickRect = null, _justOpened = false;
   var _restoringState = false;
+  var _pendingDragSlots = null;
+  var _realOpenMultiBook = window.openMultiBookModal;
+
+  // Intercept drag-select: show action chooser instead of opening booking modal directly
+  window.openMultiBookModal = function(slots) {
+    _pendingDragSlots = slots;
+    _actionMode = "drag";
+    var n = slots.length;
+    var title = document.getElementById("swActionTitle");
+    if (title) title.textContent = n + " tee time" + (n !== 1 ? "s" : "") + " selected";
+    _showActionModal();
+  };
 
   function _getDate() {
     var a = document.querySelector(".ws-pill.ws-active"); if (!a) return null;
@@ -5678,8 +5690,8 @@ function closeEditBPModal() {
     var orig = window.openGroupModal;
     window.openGroupModal = function(slot) {
       window.openGroupModal = orig;
-      if (slot && window.openMultiBookModal) {
-        window.openMultiBookModal([slot]);
+      if (slot && _realOpenMultiBook) {
+        _realOpenMultiBook([slot]);
         _relabelBookBtn();
       }
     };
@@ -5799,14 +5811,12 @@ function closeEditBPModal() {
 
   _wire("swBookBtn", function() {
     _hideActionModal();
-    if (_actionMode === "drag" && _dragModalId) {
-      // Re-open the modal the tee sheet already set up (openMultiBookModal state is intact)
-      var m = document.getElementById(_dragModalId);
-      if (m) m.classList.add("open");
-      _dragModalId = null;
+    if (_actionMode === "drag" && _pendingDragSlots) {
+      var slots = _pendingDragSlots;
+      _pendingDragSlots = null;
+      _realOpenMultiBook(slots);
       _relabelBookBtn();
     } else {
-      // Single slot: capture slot via interception, open in group mode with 4 players
       _bookSingleSlot();
     }
   });
