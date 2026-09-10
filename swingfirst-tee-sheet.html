@@ -5662,12 +5662,21 @@ function closeEditBPModal() {
     if (el) el.click();
   }
 
+  function _relabelBookBtn() {
+    setTimeout(function() {
+      var btn = document.getElementById("addSave");
+      if (btn) btn.textContent = "Book";
+    }, 0);
+  }
+
+  // Single-slot Book: intercept openGroupModal to get slot, call openMultiBookModal([slot])
   function _bookSingleSlot() {
     var orig = window.openGroupModal;
     window.openGroupModal = function(slot) {
       window.openGroupModal = orig;
-      if (slot && window.openAddModal) {
-        window.openAddModal(slot, 0, 4);
+      if (slot && window.openMultiBookModal) {
+        window.openMultiBookModal([slot]);
+        _relabelBookBtn();
       }
     };
     _fireCtxItem("ctxGroupItem");
@@ -5773,6 +5782,7 @@ function closeEditBPModal() {
     setTimeout(function() { if (!_inDragIntercept) return; _inDragIntercept=false; _showActionModal(); }, 300);
   }, true);
 
+  // Intercept tee sheet's multi-book modal opening during drag
   ["addModal","groupModal"].forEach(function(id) {
     var m = document.getElementById(id); if (!m) return;
     new MutationObserver(function() {
@@ -5785,21 +5795,14 @@ function closeEditBPModal() {
 
   _wire("swBookBtn", function() {
     _hideActionModal();
-    if (_actionMode === "drag") {
-      if (_dragModalId) {
-        var m = document.getElementById(_dragModalId); if (m) m.classList.add("open");
-        _dragModalId = null;
-      } else {
-        _fireCtxItem("ctxGroupItem");
-      }
-      setTimeout(function() {
-        var inp = document.getElementById("groupPlayerCount");
-        if (!inp) return;
-        inp.min = "4";
-        inp.value = _actionRows.length * 4;
-        inp.dispatchEvent(new Event("input", {bubbles: true}));
-      }, 0);
+    if (_actionMode === "drag" && _dragModalId) {
+      // Re-open the modal the tee sheet already set up (openMultiBookModal state is intact)
+      var m = document.getElementById(_dragModalId);
+      if (m) m.classList.add("open");
+      _dragModalId = null;
+      _relabelBookBtn();
     } else {
+      // Single slot: capture slot via interception, open in group mode with 4 players
       _bookSingleSlot();
     }
   });
@@ -5825,11 +5828,7 @@ function closeEditBPModal() {
     var pm=document.getElementById("swBulkPriceModal"); if(pm) pm.classList.add("open");
   });
 
-  _wire("swTeeOffBtn", function() {
-    _hideActionModal();
-    _fireCtxItem("ctxTeeOffItem");
-  });
-
+  _wire("swTeeOffBtn", function() { _hideActionModal(); _fireCtxItem("ctxTeeOffItem"); });
   _wire("swSqueezeBtn",    function() { _hideActionModal(); _fireCtxItem("addSqueezeItem"); });
   _wire("swDelSqueezeBtn", function() { _hideActionModal(); _fireCtxItem("deleteSqueezeItem"); });
 
