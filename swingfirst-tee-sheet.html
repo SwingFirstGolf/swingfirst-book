@@ -692,8 +692,7 @@
   .ac-item-sub  { font-size: 11px; color: var(--ink-muted); }
 
   /* ─── Group booking count picker ─── */
-  .grp-count-row { display:none; align-items:center; gap:6px; margin-left:4px; }
-  .grp-count-row.visible { display:flex; }
+  .grp-count-row { display:flex; align-items:center; gap:6px; margin-left:4px; }
   .grp-count-btn { border:1px solid var(--line); background:var(--slate-100); color:var(--ink); border-radius:6px; width:26px; height:26px; font-size:17px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; line-height:1; flex-shrink:0; }
   .grp-count-btn:hover { background:var(--green-100); border-color:var(--green-600); }
   .grp-count-display { font-size:14px; font-weight:800; min-width:32px; text-align:center; background:var(--green-700); color:#fff; border-radius:8px; padding:3px 10px; }
@@ -940,7 +939,6 @@
   <div class="ctx-sep" id="ctxDangerSep"></div>
   <div class="ctx-item" data-action="groupBooking" id="ctxGroupItem"><span class="ctx-ico">👥</span> Group Booking</div>
   <div class="ctx-item ctx-danger" data-action="cancelResv" id="ctxCancelItem"><span class="ctx-ico">✕</span> Cancel Booking</div>
-  <div class="ctx-item" id="addSqueezeItem"><span class="ctx-ico">⏱️</span> Add Squeeze Below</div>
   <div class="ctx-item ctx-danger" data-action="deleteSqueeze" id="deleteSqueezeItem" style="display:none"><span class="ctx-ico">🗑️</span> Delete Squeeze</div>
 </div>
 
@@ -1056,13 +1054,7 @@
   <div class="modal-card">
     <div class="modal-head">
       <div style="display:flex;align-items:center;gap:10px">
-        <h2>Add Player(s)</h2>
-        <div class="pc-picker" id="pcPicker">
-          <button class="pc-btn active" data-n="1">1</button>
-          <button class="pc-btn" data-n="2">2</button>
-          <button class="pc-btn" data-n="3">3</button>
-          <button class="pc-btn" data-n="4">4</button>
-        </div>
+        <h2>Book Players</h2>
         <div class="grp-count-row" id="grpCountRow">
           <button class="grp-count-btn" id="grpMinus">−</button>
           <span class="grp-count-display" id="grpCountDisplay">16</span>
@@ -1079,7 +1071,7 @@
         <div class="form-group"><label class="form-label">Rate type</label><select class="form-select" id="addRateType"><option>Public</option><option>Senior</option><option>Junior</option><option>Twilight</option><option>Member</option></select></div>
       </div>
     </div>
-    <div class="modal-footer"><button class="btn-cancel" id="addCancel">Cancel</button><button class="btn-save" id="addSave">Add Player(s)</button></div>
+    <div class="modal-footer"><button class="btn-cancel" id="addCancel">Cancel</button><button class="btn-save" id="addSave">Book</button></div>
   </div>
 </div>
 
@@ -2731,23 +2723,19 @@ let _grpTotalCount   = 4;    // total player count across all group slots
 function renderAddNames() {
   const container = document.getElementById("addNamesContainer");
   container.innerHTML = "";
-  const fieldCount = _isGroupMode ? 1 : addCount;
+  const fieldCount = addCount;
   for (let i = 0; i < fieldCount; i++) {
     const g = document.createElement("div");
     g.className = "form-group";
     g.style.marginBottom = "10px";
     const lbl = document.createElement("label");
     lbl.className = "form-label";
-    lbl.textContent = _isGroupMode
-      ? "Group name or label"
-      : (addCount === 1 ? "Name" : `Player ${i + 1} name`);
+    lbl.textContent = addCount === 1 ? "Name" : `Player ${i + 1}`;
     const inp = document.createElement("input");
     inp.type = "text";
     inp.className = "form-input";
     inp.id = `addName${i}`;
-    inp.placeholder = _isGroupMode
-      ? "e.g. Smith Group, Ladies League, Blocked"
-      : "Last, First (e.g. Smith, Dave)";
+    inp.placeholder = "Last, First (e.g. Smith, Dave)";
     inp.autocomplete = "off";
     inp.addEventListener("keydown", e => { if (e.key === "Enter") document.getElementById("addSave").click(); });
     const wrap = document.createElement('div');
@@ -2755,6 +2743,18 @@ function renderAddNames() {
     wrap.appendChild(inp);
     g.appendChild(lbl);
     g.appendChild(wrap);
+
+    // Notes textarea
+    const notesRow = document.createElement('div');
+    notesRow.style.cssText = 'margin-top:5px;';
+    const notesInp = document.createElement('textarea');
+    notesInp.id = `addNotes${i}`;
+    notesInp.className = 'form-input';
+    notesInp.placeholder = 'Notes (optional)';
+    notesInp.rows = 2;
+    notesInp.style.cssText = 'resize:vertical;min-height:44px;font-size:13px;';
+    notesRow.appendChild(notesInp);
+    g.appendChild(notesRow);
 
     // Phone capture banner (shown when selected customer has no phone)
     const phoneCap = document.createElement('div');
@@ -2790,6 +2790,19 @@ function renderAddNames() {
     container.appendChild(g);
     attachAutocomplete(inp);
   }
+  // + button to add another player
+  const _addMoreBtn = document.createElement('button');
+  _addMoreBtn.type = 'button';
+  _addMoreBtn.style.cssText = 'margin-top:8px;font-size:13px;color:var(--green-600);background:none;border:none;cursor:pointer;padding:2px 0;font-weight:600;display:block;';
+  _addMoreBtn.textContent = '+ Add another player';
+  _addMoreBtn.addEventListener('click', function() {
+    addCount++;
+    _grpTotalCount = Math.max(_grpTotalCount, addCount);
+    document.getElementById('grpCountDisplay').textContent = _grpTotalCount;
+    renderAddNames();
+    setTimeout(() => document.getElementById(`addName${addCount-1}`)?.focus(), 50);
+  });
+  container.appendChild(_addMoreBtn);
 }
 
 function _escAc(s) {
@@ -3065,44 +3078,31 @@ function parseLastFirst(raw) {
   return { lastName, firstName, fullName };
 }
 
-// Player count picker buttons
-document.getElementById("pcPicker").addEventListener("click", e => {
-  const btn = e.target.closest(".pc-btn");
-  if (!btn) return;
-  // Preserve names already typed before re-rendering
-  const savedNames = [];
-  for (let i = 0; i < addCount; i++) {
-    savedNames.push(document.getElementById(`addName${i}`)?.value || "");
-  }
-  document.querySelectorAll(".pc-btn").forEach(b => b.classList.remove("active"));
-  btn.classList.add("active");
-  addCount = parseInt(btn.dataset.n, 10);
-  renderAddNames();
-  // Restore previously typed names
-  savedNames.forEach((val, i) => {
-    const inp = document.getElementById(`addName${i}`);
-    if (inp && val) inp.value = val;
-  });
-  setTimeout(() => document.getElementById("addName0")?.focus(), 50);
-});
+// Player count picker removed — grpCountRow handles all count changes
 
 // Group count − / + buttons
 document.getElementById('grpMinus').addEventListener('click', () => {
   if (_grpTotalCount <= 1) return;
   _grpTotalCount--;
+  if (!_isGroupMode) { addCount = _grpTotalCount; renderAddNames(); }
+  else if (addCount > _grpTotalCount) { addCount = _grpTotalCount; renderAddNames(); }
   document.getElementById('grpCountDisplay').textContent = _grpTotalCount;
 });
 document.getElementById('grpPlus').addEventListener('click', () => {
-  const maxSlots = _multiBookQueue.reduce((s, sl) => s + sl.players.filter(p => !p).length, 0) || _multiBookQueue.length * 4;
-  if (_grpTotalCount >= maxSlots) return;
+  if (_isGroupMode) {
+    const maxSlots = _multiBookQueue.reduce((s2, sl) => s2 + sl.players.filter(p => !p).length, 0) || _multiBookQueue.length * 4;
+    if (_grpTotalCount >= maxSlots) return;
+  }
   _grpTotalCount++;
+  if (!_isGroupMode) { addCount = _grpTotalCount; renderAddNames(); }
   document.getElementById('grpCountDisplay').textContent = _grpTotalCount;
 });
 
 function openAddModal(slot, pi, defaultCount) {
   addTarget = { slot, pi };
-  addCount = defaultCount || 1;
-  document.querySelectorAll(".pc-btn").forEach(b => b.classList.toggle("active", b.dataset.n === String(addCount)));
+  addCount = defaultCount || 4;
+  _grpTotalCount = addCount;
+  document.getElementById('grpCountDisplay').textContent = _grpTotalCount;
   document.getElementById("addStatus").value = "paid";
   document.getElementById("addRateType").value = "Public";
   document.getElementById("addSlotLabel").textContent = fmt12(slot.hour, slot.minute) + " · " + money(slot.rateCents);
@@ -3113,13 +3113,7 @@ function openAddModal(slot, pi, defaultCount) {
 function closeAddModal() {
   document.getElementById("addModal").classList.remove("open");
   addTarget = null;
-  // Restore single-slot mode UI
-  if (_isGroupMode) {
-    _isGroupMode = false;
-    document.getElementById('pcPicker').style.display = '';
-    document.getElementById('grpCountRow').classList.remove('visible');
-    document.getElementById('addSave').textContent = 'Add Player(s)';
-  }
+  _isGroupMode = false;
 }
 
 function _cancelMultiBook() { _multiBookQueue = []; _multiBookIdx = 0; closeAddModal(); }
@@ -3138,11 +3132,9 @@ function openMultiBookModal(slots) {
 
   // Open the Add Player modal in group mode
   addTarget = { slot: sorted[0], pi: 0 };
-  addCount  = 1;  // only one name field in group mode
+  addCount  = Math.min(4, _grpTotalCount);
 
-  // Switch picker → group count row
-  document.getElementById('pcPicker').style.display = 'none';
-  document.getElementById('grpCountRow').classList.add('visible');
+  // Update player count display
   document.getElementById('grpCountDisplay').textContent = _grpTotalCount;
 
   // Slot info: range summary
@@ -3161,7 +3153,7 @@ function openMultiBookModal(slots) {
   renderAddNames();
 
   // Update save button label
-  document.getElementById('addSave').textContent = 'Book Group';
+  document.getElementById('addSave').textContent = 'Book';
 
   document.getElementById('addModal').classList.add('open');
   setTimeout(() => document.getElementById('addName0')?.focus(), 100);
@@ -3192,13 +3184,19 @@ document.getElementById("addSave").addEventListener("click", async () => {
 
   // ── Group booking mode ──────────────────────────────────────────
   if (_isGroupMode) {
-    const groupName = (document.getElementById('addName0')?.value || '').trim();
+    const _pNames = [], _pNotes = [];
+    for (let ni = 0; ni < addCount; ni++) {
+      _pNames.push((document.getElementById(`addName${ni}`)?.value || '').trim());
+      _pNotes.push((document.getElementById(`addNotes${ni}`)?.value || '').trim());
+    }
+    const groupName = _pNames[0] || '';
     if (!groupName) { document.getElementById('addName0')?.focus(); return; }
 
     const slots = _multiBookQueue;
     let remaining = _grpTotalCount;
+    let _nameIdx = 0;
 
-    pushUndo(`Book group "${groupName}" across ${slots.length} tee times`);
+    pushUndo(`Book "${groupName}" across ${slots.length} tee times`);
 
     for (const s of slots) {
       if (remaining <= 0) break;
@@ -3209,15 +3207,17 @@ document.getElementById("addSave").addEventListener("click", async () => {
       if (!emptyIdxs.length) continue;
       const existingBid = s.players.find(p => p && p.bookingId)?.bookingId || null;
       emptyIdxs.forEach(idx => {
-        s.players[idx] = { id: _nextPid++, name: groupName, status, rateType,
-                           bookingId: existingBid, bookingRef: null };
+        const _pn = _pNames[_nameIdx] || groupName;
+        s.players[idx] = { id: _nextPid++, name: _pn, notes: _pNotes[_nameIdx] || '',
+                           status, rateType, bookingId: existingBid, bookingRef: null, _justAdded: true };
+        _nameIdx++;
       });
       remaining -= emptyIdxs.length;
     }
 
     const booked = _grpTotalCount - remaining;
     toast(`${groupName} — ${booked} player${booked !== 1 ? 's' : ''} across ${slots.length} tee times`);
-    recordActivity(`Group booked: <b>${groupName}</b> — ${booked} players across ${slots.length} tee times`);
+    recordActivity(`Booked: <b>${groupName}</b> — ${booked} players across ${slots.length} tee times`);
     _multiBookQueue = []; _multiBookIdx = 0;
     closeAddModal(); renderRows();
 
@@ -3227,10 +3227,12 @@ document.getElementById("addSave").addEventListener("click", async () => {
       try {
         for (const s of slots) {
           if (!s._sb_id) continue;
-          const grpPlayers = s.players.filter(p => p && p.name === groupName && !p.bpId);
+          const grpPlayers = s.players.filter(p => p && p._justAdded && !p.bpId);
           if (!grpPlayers.length) continue;
-          let bookingId = s.players.find(p => p && p.bookingId)?.bookingId || null;
-          let bookingRef = s.players.find(p => p && p.bookingRef)?.bookingRef || null;
+          const _existingP = s.players.find(p => p && !p._justAdded && p.bookingId);
+          let bookingId = _existingP?.bookingId || null;
+          let bookingRef = _existingP?.bookingRef || null;
+          grpPlayers.forEach(p => { delete p._justAdded; });
           if (!bookingId) {
             bookingRef = generateWalkInRef(s);
             const booking = await sbPost('bookings', {
@@ -3238,7 +3240,7 @@ document.getElementById("addSave").addEventListener("click", async () => {
               lead_name: groupName, player_count: grpPlayers.length,
               total_cents: s.rateCents * grpPlayers.length,
               status: status === 'paid' ? 'paid' : 'booked',
-              booking_ref: bookingRef, booking_notes: null,
+              booking_ref: bookingRef, booking_notes: _pNotes[0] || null,
             });
             bookingId = booking.id;
             grpPlayers.forEach(p => { p.bookingId = bookingId; p.bookingRef = bookingRef; });
@@ -3246,7 +3248,7 @@ document.getElementById("addSave").addEventListener("click", async () => {
           for (let i = 0; i < grpPlayers.length; i++) {
             const bp = await sbPost('booking_players', {
               booking_id: bookingId, tee_time_id: s._sb_id,
-              name: groupName, rate_type: rateType, price_cents: s.rateCents,
+              name: grpPlayers[i].name, rate_type: rateType, price_cents: s.rateCents,
               status, is_lead: i === 0,
             });
             if (bp?.id) { grpPlayers[i].bpId = bp.id; grpPlayers[i].bookingId = bookingId; }
@@ -5587,314 +5589,4 @@ function closeEditBPModal() {
 
 </script>
 </body>
-
-<div class="modal-overlay" id="swActionModal">
-  <div class="modal-card" id="swActionCard" style="max-width:300px;width:90%">
-    <div class="modal-head">
-      <h2 id="swActionTitle" style="font-size:15px;font-weight:600;margin:0"></h2>
-      <button class="modal-close" id="swActionClose">✕</button>
-    </div>
-    <div style="display:flex;flex-direction:column;gap:6px;padding:14px 16px">
-      <button id="swBookBtn"       style="padding:11px 14px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;text-align:left;cursor:pointer;font-size:14px">📅  Book</button>
-      <button id="swBlockBtn"      style="padding:11px 14px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;text-align:left;cursor:pointer;font-size:14px">🚫  Block</button>
-      <button id="swPriceBtn"      style="padding:11px 14px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;text-align:left;cursor:pointer;font-size:14px">💰  Override $</button>
-      <button id="swTeeOffBtn"     style="padding:11px 14px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;text-align:left;cursor:pointer;font-size:14px">🏌️  Tee Off</button>
-      <button id="swSqueezeBtn"    style="padding:11px 14px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;text-align:left;cursor:pointer;font-size:14px">⏱️  Squeeze</button>
-      <button id="swDelSqueezeBtn" style="padding:11px 14px;border:1px solid #fca5a5;border-radius:8px;background:#fff;text-align:left;cursor:pointer;font-size:14px;display:none">🗑️  Delete Squeeze</button>
-    </div>
-  </div>
-</div>
-<div class="modal-overlay" id="swBulkPriceModal">
-  <div class="modal-card">
-    <div class="modal-head"><h2>💰 Override Price</h2><button class="modal-close" id="swBulkPriceClose">✕</button></div>
-    <div class="modal-body">
-      <div id="swBulkPriceSlotInfo" style="margin-bottom:12px;font-size:13px;color:#6b7280"></div>
-      <div class="form-group">
-        <label style="font-size:13px;font-weight:500;color:#374151">New price per player (USD)</label>
-        <input type="number" id="swBulkPriceInput" class="form-control" min="0" step="1" placeholder="e.g. 39" style="margin-top:6px;width:100%">
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-cancel" id="swBulkPriceCancel">Cancel</button>
-      <button class="btn-save"   id="swBulkPriceSave">Apply Price</button>
-    </div>
-  </div>
-</div>
-<script>
-(function() {
-  var _SB = "https://ojgxfeaesnaohskxdvam.supabase.co";
-  var _SK = "sb_publishable_4UVFMXQWGOt4XNgHVNzWoQ_Id6TBqcu";
-  var _SH = { apikey: _SK, "Authorization": "Bearer " + _SK };
-  var rowsEl  = document.getElementById("rows");
-  var ctxMenu = document.getElementById("ctxMenu");
-  var _actionRows = [], _actionMode = "single", _dragModalId = null;
-  var _inDragIntercept = false, _dragActive = false, _dragRowSet = [];
-  var _lastClickRect = null, _justOpened = false;
-  var _restoringState = false;
-
-  function _getDate() {
-    var a = document.querySelector(".ws-pill.ws-active"); if (!a) return null;
-    var t = a.textContent.trim().replace(/\s+/g, " ");
-    var M = {Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12};
-    var p = t.split(" "); var mon = M[p[0]], day = parseInt(p[1]); if (!mon || !day) return null;
-    return new Date().getFullYear() + "-" + String(mon).padStart(2,"0") + "-" + String(day).padStart(2,"0");
-  }
-
-  function _parseRowTime(idx) {
-    var row = rowsEl && rowsEl.children[idx];
-    var txt = (row && row.querySelector(".row-time") && row.querySelector(".row-time").textContent.trim()) || "";
-    var m = txt.match(/(\d+):(\d+)\s*(AM|PM)/i); if (!m) return null;
-    var h = parseInt(m[1]), min = parseInt(m[2]);
-    if (m[3].toUpperCase() === "PM" && h < 12) h += 12;
-    if (m[3].toUpperCase() === "AM" && h === 12) h = 0;
-    return {hour: h, minute: min, label: txt};
-  }
-
-  function _fireCtxItem(ctxId) {
-    var rowEl = rowsEl && rowsEl.children[_actionRows[0]];
-    var rowTimeEl = rowEl && rowEl.querySelector(".row-time");
-    if (!rowTimeEl) return;
-    _restoringState = true;
-    rowTimeEl.click();
-    _restoringState = false;
-    if (ctxMenu) ctxMenu.style.display = "none";
-    var el = document.getElementById(ctxId);
-    if (el) el.click();
-  }
-
-  function _relabelBookBtn() {
-    setTimeout(function() {
-      var btn = document.getElementById("addSave");
-      if (btn) btn.textContent = "Book";
-    }, 0);
-  }
-
-  // Single-slot Book: intercept openGroupModal to get slot, call openMultiBookModal([slot])
-  function _bookSingleSlot() {
-    var orig = window.openGroupModal;
-    window.openGroupModal = function(slot) {
-      window.openGroupModal = orig;
-      if (slot && window.openMultiBookModal) {
-        window.openMultiBookModal([slot]);
-        _relabelBookBtn();
-      }
-    };
-    _fireCtxItem("ctxGroupItem");
-  }
-
-  async function _getRowTeeTimeIds(rowIndices) {
-    var date = _getDate(); if (!date) return [];
-    var resp = await fetch(_SB + "/rest/v1/tee_times?date=eq." + date + "&select=id,hour,minute", {headers: _SH});
-    var tts = await resp.json(); var result = [];
-    rowIndices.forEach(function(idx) {
-      var t = _parseRowTime(idx); if (!t) return;
-      var tt = tts.find(function(r) { return r.hour === t.hour && r.minute === t.minute; });
-      if (tt) result.push(tt.id);
-    });
-    return result;
-  }
-
-  function _showActionModal() {
-    var modal = document.getElementById("swActionModal"); if (!modal) return;
-    var isDrag = _actionMode === "drag";
-    var row0 = rowsEl && rowsEl.children[_actionRows[0]];
-    var isSq = row0 && row0.classList.contains("squeezed");
-    var title = document.getElementById("swActionTitle");
-    if (title) {
-      if (isDrag && _actionRows.length > 1) {
-        var f = _parseRowTime(_actionRows[0]), l = _parseRowTime(_actionRows[_actionRows.length-1]);
-        title.textContent = (f?f.label:"") + " - " + (l?l.label:"");
-      } else {
-        var t2 = _parseRowTime(_actionRows[0]); title.textContent = t2?t2.label:"Tee Time";
-      }
-    }
-    var teeOffBtn = document.getElementById("swTeeOffBtn");
-    var sqBtn     = document.getElementById("swSqueezeBtn");
-    var delSqBtn  = document.getElementById("swDelSqueezeBtn");
-    if (teeOffBtn) teeOffBtn.style.display = isDrag ? "none" : "";
-    if (sqBtn)     sqBtn.style.display     = (isDrag||isSq) ? "none" : "";
-    if (delSqBtn)  delSqBtn.style.display  = (!isDrag&&isSq) ? "" : "none";
-
-    var card = document.getElementById("swActionCard");
-    if (card) {
-      if (_lastClickRect && !isDrag) {
-        var vw=window.innerWidth, vh=window.innerHeight, mw=310, mh=290;
-        var left=_lastClickRect.right+10;
-        if (left+mw>vw-8) left=_lastClickRect.left-mw-10;
-        if (left<8) left=8;
-        var top=_lastClickRect.top-10;
-        if (top+mh>vh-8) top=vh-mh-8;
-        if (top<8) top=8;
-        card.style.cssText = "position:fixed;top:"+top+"px;left:"+left+"px;margin:0";
-      } else { card.style.cssText = ""; }
-    }
-    _justOpened = true;
-    modal.classList.add("open");
-    setTimeout(function() { _justOpened = false; }, 0);
-  }
-
-  function _hideActionModal() {
-    var m = document.getElementById("swActionModal"); if (m) m.classList.remove("open");
-    var card = document.getElementById("swActionCard"); if (card) card.style.cssText = "";
-  }
-
-  document.addEventListener("click", function(e) {
-    if (_inDragIntercept || _restoringState) return;
-    var tc = e.target.closest(".row-time"); if (!tc) return;
-    var row = tc.closest(".row"); if (!row || !rowsEl) return;
-    var idx = Array.from(rowsEl.children).indexOf(row);
-    _actionRows = [idx]; _actionMode = "single";
-    _lastClickRect = tc.getBoundingClientRect();
-    setTimeout(function() { if (ctxMenu) ctxMenu.style.display = "none"; }, 0);
-    _showActionModal();
-  }, true);
-
-  document.addEventListener("click", function(e) {
-    if (_justOpened) return;
-    var m = document.getElementById("swActionModal");
-    if (!m || !m.classList.contains("open")) return;
-    if (!m.contains(e.target)) _hideActionModal();
-  });
-
-  var ac = document.getElementById("swActionClose"); if (ac) ac.addEventListener("click", _hideActionModal);
-
-  if (rowsEl) {
-    rowsEl.addEventListener("pointerdown", function(e) {
-      if (!e.target.closest(".row-time")) return;
-      _dragActive = true; _dragRowSet = [];
-      var row = e.target.closest(".row");
-      if (row) _dragRowSet = [Array.from(rowsEl.children).indexOf(row)];
-    }, true);
-    rowsEl.addEventListener("pointermove", function(e) {
-      if (!_dragActive || !e.buttons) return;
-      var row = e.target.closest(".row"); if (!row) return;
-      var idx = Array.from(rowsEl.children).indexOf(row);
-      if (idx>=0 && _dragRowSet.indexOf(idx)<0) _dragRowSet.push(idx);
-    }, true);
-  }
-
-  document.addEventListener("pointerup", function(e) {
-    if (!_dragActive) return;
-    _dragActive = false;
-    if (_dragRowSet.length < 2) return;
-    _actionRows = _dragRowSet.slice().sort(function(a,b){return a-b;});
-    _actionMode = "drag"; _inDragIntercept = true; _dragModalId = null; _lastClickRect = null;
-    setTimeout(function() { if (!_inDragIntercept) return; _inDragIntercept=false; _showActionModal(); }, 300);
-  }, true);
-
-  // Intercept tee sheet's multi-book modal opening during drag
-  ["addModal","groupModal"].forEach(function(id) {
-    var m = document.getElementById(id); if (!m) return;
-    new MutationObserver(function() {
-      if (!_inDragIntercept || !m.classList.contains("open")) return;
-      _dragModalId = id; m.classList.remove("open"); _inDragIntercept=false; _showActionModal();
-    }).observe(m, {attributes:true, attributeFilter:["style","class"]});
-  });
-
-  function _wire(id, fn) { var el=document.getElementById(id); if (el) el.addEventListener("click", fn); }
-
-  _wire("swBookBtn", function() {
-    _hideActionModal();
-    if (_actionMode === "drag" && _dragModalId) {
-      // Re-open the modal the tee sheet already set up (openMultiBookModal state is intact)
-      var m = document.getElementById(_dragModalId);
-      if (m) m.classList.add("open");
-      _dragModalId = null;
-      _relabelBookBtn();
-    } else {
-      // Single slot: capture slot via interception, open in group mode with 4 players
-      _bookSingleSlot();
-    }
-  });
-
-  _wire("swBlockBtn", function() {
-    _hideActionModal();
-    if (_actionMode==="drag" && _actionRows.length>1) {
-      if (window.confirm("Block "+_actionRows.length+" tee times?")) _bulkBlock(_actionRows);
-    } else {
-      _fireCtxItem("ctxBlockItem");
-    }
-  });
-
-  _wire("swPriceBtn", function() {
-    _hideActionModal();
-    var rows = (_actionMode==="drag") ? _actionRows : _actionRows.slice(0,1);
-    var f=_parseRowTime(rows[0]), l=_parseRowTime(rows[rows.length-1]);
-    var info=document.getElementById("swBulkPriceSlotInfo");
-    if (info) info.textContent = rows.length===1 ? (f?f.label:"") : rows.length+" tee times: "+(f?f.label:"")+" - "+(l?l.label:"");
-    var sv=document.getElementById("swBulkPriceSave");
-    if (sv) sv.textContent = rows.length===1 ? "Apply Price" : "Apply to "+rows.length+" Tee Times";
-    var inp=document.getElementById("swBulkPriceInput"); if(inp) inp.value="";
-    var pm=document.getElementById("swBulkPriceModal"); if(pm) pm.classList.add("open");
-  });
-
-  _wire("swTeeOffBtn", function() { _hideActionModal(); _fireCtxItem("ctxTeeOffItem"); });
-  _wire("swSqueezeBtn",    function() { _hideActionModal(); _fireCtxItem("addSqueezeItem"); });
-  _wire("swDelSqueezeBtn", function() { _hideActionModal(); _fireCtxItem("deleteSqueezeItem"); });
-
-  async function _bulkBlock(rowIndices) {
-    try {
-      var ids=await _getRowTeeTimeIds(rowIndices);
-      if (!ids.length) { alert("Could not identify tee times."); return; }
-      await fetch(_SB+"/rest/v1/tee_times?id=in.("+ids.join(",")+")", {
-        method:"PATCH", headers:Object.assign({},_SH,{"Content-Type":"application/json","Prefer":"return=minimal"}),
-        body:JSON.stringify({status:"blocked"})
-      }); location.reload();
-    } catch(e) { alert("Block error: "+e.message); }
-  }
-
-  _wire("swBulkPriceCancel", function() { var m=document.getElementById("swBulkPriceModal"); if(m) m.classList.remove("open"); });
-  _wire("swBulkPriceClose",  function() { var m=document.getElementById("swBulkPriceModal"); if(m) m.classList.remove("open"); });
-  _wire("swBulkPriceSave", async function() {
-    var inp=document.getElementById("swBulkPriceInput");
-    var dollars=parseFloat(inp?inp.value:"");
-    if (isNaN(dollars)||dollars<0) { alert("Enter a valid price."); return; }
-    var cents=Math.round(dollars*100);
-    var bm=document.getElementById("swBulkPriceModal"); if(bm) bm.classList.remove("open");
-    try {
-      var rows=(_actionMode==="drag")?_actionRows:_actionRows.slice(0,1);
-      var ids=await _getRowTeeTimeIds(rows);
-      if (!ids.length) { alert("Could not identify tee times."); return; }
-      await fetch(_SB+"/rest/v1/tee_times?id=in.("+ids.join(",")+")", {
-        method:"PATCH", headers:Object.assign({},_SH,{"Content-Type":"application/json","Prefer":"return=minimal"}),
-        body:JSON.stringify({rack_cents:cents})
-      }); location.reload();
-    } catch(e) { alert("Price error: "+e.message); }
-  });
-
-  async function _persistGroupDelete(leadName) {
-    var date=_getDate(); if (!date) { alert("Could not detect date."); return; }
-    try {
-      var resp=await fetch(_SB+"/rest/v1/tee_times?date=eq."+date+"&select=id,bookings(id,lead_name,status)&order=hour.asc",{headers:_SH});
-      var all=await resp.json(); var ttIds=[];
-      all.forEach(function(tt) {
-        if ((tt.bookings||[]).some(function(b){return b.status!=="cancelled"&&b.lead_name===leadName;})) ttIds.push(tt.id);
-      });
-      if (!ttIds.length) { location.reload(); return; }
-      await fetch(_SB+"/rest/v1/bookings?tee_time_id=in.("+ttIds.join(",")+")", {
-        method:"PATCH", headers:Object.assign({},_SH,{"Content-Type":"application/json","Prefer":"return=minimal"}),
-        body:JSON.stringify({status:"cancelled"})
-      });
-      await fetch(_SB+"/rest/v1/tee_times?id=in.("+ttIds.join(",")+")", {
-        method:"PATCH", headers:Object.assign({},_SH,{"Content-Type":"application/json","Prefer":"return=minimal"}),
-        body:JSON.stringify({status:"open"})
-      });
-      location.reload();
-    } catch(err) { alert("Delete Group error: "+err.message); }
-  }
-
-  document.addEventListener("click", function(e) {
-    var btn=e.target.closest("#grpEditDelete"); if(!btn) return;
-    e.stopImmediatePropagation();
-    var nameEl=document.getElementById("grpEditName"), titleEl=document.getElementById("grpEditTitle");
-    var leadName=(nameEl?nameEl.value:(titleEl?titleEl.textContent:"")).trim();
-    var meta=((document.getElementById("grpEditMeta")||{}).textContent||"").trim();
-    if (!window.confirm('Delete "'+leadName+'"?\n'+meta)) return;
-    btn.disabled=true; btn.textContent="Deleting...";
-    var overlay=document.getElementById("grpEditModal"); if(overlay) overlay.style.display="none";
-    _persistGroupDelete(leadName);
-  }, true);
-
-})();
-</script>
 </html>
