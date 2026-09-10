@@ -5855,21 +5855,14 @@ function closeEditBPModal() {
   });
 
   function _openGrpEditForBlock() {
-    _restoringState = true;
-    var row = rowsEl && rowsEl.children[_actionRows[0]];
-    var timeCell = row && row.querySelector(".row-time");
-    if (!timeCell) { _restoringState = false; return; }
-    timeCell.click();
-    _restoringState = false;
-    window.closeCtxMenu && window.closeCtxMenu();
-    var slot = window.currentSlot;
-    if (!slot) { return; }
+    var slot = window.state && window.state.slots[_actionRows[0]];
+    if (!slot) return;
     _grpBlockMode = true;
     _grpBlockSlot = slot;
     var label = slot.block_label || "Blocked";
     var srRow = document.getElementById("grpEditStatusRateRow");
     if (srRow) srRow.style.display = "none";
-    window.openGrpEditModal && window.openGrpEditModal(label, [slot]);
+    window.openGrpEditModal(label, [slot]);
   }
 
   _wire("swUnblockBtn", function() { _hideActionModal(); _openGrpEditForBlock(); });
