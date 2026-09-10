@@ -729,7 +729,6 @@
   .editbp-loading{text-align:center;padding:30px;color:var(--ink-muted);font-size:14px}
 
 
-  /* addModal: anchor to top so it grows downward, not upward */
   #addModal { align-items: flex-start; padding-top: 48px; overflow-y: auto; }
 </style>
 </head>
@@ -942,6 +941,7 @@
   <div class="ctx-sep" id="ctxDangerSep"></div>
   <div class="ctx-item" data-action="groupBooking" id="ctxGroupItem"><span class="ctx-ico">👥</span> Group Booking</div>
   <div class="ctx-item ctx-danger" data-action="cancelResv" id="ctxCancelItem"><span class="ctx-ico">✕</span> Cancel Booking</div>
+  <div class="ctx-item" id="addSqueezeItem"><span class="ctx-ico">⏱️</span> Add Squeeze Below</div>
   <div class="ctx-item ctx-danger" data-action="deleteSqueeze" id="deleteSqueezeItem" style="display:none"><span class="ctx-ico">🗑️</span> Delete Squeeze</div>
 </div>
 
@@ -2793,7 +2793,6 @@ function renderAddNames() {
     container.appendChild(g);
     attachAutocomplete(inp);
   }
-  // + button to add another player
   const _addMoreBtn = document.createElement('button');
   _addMoreBtn.type = 'button';
   _addMoreBtn.style.cssText = 'margin-top:8px;font-size:13px;color:var(--green-600);background:none;border:none;cursor:pointer;padding:2px 0;font-weight:600;display:block;';
@@ -5591,7 +5590,40 @@ function closeEditBPModal() {
 }
 
 </script>
+</body>
 
+<div class="modal-overlay" id="swActionModal">
+  <div class="modal-card" id="swActionCard" style="max-width:300px;width:90%">
+    <div class="modal-head">
+      <h2 id="swActionTitle" style="font-size:15px;font-weight:600;margin:0"></h2>
+      <button class="modal-close" id="swActionClose">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px;padding:14px 16px">
+      <button id="swBookBtn"       style="padding:11px 14px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;text-align:left;cursor:pointer;font-size:14px">📅  Book</button>
+      <button id="swBlockBtn"      style="padding:11px 14px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;text-align:left;cursor:pointer;font-size:14px">🚫  Block</button>
+      <button id="swPriceBtn"      style="padding:11px 14px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;text-align:left;cursor:pointer;font-size:14px">💰  Override $</button>
+      <button id="swTeeOffBtn"     style="padding:11px 14px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;text-align:left;cursor:pointer;font-size:14px">🏌️  Tee Off</button>
+      <button id="swSqueezeBtn"    style="padding:11px 14px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;text-align:left;cursor:pointer;font-size:14px">⏱️  Squeeze</button>
+      <button id="swDelSqueezeBtn" style="padding:11px 14px;border:1px solid #fca5a5;border-radius:8px;background:#fff;text-align:left;cursor:pointer;font-size:14px;display:none">🗑️  Delete Squeeze</button>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="swBulkPriceModal">
+  <div class="modal-card">
+    <div class="modal-head"><h2>💰 Override Price</h2><button class="modal-close" id="swBulkPriceClose">✕</button></div>
+    <div class="modal-body">
+      <div id="swBulkPriceSlotInfo" style="margin-bottom:12px;font-size:13px;color:#6b7280"></div>
+      <div class="form-group">
+        <label style="font-size:13px;font-weight:500;color:#374151">New price per player (USD)</label>
+        <input type="number" id="swBulkPriceInput" class="form-control" min="0" step="1" placeholder="e.g. 39" style="margin-top:6px;width:100%">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" id="swBulkPriceCancel">Cancel</button>
+      <button class="btn-save"   id="swBulkPriceSave">Apply Price</button>
+    </div>
+  </div>
+</div>
 <script>
 (function() {
   var _SB = "https://ojgxfeaesnaohskxdvam.supabase.co";
@@ -5869,6 +5901,4 @@ function closeEditBPModal() {
 
 })();
 </script>
-
-</body>
 </html>
