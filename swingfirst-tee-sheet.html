@@ -5630,8 +5630,7 @@ function closeEditBPModal() {
   var _actionRows = [], _actionMode = "single", _dragModalId = null;
   var _inDragIntercept = false, _dragActive = false, _dragRowSet = [];
   var _lastClickRect = null, _justOpened = false;
-  var _currentSlot = null;
-  var _currentBlockSlot = null, _currentTeeOffSlot = null;
+  var _restoringState = false; // prevents capture listener from re-showing action modal
 
   function _getDate() {
     var a = document.querySelector(".ws-pill.ws-active"); if (!a) return null;
@@ -5651,29 +5650,18 @@ function closeEditBPModal() {
     return {hour: h, minute: min, label: txt};
   }
 
-  // Capture the tee sheet's internal slot objects by briefly intercepting its functions
-  function _captureSlots() {
-    _currentSlot = null; _currentBlockSlot = null; _currentTeeOffSlot = null;
-    var origGroup = window.openGroupModal;
-    var origBlock = window.openBlockModal;
-    var origTeeOff = window.openTeeOffModal;
-    var gCaptured = false, bCaptured = false, tCaptured = false;
-
-    window.openGroupModal = function(s) { _currentSlot = s; gCaptured = true; window.openGroupModal = origGroup; };
-    window.openBlockModal = function(s) { _currentBlockSlot = s; bCaptured = true; window.openBlockModal = origBlock; };
-    window.openTeeOffModal = function(s) { _currentTeeOffSlot = s; tCaptured = true; window.openTeeOffModal = origTeeOff; };
-
-    // Fire ctxGroupItem to capture group slot
-    var cgi = document.getElementById("ctxGroupItem"); if (cgi) cgi.click();
-    // Fire ctxBlockItem to capture block slot
-    var cbi = document.getElementById("ctxBlockItem"); if (cbi) cbi.click();
-    // Fire ctxTeeOffItem to capture teeoff slot
-    var cti = document.getElementById("ctxTeeOffItem"); if (cti) cti.click();
-
-    // Restore any not yet restored
-    if (!gCaptured) window.openGroupModal = origGroup;
-    if (!bCaptured) window.openBlockModal = origBlock;
-    if (!tCaptured) window.openTeeOffModal = origTeeOff;
+  // Re-trigger row-time click so tee sheet refreshes its internal state,
+  // then fire a ctx menu item. Both happen synchronously before any state clears.
+  function _fireCtxItem(ctxId) {
+    var rowEl = rowsEl && rowsEl.children[_actionRows[0]];
+    var rowTimeEl = rowEl && rowEl.querySelector(".row-time");
+    if (!rowTimeEl) return;
+    _restoringState = true;
+    rowTimeEl.click(); // tee sheet sets currentSlot; we skip our capture listener
+    _restoringState = false;
+    if (ctxMenu) ctxMenu.style.display = "none"; // hide ctxMenu that tee sheet showed
+    var el = document.getElementById(ctxId);
+    if (el) el.click();
   }
 
   async function _getRowTeeTimeIds(rowIndices) {
@@ -5732,24 +5720,17 @@ function closeEditBPModal() {
     var card = document.getElementById("swActionCard"); if (card) card.style.cssText = "";
   }
 
-  // CAPTURE phase: record which row was clicked, show our modal
+  // CAPTURE phase: show our action modal (skip if we're just restoring tee sheet state)
   document.addEventListener("click", function(e) {
-    if (_inDragIntercept) return;
+    if (_inDragIntercept || _restoringState) return;
     var tc = e.target.closest(".row-time"); if (!tc) return;
     var row = tc.closest(".row"); if (!row || !rowsEl) return;
     var idx = Array.from(rowsEl.children).indexOf(row);
     _actionRows = [idx]; _actionMode = "single";
     _lastClickRect = tc.getBoundingClientRect();
+    setTimeout(function() { if (ctxMenu) ctxMenu.style.display = "none"; }, 0);
     _showActionModal();
   }, true);
-
-  // BUBBLE phase: tee sheet has now set its internal state; capture slots from its functions
-  document.addEventListener("click", function(e) {
-    if (_inDragIntercept) return;
-    var tc = e.target.closest(".row-time"); if (!tc) return;
-    setTimeout(function() { if (ctxMenu) ctxMenu.style.display = "none"; }, 0);
-    _captureSlots();
-  }, false);
 
   // Outside-click closes action modal
   document.addEventListener("click", function(e) {
@@ -5800,8 +5781,8 @@ function closeEditBPModal() {
     _hideActionModal();
     if (_actionMode==="drag" && _dragModalId) {
       var m=document.getElementById(_dragModalId); if(m) m.classList.add("open"); _dragModalId=null;
-    } else if (_currentSlot) {
-      openGroupModal(_currentSlot);
+    } else {
+      _fireCtxItem("ctxGroupItem");
     }
   });
 
@@ -5809,8 +5790,8 @@ function closeEditBPModal() {
     _hideActionModal();
     if (_actionMode==="drag" && _actionRows.length>1) {
       if (window.confirm("Block "+_actionRows.length+" tee times?")) _bulkBlock(_actionRows);
-    } else if (_currentBlockSlot) {
-      openBlockModal(_currentBlockSlot);
+    } else {
+      _fireCtxItem("ctxBlockItem");
     }
   });
 
@@ -5828,20 +5809,11 @@ function closeEditBPModal() {
 
   _wire("swTeeOffBtn", function() {
     _hideActionModal();
-    if (_currentTeeOffSlot) openTeeOffModal(_currentTeeOffSlot);
+    _fireCtxItem("ctxTeeOffItem");
   });
 
-  function _ctxClickDirect(id) {
-    setTimeout(function() {
-      var el=document.getElementById(id); if(!el) return;
-      var wasNone=ctxMenu && ctxMenu.style.display==="none";
-      if (wasNone && ctxMenu) { ctxMenu.style.visibility="hidden"; ctxMenu.style.display="block"; }
-      el.click();
-      if (wasNone && ctxMenu) { ctxMenu.style.display="none"; ctxMenu.style.visibility=""; }
-    }, 50);
-  }
-  _wire("swSqueezeBtn",    function() { _hideActionModal(); _ctxClickDirect("addSqueezeItem"); });
-  _wire("swDelSqueezeBtn", function() { _hideActionModal(); _ctxClickDirect("deleteSqueezeItem"); });
+  _wire("swSqueezeBtn",    function() { _hideActionModal(); _fireCtxItem("addSqueezeItem"); });
+  _wire("swDelSqueezeBtn", function() { _hideActionModal(); _fireCtxItem("deleteSqueezeItem"); });
 
   async function _bulkBlock(rowIndices) {
     try {
