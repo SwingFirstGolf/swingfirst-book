@@ -5857,8 +5857,19 @@ function closeEditBPModal() {
 
   _wire("swBlockBtn", function() {
     _hideActionModal();
-    if (_actionMode==="drag" && _actionRows.length>1) {
-      if (window.confirm("Block "+_actionRows.length+" tee times?")) _bulkBlock(_actionRows);
+    if (_actionMode === "drag" && _pendingDragSlots && _pendingDragSlots.length > 0) {
+      var n = _pendingDragSlots.length;
+      if (window.confirm("Block " + n + " tee time" + (n !== 1 ? "s" : "") + "?")) {
+        var _slots = _pendingDragSlots;
+        _pendingDragSlots = null;
+        var ids = _slots.map(function(sl) { return sl._sb_id; }).filter(Boolean);
+        if (!ids.length) { alert("Could not identify tee times."); return; }
+        fetch(_SB + "/rest/v1/tee_times?id=in.(" + ids.join(",") + ")", {
+          method: "PATCH",
+          headers: Object.assign({}, _SH, {"Content-Type": "application/json", "Prefer": "return=minimal"}),
+          body: JSON.stringify({status: "blocked"})
+        }).then(function() { location.reload(); }).catch(function(e) { alert("Block error: " + e.message); });
+      }
     } else {
       _fireCtxItem("ctxBlockItem");
     }
