@@ -5589,7 +5589,7 @@ function closeEditBPModal() {
 </body>
 
 <div class="modal-overlay" id="swActionModal">
-  <div class="modal-card" style="max-width:300px;width:90%">
+  <div class="modal-card" id="swActionCard" style="max-width:300px;width:90%">
     <div class="modal-head">
       <h2 id="swActionTitle" style="font-size:15px;font-weight:600;margin:0"></h2>
       <button class="modal-close" id="swActionClose">✕</button>
@@ -5598,7 +5598,7 @@ function closeEditBPModal() {
       <button id="swBookBtn"       class="ctx-item" style="padding:11px 14px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;text-align:left;cursor:pointer;font-size:14px">📅  Book</button>
       <button id="swBlockBtn"      class="ctx-item" style="padding:11px 14px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;text-align:left;cursor:pointer;font-size:14px">🚫  Block</button>
       <button id="swPriceBtn"      class="ctx-item" style="padding:11px 14px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;text-align:left;cursor:pointer;font-size:14px">💰  Override $</button>
-      <button id="swTeeOffBtn"     class="ctx-item" style="padding:11px 14px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;text-align:left;cursor:pointer;font-size:14px">🏷️  Tee Off</button>
+      <button id="swTeeOffBtn"     class="ctx-item" style="padding:11px 14px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;text-align:left;cursor:pointer;font-size:14px">🏌️  Tee Off</button>
       <button id="swSqueezeBtn"    class="ctx-item" style="padding:11px 14px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;text-align:left;cursor:pointer;font-size:14px">⏱️  Squeeze</button>
       <button id="swDelSqueezeBtn" class="ctx-item" style="padding:11px 14px;border:1px solid #fca5a5;border-radius:8px;background:#fff;text-align:left;cursor:pointer;font-size:14px;display:none">🗑️  Delete Squeeze</button>
     </div>
@@ -5629,7 +5629,7 @@ function closeEditBPModal() {
   var ctxMenu = document.getElementById("ctxMenu");
   var _actionRows = [], _actionMode = "single", _dragModalId = null;
   var _inDragIntercept = false, _dragActive = false, _dragRowSet = [];
-  var _lastClickRect = null, _bypassCapture = false;
+  var _lastClickRect = null, _justOpened = false;
 
   function _getDate() {
     var a = document.querySelector(".ws-pill.ws-active"); if (!a) return null;
@@ -5682,42 +5682,47 @@ function closeEditBPModal() {
     if (sqBtn)     sqBtn.style.display     = (isDrag || isSq) ? "none" : "";
     if (delSqBtn)  delSqBtn.style.display  = (!isDrag && isSq) ? "" : "none";
 
-    if (_lastClickRect && !isDrag) {
-      var vw = window.innerWidth, vh = window.innerHeight;
-      var mw = 310, mh = 290;
-      var left = _lastClickRect.right + 10;
-      if (left + mw > vw - 8) left = _lastClickRect.left - mw - 10;
-      if (left < 8) left = 8;
-      var top = _lastClickRect.top - 10;
-      if (top + mh > vh - 8) top = vh - mh - 8;
-      if (top < 8) top = 8;
-      modal.style.alignItems = "flex-start";
-      modal.style.justifyContent = "flex-start";
-      modal.style.paddingTop = top + "px";
-      modal.style.paddingLeft = left + "px";
-    } else {
-      modal.style.alignItems = "";
-      modal.style.justifyContent = "";
-      modal.style.padding = "";
+    /* Position near click — fix card position, let overlay be transparent backdrop */
+    var card = document.getElementById("swActionCard");
+    if (card) {
+      if (_lastClickRect && !isDrag) {
+        var vw = window.innerWidth, vh = window.innerHeight;
+        var mw = 310, mh = 290;
+        var left = _lastClickRect.right + 10;
+        if (left + mw > vw - 8) left = _lastClickRect.left - mw - 10;
+        if (left < 8) left = 8;
+        var top = _lastClickRect.top - 10;
+        if (top + mh > vh - 8) top = vh - mh - 8;
+        if (top < 8) top = 8;
+        card.style.position = "fixed";
+        card.style.top = top + "px";
+        card.style.left = left + "px";
+        card.style.margin = "0";
+      } else {
+        card.style.position = "";
+        card.style.top = "";
+        card.style.left = "";
+        card.style.margin = "";
+      }
     }
 
+    _justOpened = true;
     modal.classList.add("open");
+    setTimeout(function() { _justOpened = false; }, 0);
   }
 
   function _hideActionModal() {
     var m = document.getElementById("swActionModal");
-    if (m) {
-      m.classList.remove("open");
-      m.style.alignItems = "";
-      m.style.justifyContent = "";
-      m.style.padding = "";
-    }
+    if (m) m.classList.remove("open");
+    var card = document.getElementById("swActionCard");
+    if (card) { card.style.position = ""; card.style.top = ""; card.style.left = ""; card.style.margin = ""; }
   }
 
   var ni = document.getElementById("grpEditName"); if (ni) ni.setAttribute("autocomplete", "off");
 
+  /* Single TIME click - capture phase */
   document.addEventListener("click", function(e) {
-    if (_bypassCapture || _inDragIntercept) return;
+    if (_inDragIntercept) return;
     var tc = e.target.closest(".row-time"); if (!tc) return;
     var row = tc.closest(".row"); if (!row || !rowsEl) return;
     var idx = Array.from(rowsEl.children).indexOf(row);
@@ -5727,15 +5732,17 @@ function closeEditBPModal() {
     _showActionModal();
   }, true);
 
+  /* Close on outside click — _justOpened prevents same-click-close */
   document.addEventListener("click", function(e) {
+    if (_justOpened) return;
     var m = document.getElementById("swActionModal");
     if (!m || !m.classList.contains("open")) return;
-    if (e.target.closest(".row-time")) return;
     if (!m.contains(e.target)) _hideActionModal();
   });
 
   var ac = document.getElementById("swActionClose"); if (ac) ac.addEventListener("click", _hideActionModal);
 
+  /* Drag tracking */
   if (rowsEl) {
     rowsEl.addEventListener("pointerdown", function(e) {
       if (!e.target.closest(".row-time")) return;
@@ -5763,6 +5770,7 @@ function closeEditBPModal() {
     }, 300);
   }, true);
 
+  /* Intercept drag modals - classList.contains fix */
   ["addModal", "groupModal"].forEach(function(id) {
     var m = document.getElementById(id); if (!m) return;
     new MutationObserver(function() {
@@ -5779,14 +5787,8 @@ function closeEditBPModal() {
     if (_actionMode === "drag" && _dragModalId) {
       var m = document.getElementById(_dragModalId); if (m) m.classList.add("open"); _dragModalId = null;
     } else {
-      var rowEl = rowsEl && rowsEl.children[_actionRows[0]];
-      var rtEl = rowEl && rowEl.querySelector(".row-time");
-      if (rtEl) {
-        _bypassCapture = true;
-        rtEl.dispatchEvent(new MouseEvent("click", {bubbles: true, cancelable: true}));
-        _bypassCapture = false;
-      }
       setTimeout(function() {
+        if (ctxMenu) ctxMenu.style.display = "none";
         var ci = document.getElementById("ctxGroupItem"); if (ci) ci.click();
       }, 50);
     }
@@ -5797,7 +5799,10 @@ function closeEditBPModal() {
     if (_actionMode === "drag" && _actionRows.length > 1) {
       if (window.confirm("Block " + _actionRows.length + " tee times?")) _bulkBlock(_actionRows);
     } else {
-      var ci = document.getElementById("ctxBlockItem"); if (ci) ci.click();
+      setTimeout(function() {
+        if (ctxMenu) ctxMenu.style.display = "none";
+        var ci = document.getElementById("ctxBlockItem"); if (ci) ci.click();
+      }, 50);
     }
   });
 
@@ -5812,13 +5817,16 @@ function closeEditBPModal() {
       var inp = document.getElementById("swBulkPriceInput"); if (inp) inp.value = "";
       var pm = document.getElementById("swBulkPriceModal"); if (pm) pm.classList.add("open");
     } else {
-      var ci = document.getElementById("ctxPriceItem"); if (ci) ci.click();
+      setTimeout(function() {
+        if (ctxMenu) ctxMenu.style.display = "none";
+        var ci = document.getElementById("ctxPriceItem"); if (ci) ci.click();
+      }, 50);
     }
   });
 
-  _wire("swTeeOffBtn",     function() { _hideActionModal(); var ci = document.getElementById("ctxTeeOffItem");     if (ci) ci.click(); });
-  _wire("swSqueezeBtn",    function() { _hideActionModal(); var ai = document.getElementById("addSqueezeItem");    if (ai) ai.click(); });
-  _wire("swDelSqueezeBtn", function() { _hideActionModal(); var ci = document.getElementById("deleteSqueezeItem"); if (ci) ci.click(); });
+  _wire("swTeeOffBtn",     function() { _hideActionModal(); setTimeout(function() { var ci = document.getElementById("ctxTeeOffItem");     if (ci) ci.click(); }, 50); });
+  _wire("swSqueezeBtn",    function() { _hideActionModal(); setTimeout(function() { var ai = document.getElementById("addSqueezeItem");    if (ai) ai.click(); }, 50); });
+  _wire("swDelSqueezeBtn", function() { _hideActionModal(); setTimeout(function() { var ci = document.getElementById("deleteSqueezeItem"); if (ci) ci.click(); }, 50); });
 
   async function _bulkBlock(rowIndices) {
     try {
