@@ -1110,7 +1110,7 @@
         <label style="font-size:11px;font-weight:600;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px">Group name or label</label>
         <input id="grpEditName" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:14px;background:var(--card);color:var(--ink)" placeholder="e.g. Smith Group, Ladies League, Blocked">
       </div>
-      <div style="display:flex;gap:10px">
+      <div id="grpEditStatusRateRow" style="display:flex;gap:10px">
         <div style="flex:1">
           <label style="font-size:11px;font-weight:600;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px">Status</label>
           <select id="grpEditStatus" style="width:100%;padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:14px;background:var(--card);color:var(--ink)">
@@ -1129,11 +1129,11 @@
       </div>
     </div>
     <div class="modal-footer" id="grpSummaryFooter" style="justify-content:space-between">
-      <button class="btn-cancel" id="grpEditDelete" style="color:#c0392b;border-color:#e8b4b0">Delete Group</button>
+      <button class="btn-cancel" onclick="closeGrpEditModal()">Cancel</button>
       <div style="display:flex;gap:8px">
-        <button class="btn-cancel" onclick="closeGrpEditModal()">Cancel</button>
-        <button class="btn-cancel" id="grpEditPlayersBtn">Edit Players</button>
-        <button class="btn-save" id="grpEditSave">Save Group</button>
+        <button class="btn-cancel" id="grpEditDelete" style="color:#c0392b;border-color:#e8b4b0">Delete</button>
+        <button class="btn-cancel" id="grpEditPlayersBtn">Modify</button>
+        <button class="btn-save" id="grpEditSave">Save</button>
       </div>
     </div>
 
@@ -5637,6 +5637,7 @@ function closeEditBPModal() {
   var _lastClickRect = null, _justOpened = false;
   var _restoringState = false;
   var _pendingDragSlots = null;
+  var _grpBlockMode = false, _grpBlockSlot = null;
   var _realOpenMultiBook = window.openMultiBookModal;
 
   // Intercept drag-select: show action chooser instead of opening booking modal directly
@@ -5853,23 +5854,32 @@ function closeEditBPModal() {
     }
   });
 
-  _wire("swUnblockBtn", function() { _hideActionModal(); _fireCtxItem("ctxUnblockItem"); });
+  function _openGrpEditForBlock() {
+    _restoringState = true;
+    var row = rowsEl && rowsEl.children[_actionRows[0]];
+    var timeCell = row && row.querySelector(".row-time");
+    if (!timeCell) { _restoringState = false; return; }
+    timeCell.click();
+    _restoringState = false;
+    window.closeCtxMenu && window.closeCtxMenu();
+    var slot = window.currentSlot;
+    if (!slot) { return; }
+    _grpBlockMode = true;
+    _grpBlockSlot = slot;
+    var label = slot.block_label || "Blocked";
+    var srRow = document.getElementById("grpEditStatusRateRow");
+    if (srRow) srRow.style.display = "none";
+    window.openGrpEditModal && window.openGrpEditModal(label, [slot]);
+  }
+
+  _wire("swUnblockBtn", function() { _hideActionModal(); _openGrpEditForBlock(); });
 
   _wire("swBlockBtn", function() {
     _hideActionModal();
     if (_actionMode === "drag" && _pendingDragSlots && _pendingDragSlots.length > 0) {
-      var n = _pendingDragSlots.length;
-      if (window.confirm("Block " + n + " tee time" + (n !== 1 ? "s" : "") + "?")) {
-        var _slots = _pendingDragSlots;
-        _pendingDragSlots = null;
-        var ids = _slots.map(function(sl) { return sl._sb_id; }).filter(Boolean);
-        if (!ids.length) { alert("Could not identify tee times."); return; }
-        fetch(_SB + "/rest/v1/tee_times?id=in.(" + ids.join(",") + ")", {
-          method: "PATCH",
-          headers: Object.assign({}, _SH, {"Content-Type": "application/json", "Prefer": "return=minimal"}),
-          body: JSON.stringify({status: "blocked"})
-        }).then(function() { location.reload(); }).catch(function(e) { alert("Block error: " + e.message); });
-      }
+      var slots = _pendingDragSlots;
+      _pendingDragSlots = null;
+      window.openBlockModal(slots);
     } else {
       _fireCtxItem("ctxBlockItem");
     }
@@ -5945,6 +5955,20 @@ function closeEditBPModal() {
   document.addEventListener("click", function(e) {
     var btn=e.target.closest("#grpEditDelete"); if(!btn) return;
     e.stopImmediatePropagation();
+    if (_grpBlockMode && _grpBlockSlot) {
+      if (!window.confirm("Unblock this tee time?")) return;
+      btn.disabled=true; btn.textContent="Unblocking...";
+      var overlay=document.getElementById("grpEditModal"); if(overlay) overlay.style.display="none";
+      var id=_grpBlockSlot.id||_grpBlockSlot._sb_id;
+      if (!id) { alert("Could not identify tee time."); return; }
+      fetch(_SB+"/rest/v1/tee_times?id=eq."+id,{
+        method:"PATCH",
+        headers:Object.assign({},_SH,{"Content-Type":"application/json","Prefer":"return=minimal"}),
+        body:JSON.stringify({status:"available",block_label:null})
+      }).then(function(){ _grpBlockMode=false; _grpBlockSlot=null; location.reload(); })
+        .catch(function(err){ alert("Unblock error: "+err.message); });
+      return;
+    }
     var nameEl=document.getElementById("grpEditName"), titleEl=document.getElementById("grpEditTitle");
     var leadName=(nameEl?nameEl.value:(titleEl?titleEl.textContent:"")).trim();
     var meta=((document.getElementById("grpEditMeta")||{}).textContent||"").trim();
@@ -5953,6 +5977,53 @@ function closeEditBPModal() {
     var overlay=document.getElementById("grpEditModal"); if(overlay) overlay.style.display="none";
     _persistGroupDelete(leadName);
   }, true);
+
+  // Block mode: Modify → open addModal
+  document.addEventListener("click", function(e) {
+    var btn=e.target.closest("#grpEditPlayersBtn"); if(!btn) return;
+    if (!_grpBlockMode || !_grpBlockSlot) return;
+    e.stopImmediatePropagation();
+    document.getElementById("grpEditModal").classList.remove("open");
+    _grpBlockMode=false;
+    var sl=_grpBlockSlot; _grpBlockSlot=null;
+    var srRow=document.getElementById("grpEditStatusRateRow");
+    if(srRow) srRow.style.display="";
+    _realOpenMultiBook([sl]);
+    _relabelBookBtn();
+  }, true);
+
+  // Block mode: Save → save block label
+  document.addEventListener("click", function(e) {
+    var btn=e.target.closest("#grpEditSave"); if(!btn) return;
+    if (!_grpBlockMode || !_grpBlockSlot) return;
+    e.stopImmediatePropagation();
+    var label=(document.getElementById("grpEditName").value||"").trim()||"Blocked";
+    var id=_grpBlockSlot.id||_grpBlockSlot._sb_id;
+    if (!id) { alert("Cannot save: no tee time ID."); return; }
+    btn.disabled=true; btn.textContent="Saving...";
+    fetch(_SB+"/rest/v1/tee_times?id=eq."+id,{
+      method:"PATCH",
+      headers:Object.assign({},_SH,{"Content-Type":"application/json","Prefer":"return=minimal"}),
+      body:JSON.stringify({block_label:label})
+    }).then(function(){
+      _grpBlockMode=false; _grpBlockSlot=null;
+      var srRow=document.getElementById("grpEditStatusRateRow");
+      if(srRow) srRow.style.display="";
+      document.getElementById("grpEditModal").classList.remove("open");
+      location.reload();
+    }).catch(function(err){ btn.disabled=false; btn.textContent="Save"; alert("Save error: "+err.message); });
+  }, true);
+
+  // Reset block mode when modal is closed normally
+  (function(){
+    var _realClose=window.closeGrpEditModal;
+    window.closeGrpEditModal=function(){
+      _grpBlockMode=false; _grpBlockSlot=null;
+      var srRow=document.getElementById("grpEditStatusRateRow");
+      if(srRow) srRow.style.display="";
+      if(_realClose) _realClose();
+    };
+  })();
 
 })();
 </script>
