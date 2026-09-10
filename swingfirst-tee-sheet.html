@@ -5598,7 +5598,7 @@ function closeEditBPModal() {
       <button id="swBookBtn"       class="ctx-item" style="padding:11px 14px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;text-align:left;cursor:pointer;font-size:14px">📅  Book</button>
       <button id="swBlockBtn"      class="ctx-item" style="padding:11px 14px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;text-align:left;cursor:pointer;font-size:14px">🚫  Block</button>
       <button id="swPriceBtn"      class="ctx-item" style="padding:11px 14px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;text-align:left;cursor:pointer;font-size:14px">💰  Override $</button>
-      <button id="swTeeOffBtn"     class="ctx-item" style="padding:11px 14px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;text-align:left;cursor:pointer;font-size:14px">🏌️  Tee Off</button>
+      <button id="swTeeOffBtn"     class="ctx-item" style="padding:11px 14px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;text-align:left;cursor:pointer;font-size:14px">🏷️  Tee Off</button>
       <button id="swSqueezeBtn"    class="ctx-item" style="padding:11px 14px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;text-align:left;cursor:pointer;font-size:14px">⏱️  Squeeze</button>
       <button id="swDelSqueezeBtn" class="ctx-item" style="padding:11px 14px;border:1px solid #fca5a5;border-radius:8px;background:#fff;text-align:left;cursor:pointer;font-size:14px;display:none">🗑️  Delete Squeeze</button>
     </div>
@@ -5629,6 +5629,7 @@ function closeEditBPModal() {
   var ctxMenu = document.getElementById("ctxMenu");
   var _actionRows = [], _actionMode = "single", _dragModalId = null;
   var _inDragIntercept = false, _dragActive = false, _dragRowSet = [];
+  var _lastClickRect = null, _bypassCapture = false;
 
   function _getDate() {
     var a = document.querySelector(".ws-pill.ws-active"); if (!a) return null;
@@ -5680,28 +5681,52 @@ function closeEditBPModal() {
     if (teeOffBtn) teeOffBtn.style.display = isDrag ? "none" : "";
     if (sqBtn)     sqBtn.style.display     = (isDrag || isSq) ? "none" : "";
     if (delSqBtn)  delSqBtn.style.display  = (!isDrag && isSq) ? "" : "none";
+
+    if (_lastClickRect && !isDrag) {
+      var vw = window.innerWidth, vh = window.innerHeight;
+      var mw = 310, mh = 290;
+      var left = _lastClickRect.right + 10;
+      if (left + mw > vw - 8) left = _lastClickRect.left - mw - 10;
+      if (left < 8) left = 8;
+      var top = _lastClickRect.top - 10;
+      if (top + mh > vh - 8) top = vh - mh - 8;
+      if (top < 8) top = 8;
+      modal.style.alignItems = "flex-start";
+      modal.style.justifyContent = "flex-start";
+      modal.style.paddingTop = top + "px";
+      modal.style.paddingLeft = left + "px";
+    } else {
+      modal.style.alignItems = "";
+      modal.style.justifyContent = "";
+      modal.style.padding = "";
+    }
+
     modal.classList.add("open");
   }
 
   function _hideActionModal() {
-    var m = document.getElementById("swActionModal"); if (m) m.classList.remove("open");
+    var m = document.getElementById("swActionModal");
+    if (m) {
+      m.classList.remove("open");
+      m.style.alignItems = "";
+      m.style.justifyContent = "";
+      m.style.padding = "";
+    }
   }
 
-  /* Autocomplete suppression */
   var ni = document.getElementById("grpEditName"); if (ni) ni.setAttribute("autocomplete", "off");
 
-  /* Single TIME click - capture phase */
   document.addEventListener("click", function(e) {
-    if (_inDragIntercept) return;
+    if (_bypassCapture || _inDragIntercept) return;
     var tc = e.target.closest(".row-time"); if (!tc) return;
     var row = tc.closest(".row"); if (!row || !rowsEl) return;
     var idx = Array.from(rowsEl.children).indexOf(row);
     _actionRows = [idx]; _actionMode = "single";
+    _lastClickRect = tc.getBoundingClientRect();
     setTimeout(function() { if (ctxMenu) ctxMenu.style.display = "none"; }, 0);
     _showActionModal();
   }, true);
 
-  /* Close on outside click */
   document.addEventListener("click", function(e) {
     var m = document.getElementById("swActionModal");
     if (!m || !m.classList.contains("open")) return;
@@ -5711,7 +5736,6 @@ function closeEditBPModal() {
 
   var ac = document.getElementById("swActionClose"); if (ac) ac.addEventListener("click", _hideActionModal);
 
-  /* Drag tracking */
   if (rowsEl) {
     rowsEl.addEventListener("pointerdown", function(e) {
       if (!e.target.closest(".row-time")) return;
@@ -5732,7 +5756,7 @@ function closeEditBPModal() {
     _dragActive = false;
     if (_dragRowSet.length < 2) return;
     _actionRows = _dragRowSet.slice().sort(function(a, b) { return a - b; });
-    _actionMode = "drag"; _inDragIntercept = true; _dragModalId = null;
+    _actionMode = "drag"; _inDragIntercept = true; _dragModalId = null; _lastClickRect = null;
     setTimeout(function() {
       if (!_inDragIntercept) return;
       _inDragIntercept = false; _showActionModal();
@@ -5743,12 +5767,11 @@ function closeEditBPModal() {
     var m = document.getElementById(id); if (!m) return;
     new MutationObserver(function() {
       if (!_inDragIntercept) return;
-      if (window.getComputedStyle(m).display === "none") return;
-      _dragModalId = id; m.style.display = "none"; _inDragIntercept = false; _showActionModal();
+      if (!m.classList.contains("open")) return;
+      _dragModalId = id; m.classList.remove("open"); _inDragIntercept = false; _showActionModal();
     }).observe(m, {attributes: true, attributeFilter: ["style", "class"]});
   });
 
-  /* Action buttons */
   function _wire(id, fn) { var el = document.getElementById(id); if (el) el.addEventListener("click", fn); }
 
   _wire("swBookBtn", function() {
@@ -5756,7 +5779,16 @@ function closeEditBPModal() {
     if (_actionMode === "drag" && _dragModalId) {
       var m = document.getElementById(_dragModalId); if (m) m.classList.add("open"); _dragModalId = null;
     } else {
-      var ci = document.getElementById("ctxGroupItem"); if (ci) ci.click();
+      var rowEl = rowsEl && rowsEl.children[_actionRows[0]];
+      var rtEl = rowEl && rowEl.querySelector(".row-time");
+      if (rtEl) {
+        _bypassCapture = true;
+        rtEl.dispatchEvent(new MouseEvent("click", {bubbles: true, cancelable: true}));
+        _bypassCapture = false;
+      }
+      setTimeout(function() {
+        var ci = document.getElementById("ctxGroupItem"); if (ci) ci.click();
+      }, 50);
     }
   });
 
@@ -5788,7 +5820,6 @@ function closeEditBPModal() {
   _wire("swSqueezeBtn",    function() { _hideActionModal(); var ai = document.getElementById("addSqueezeItem");    if (ai) ai.click(); });
   _wire("swDelSqueezeBtn", function() { _hideActionModal(); var ci = document.getElementById("deleteSqueezeItem"); if (ci) ci.click(); });
 
-  /* Bulk Block */
   async function _bulkBlock(rowIndices) {
     try {
       var ids = await _getRowTeeTimeIds(rowIndices);
@@ -5802,7 +5833,6 @@ function closeEditBPModal() {
     } catch(e) { alert("Block error: " + e.message); }
   }
 
-  /* Bulk Price */
   _wire("swBulkPriceCancel", function() { var m = document.getElementById("swBulkPriceModal"); if (m) m.classList.remove("open"); });
   _wire("swBulkPriceClose",  function() { var m = document.getElementById("swBulkPriceModal"); if (m) m.classList.remove("open"); });
   _wire("swBulkPriceSave", async function() {
@@ -5823,7 +5853,6 @@ function closeEditBPModal() {
     } catch(e) { alert("Price error: " + e.message); }
   });
 
-  /* Delete Group */
   async function _persistGroupDelete(leadName) {
     var date = _getDate();
     if (!date) { alert("Could not detect date."); return; }
@@ -5862,6 +5891,5 @@ function closeEditBPModal() {
   }, true);
 
 })();
-
 </script>
 </html>
