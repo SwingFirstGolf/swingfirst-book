@@ -5605,6 +5605,7 @@ function closeEditBPModal() {
       <button id="swTeeOffBtn"     style="padding:11px 14px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;text-align:left;cursor:pointer;font-size:14px">🏌️  Tee Off</button>
       <button id="swSqueezeBtn"    style="padding:11px 14px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;text-align:left;cursor:pointer;font-size:14px">⏱️  Squeeze</button>
       <button id="swDelSqueezeBtn" style="padding:11px 14px;border:1px solid #fca5a5;border-radius:8px;background:#fff;text-align:left;cursor:pointer;font-size:14px;display:none">🗑️  Delete Squeeze</button>
+      <button id="swUnblockBtn" style="padding:11px 14px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;text-align:left;cursor:pointer;font-size:14px;display:none">🔓  Unblock</button>
     </div>
   </div>
 </div>
@@ -5724,12 +5725,31 @@ function closeEditBPModal() {
         var t2 = _parseRowTime(_actionRows[0]); title.textContent = t2?t2.label:"Tee Time";
       }
     }
-    var teeOffBtn = document.getElementById("swTeeOffBtn");
-    var sqBtn     = document.getElementById("swSqueezeBtn");
-    var delSqBtn  = document.getElementById("swDelSqueezeBtn");
-    if (teeOffBtn) teeOffBtn.style.display = isDrag ? "none" : "";
-    if (sqBtn)     sqBtn.style.display     = (isDrag||isSq) ? "none" : "";
-    if (delSqBtn)  delSqBtn.style.display  = (!isDrag&&isSq) ? "" : "none";
+    var isBlocked = !!(row0 && row0.querySelector(".row-blocked-cell"));
+    var teeOffBtn  = document.getElementById("swTeeOffBtn");
+    var sqBtn      = document.getElementById("swSqueezeBtn");
+    var delSqBtn   = document.getElementById("swDelSqueezeBtn");
+    var unblockBtn = document.getElementById("swUnblockBtn");
+    var bookBtn    = document.getElementById("swBookBtn");
+    var blockBtn   = document.getElementById("swBlockBtn");
+    var priceBtn   = document.getElementById("swPriceBtn");
+    if (isBlocked) {
+      if (bookBtn)    bookBtn.style.display    = "none";
+      if (blockBtn)   blockBtn.style.display   = "none";
+      if (priceBtn)   priceBtn.style.display   = "none";
+      if (teeOffBtn)  teeOffBtn.style.display  = "none";
+      if (sqBtn)      sqBtn.style.display      = "none";
+      if (delSqBtn)   delSqBtn.style.display   = "none";
+      if (unblockBtn) unblockBtn.style.display = "";
+    } else {
+      if (bookBtn)    bookBtn.style.display    = "";
+      if (blockBtn)   blockBtn.style.display   = "";
+      if (priceBtn)   priceBtn.style.display   = "";
+      if (teeOffBtn)  teeOffBtn.style.display  = isDrag ? "none" : "";
+      if (sqBtn)      sqBtn.style.display      = (isDrag||isSq) ? "none" : "";
+      if (delSqBtn)   delSqBtn.style.display   = (!isDrag&&isSq) ? "" : "none";
+      if (unblockBtn) unblockBtn.style.display = "none";
+    }
 
     var card = document.getElementById("swActionCard");
     if (card) {
@@ -5807,6 +5827,18 @@ function closeEditBPModal() {
     }).observe(m, {attributes:true, attributeFilter:["style","class"]});
   });
 
+  // Blocked cell click: show action chooser with Unblock option
+  document.addEventListener("click", function(e) {
+    if (_restoringState) return;
+    var bc = e.target.closest(".row-blocked-cell"); if (!bc) return;
+    var row = bc.closest(".row"); if (!row || !rowsEl) return;
+    var idx = Array.from(rowsEl.children).indexOf(row);
+    if (idx < 0) return;
+    _actionRows = [idx]; _actionMode = "single";
+    _lastClickRect = bc.getBoundingClientRect();
+    _showActionModal();
+  }, true);
+
   function _wire(id, fn) { var el=document.getElementById(id); if (el) el.addEventListener("click", fn); }
 
   _wire("swBookBtn", function() {
@@ -5820,6 +5852,8 @@ function closeEditBPModal() {
       _bookSingleSlot();
     }
   });
+
+  _wire("swUnblockBtn", function() { _hideActionModal(); _fireCtxItem("ctxUnblockItem"); });
 
   _wire("swBlockBtn", function() {
     _hideActionModal();
