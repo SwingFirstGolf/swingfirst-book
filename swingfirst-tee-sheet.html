@@ -5837,7 +5837,7 @@ function closeEditBPModal() {
     if (idx < 0) return;
     _actionRows = [idx]; _actionMode = "single";
     _lastClickRect = bc.getBoundingClientRect();
-    _showActionModal();
+    _openGrpEditForBlock();
   }, true);
 
   function _wire(id, fn) { var el=document.getElementById(id); if (el) el.addEventListener("click", fn); }
