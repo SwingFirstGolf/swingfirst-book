@@ -5783,6 +5783,7 @@ function closeEditBPModal() {
     _actionRows = [idx]; _actionMode = "single";
     _lastClickRect = tc.getBoundingClientRect();
     setTimeout(function() { if (ctxMenu) ctxMenu.style.display = "none"; }, 0);
+    if (row.querySelector(".row-blocked-cell")) { _openGrpEditForBlock(); return; }
     _showActionModal();
   }, true);
 
