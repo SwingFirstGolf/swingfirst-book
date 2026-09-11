@@ -6004,7 +6004,7 @@ function closeEditBPModal() {
     _persistGroupDelete(leadName);
   }, true);
 
-  // Block mode: Modify → unblock slots first, then open addModal
+  // Block mode: Modify → unblock slots first, re-fetch full data, then open addModal
   document.addEventListener("click", function(e) {
     var btn=e.target.closest("#grpEditPlayersBtn"); if(!btn) return;
     if (!_grpBlockMode || !_grpBlockSlot) return;
@@ -6018,8 +6018,16 @@ function closeEditBPModal() {
         method:"PATCH",
         headers:Object.assign({},_SH,{"Content-Type":"application/json","Prefer":"return=minimal"}),
         body:JSON.stringify({status:"available"})
-      }).then(function(){ _realOpenMultiBook(sls); _relabelBookBtn(); })
-        .catch(function(err){ alert("Could not unblock: "+err.message); });
+      }).then(function(){
+        return fetch(_SB+"/rest/v1/tee_times?id=in.("+ids.join(",")+")",{headers:_SH});
+      }).then(function(r){ return r.json(); })
+      .then(function(fullSlots){
+        var merged=sls.map(function(s){
+          var full=(fullSlots||[]).find(function(f){return f.id===s.id;});
+          return full ? Object.assign({},full,{players:[]}) : s;
+        });
+        _realOpenMultiBook(merged); _relabelBookBtn();
+      }).catch(function(err){ alert("Could not unblock: "+err.message); });
     } else {
       _realOpenMultiBook(sls); _relabelBookBtn();
     }
