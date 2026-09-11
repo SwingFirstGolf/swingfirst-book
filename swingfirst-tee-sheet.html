@@ -5855,14 +5855,35 @@ function closeEditBPModal() {
   });
 
   function _openGrpEditForBlock() {
-    var slot = window.state && window.state.slots[_actionRows[0]];
-    if (!slot) return;
-    _grpBlockMode = true;
-    _grpBlockSlot = slot;
-    var label = slot.block_label || "Blocked";
-    var srRow = document.getElementById("grpEditStatusRateRow");
-    if (srRow) srRow.style.display = "none";
-    window.openGrpEditModal(label, [slot]);
+    var row = rowsEl && rowsEl.children[_actionRows[0]];
+    if (!row) return;
+    var timeEl = row.querySelector(".row-time");
+    var timeText = (timeEl && timeEl.textContent.trim()) || "";
+    var m = timeText.match(/(\d+):(\d+)\s*(AM|PM)/i);
+    if (!m) return;
+    var h = parseInt(m[1]), min = parseInt(m[2]), pm = m[3].toUpperCase() === "PM";
+    if (pm && h !== 12) h += 12;
+    if (!pm && h === 12) h = 0;
+    var date = window.getSelectedDate ? window.getSelectedDate() : new Date().toISOString().slice(0,10);
+    fetch(_SB + "/rest/v1/tee_times?date=eq." + date + "&hour=eq." + h + "&minute=eq." + min + "&status=eq.blocked&select=id,hour,minute", { headers: _SH })
+      .then(function(r) { return r.json(); })
+      .then(function(rows) {
+        var r0 = rows && rows[0];
+        var fakeSlot = { id: r0 && r0.id, hour: h, minute: min, players: [] };
+        _grpBlockMode = true; _grpBlockSlot = fakeSlot;
+        var srRow = document.getElementById("grpEditStatusRateRow");
+        if (srRow) srRow.style.display = "none";
+        var saveBtn = document.getElementById("grpEditSave");
+        if (saveBtn) saveBtn.style.display = "none";
+        window.openGrpEditModal("Blocked", [fakeSlot]);
+      })
+      .catch(function() {
+        var fakeSlot = { hour: h, minute: min, players: [] };
+        _grpBlockMode = true; _grpBlockSlot = fakeSlot;
+        var srRow = document.getElementById("grpEditStatusRateRow");
+        if (srRow) srRow.style.display = "none";
+        window.openGrpEditModal("Blocked", [fakeSlot]);
+      });
   }
 
   _wire("swUnblockBtn", function() { _hideActionModal(); _openGrpEditForBlock(); });
@@ -5957,7 +5978,7 @@ function closeEditBPModal() {
       fetch(_SB+"/rest/v1/tee_times?id=eq."+id,{
         method:"PATCH",
         headers:Object.assign({},_SH,{"Content-Type":"application/json","Prefer":"return=minimal"}),
-        body:JSON.stringify({status:"available",block_label:null})
+        body:JSON.stringify({status:"available"})
       }).then(function(){ _grpBlockMode=false; _grpBlockSlot=null; location.reload(); })
         .catch(function(err){ alert("Unblock error: "+err.message); });
       return;
@@ -5985,26 +6006,12 @@ function closeEditBPModal() {
     _relabelBookBtn();
   }, true);
 
-  // Block mode: Save → save block label
+  // Block mode: Save → just close modal (no label column in DB)
   document.addEventListener("click", function(e) {
     var btn=e.target.closest("#grpEditSave"); if(!btn) return;
-    if (!_grpBlockMode || !_grpBlockSlot) return;
+    if (!_grpBlockMode) return;
     e.stopImmediatePropagation();
-    var label=(document.getElementById("grpEditName").value||"").trim()||"Blocked";
-    var id=_grpBlockSlot.id||_grpBlockSlot._sb_id;
-    if (!id) { alert("Cannot save: no tee time ID."); return; }
-    btn.disabled=true; btn.textContent="Saving...";
-    fetch(_SB+"/rest/v1/tee_times?id=eq."+id,{
-      method:"PATCH",
-      headers:Object.assign({},_SH,{"Content-Type":"application/json","Prefer":"return=minimal"}),
-      body:JSON.stringify({block_label:label})
-    }).then(function(){
-      _grpBlockMode=false; _grpBlockSlot=null;
-      var srRow=document.getElementById("grpEditStatusRateRow");
-      if(srRow) srRow.style.display="";
-      document.getElementById("grpEditModal").classList.remove("open");
-      location.reload();
-    }).catch(function(err){ btn.disabled=false; btn.textContent="Save"; alert("Save error: "+err.message); });
+    window.closeGrpEditModal && window.closeGrpEditModal();
   }, true);
 
   // Reset block mode when modal is closed normally
