@@ -6024,7 +6024,8 @@ function closeEditBPModal() {
       .then(function(fullSlots){
         var merged=sls.map(function(s){
           var full=(fullSlots||[]).find(function(f){return f.id===s.id;});
-          return full ? Object.assign({},full,{players:[]}) : s;
+          if (full) return Object.assign({},full,{_sb_id:full.id,rateCents:full.rack_cents,players:[]});
+          return s;
         });
         _realOpenMultiBook(merged); _relabelBookBtn();
       }).catch(function(err){ alert("Could not unblock: "+err.message); });
