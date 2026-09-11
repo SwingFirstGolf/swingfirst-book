@@ -1074,7 +1074,7 @@
         <div class="form-group"><label class="form-label">Rate type</label><select class="form-select" id="addRateType"><option>Public</option><option>Senior</option><option>Junior</option><option>Twilight</option><option>Member</option></select></div>
       </div>
     </div>
-    <div class="modal-footer"><button class="btn-cancel" id="addCancel">Cancel</button><button class="btn-save" id="addSave">Book</button></div>
+    <div class="modal-footer"><button class="btn-cancel" id="addCancel">Cancel</button><button class="btn-save" id="addSave">Save</button></div>
   </div>
 </div>
 
@@ -5683,7 +5683,7 @@ function closeEditBPModal() {
   function _relabelBookBtn() {
     setTimeout(function() {
       var btn = document.getElementById("addSave");
-      if (btn) btn.textContent = "Book";
+      if (btn) btn.textContent = "Save";
     }, 0);
   }
 
@@ -6004,7 +6004,7 @@ function closeEditBPModal() {
     _persistGroupDelete(leadName);
   }, true);
 
-  // Block mode: Modify → open addModal
+  // Block mode: Modify → unblock slots first, then open addModal
   document.addEventListener("click", function(e) {
     var btn=e.target.closest("#grpEditPlayersBtn"); if(!btn) return;
     if (!_grpBlockMode || !_grpBlockSlot) return;
@@ -6012,8 +6012,17 @@ function closeEditBPModal() {
     document.getElementById("grpEditModal").classList.remove("open");
     _grpBlockMode=false;
     var sls=_grpBlockSlots||[_grpBlockSlot]; _grpBlockSlot=null; _grpBlockSlots=null;
-    _realOpenMultiBook(sls);
-    _relabelBookBtn();
+    var ids=sls.map(function(s){return s&&s.id;}).filter(Boolean);
+    if (ids.length) {
+      fetch(_SB+"/rest/v1/tee_times?id=in.("+ids.join(",")+")",{
+        method:"PATCH",
+        headers:Object.assign({},_SH,{"Content-Type":"application/json","Prefer":"return=minimal"}),
+        body:JSON.stringify({status:"available"})
+      }).then(function(){ _realOpenMultiBook(sls); _relabelBookBtn(); })
+        .catch(function(err){ alert("Could not unblock: "+err.message); });
+    } else {
+      _realOpenMultiBook(sls); _relabelBookBtn();
+    }
   }, true);
 
   // Block mode: Save → just close modal (no label column in DB)
