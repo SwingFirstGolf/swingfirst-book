@@ -5872,17 +5872,11 @@ function closeEditBPModal() {
         var r0 = rows && rows[0];
         var fakeSlot = { id: r0 && r0.id, hour: h, minute: min, players: [] };
         _grpBlockMode = true; _grpBlockSlot = fakeSlot;
-        var srRow = document.getElementById("grpEditStatusRateRow");
-        if (srRow) srRow.style.display = "none";
-        var saveBtn = document.getElementById("grpEditSave");
-        if (saveBtn) saveBtn.style.display = "none";
         window.openGrpEditModal("Blocked", [fakeSlot]);
       })
       .catch(function() {
         var fakeSlot = { hour: h, minute: min, players: [] };
         _grpBlockMode = true; _grpBlockSlot = fakeSlot;
-        var srRow = document.getElementById("grpEditStatusRateRow");
-        if (srRow) srRow.style.display = "none";
         window.openGrpEditModal("Blocked", [fakeSlot]);
       });
   }
