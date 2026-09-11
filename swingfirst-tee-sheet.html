@@ -2858,6 +2858,9 @@ function attachAutocomplete(input) {
         const ncDiv = document.getElementById(`ncForm${idx}`);
         if (pcDiv) pcDiv.classList.remove('visible');
         if (ncDiv) ncDiv.style.display = 'none';
+        // Auto-fill notes from customer profile
+        const notesEl = document.getElementById(`addNotes${idx}`);
+        if (notesEl && item.notes && !notesEl.value) notesEl.value = item.notes;
         input.style.display = '';
       });
       _acList.appendChild(div);
@@ -2919,7 +2922,7 @@ function attachAutocomplete(input) {
         }
         const rows = await fetch(
           `${SB_URL}/rest/v1/q18_customers` +
-          `?select=q18_id,first_name,last_name,email,phone,reservation_count` +
+          `?select=q18_id,first_name,last_name,email,phone,reservation_count,notes` +
           acFilter +
           `&reservation_count=gte.0` +
           `&order=reservation_count.desc&limit=12`,
@@ -3191,6 +3194,11 @@ document.getElementById("addSave").addEventListener("click", async () => {
       _pNames.push((document.getElementById(`addName${ni}`)?.value || '').trim());
       _pNotes.push((document.getElementById(`addNotes${ni}`)?.value || '').trim());
     }
+    const _q18Custs = [];
+    for (let ni = 0; ni < addCount; ni++) {
+      const _inp = document.getElementById(`addName${ni}`);
+      _q18Custs.push(_inp && _inp._q18Customer ? _inp._q18Customer : null);
+    }
     const groupName = _pNames[0] || '';
     if (!groupName) { document.getElementById('addName0')?.focus(); return; }
 
@@ -3254,6 +3262,18 @@ document.getElementById("addSave").addEventListener("click", async () => {
               status, is_lead: i === 0,
             });
             if (bp?.id) { grpPlayers[i].bpId = bp.id; grpPlayers[i].bookingId = bookingId; }
+          }
+        }
+        // Save notes back to customer profiles
+        for (let _ni = 0; _ni < _q18Custs.length; _ni++) {
+          const _cust = _q18Custs[_ni];
+          const _note = _pNotes[_ni];
+          if (_cust && _cust.q18_id && _note) {
+            await fetch(`${SB_URL}/rest/v1/q18_customers?q18_id=eq.${_cust.q18_id}`, {
+              method: 'PATCH',
+              headers: { ...SB_H, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+              body: JSON.stringify({ notes: _note })
+            }).catch(() => {});
           }
         }
       } catch (err) {
