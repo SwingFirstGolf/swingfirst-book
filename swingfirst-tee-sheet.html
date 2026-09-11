@@ -5637,7 +5637,7 @@ function closeEditBPModal() {
   var _lastClickRect = null, _justOpened = false;
   var _restoringState = false;
   var _pendingDragSlots = null;
-  var _grpBlockMode = false, _grpBlockSlot = null;
+  var _grpBlockMode = false, _grpBlockSlot = null, _grpBlockSlots = null;
   var _realOpenMultiBook = window.openMultiBookModal;
 
   // Intercept drag-select: show action chooser instead of opening booking modal directly
@@ -5856,30 +5856,47 @@ function closeEditBPModal() {
   });
 
   function _openGrpEditForBlock() {
-    var row = rowsEl && rowsEl.children[_actionRows[0]];
-    if (!row) return;
-    var timeEl = row.querySelector(".row-time");
-    var timeText = (timeEl && timeEl.textContent.trim()) || "";
-    var m = timeText.match(/(\d+):(\d+)\s*(AM|PM)/i);
-    if (!m) return;
-    var h = parseInt(m[1]), min = parseInt(m[2]), pm = m[3].toUpperCase() === "PM";
-    if (pm && h !== 12) h += 12;
-    if (!pm && h === 12) h = 0;
+    var clickedIdx = _actionRows[0];
+    if (!rowsEl || clickedIdx == null) return;
+    // Walk backward to find start of contiguous block
+    var startIdx = clickedIdx;
+    while (startIdx > 0 && rowsEl.children[startIdx-1] && rowsEl.children[startIdx-1].querySelector('.row-blocked-cell')) startIdx--;
+    // Walk forward to find end
+    var endIdx = clickedIdx;
+    while (endIdx < rowsEl.children.length-1 && rowsEl.children[endIdx+1] && rowsEl.children[endIdx+1].querySelector('.row-blocked-cell')) endIdx++;
+    // Collect hour/minute from each row in the block
+    var pairs = [];
+    for (var i = startIdx; i <= endIdx; i++) {
+      var rr = rowsEl.children[i];
+      var te = rr && rr.querySelector('.row-time');
+      var tt = (te && te.textContent.trim()) || '';
+      var m = tt.match(/(\d+):(\d+)\s*(AM|PM)/i);
+      if (!m) continue;
+      var h = parseInt(m[1]), min = parseInt(m[2]), pm = m[3].toUpperCase() === 'PM';
+      if (pm && h !== 12) h += 12;
+      if (!pm && h === 12) h = 0;
+      pairs.push({ hour: h, minute: min });
+    }
+    if (!pairs.length) return;
     var date = window.getSelectedDate ? window.getSelectedDate() : new Date().toISOString().slice(0,10);
-    fetch(_SB + "/rest/v1/tee_times?date=eq." + date + "&hour=eq." + h + "&minute=eq." + min + "&status=eq.blocked&select=id,hour,minute", { headers: _SH })
+    fetch(_SB + '/rest/v1/tee_times?date=eq.' + date + '&status=eq.blocked&select=id,hour,minute', { headers: _SH })
       .then(function(r) { return r.json(); })
       .then(function(rows) {
-        var r0 = rows && rows[0];
-        var fakeSlot = { id: r0 && r0.id, hour: h, minute: min, players: [] };
-        _grpBlockMode = true; _grpBlockSlot = fakeSlot;
-        window.openGrpEditModal("Blocked", [fakeSlot]);
+        var slots = pairs.map(function(p) {
+          var found = (rows||[]).find(function(r) { return r.hour===p.hour && r.minute===p.minute; });
+          return { id: found&&found.id, hour: p.hour, minute: p.minute, players: [] };
+        });
+        _grpBlockMode = true; _grpBlockSlot = slots[0]; _grpBlockSlots = slots;
+        window.openGrpEditModal('Blocked', slots);
       })
       .catch(function() {
-        var fakeSlot = { hour: h, minute: min, players: [] };
-        _grpBlockMode = true; _grpBlockSlot = fakeSlot;
-        window.openGrpEditModal("Blocked", [fakeSlot]);
+        var slots = pairs.map(function(p) { return { hour: p.hour, minute: p.minute, players: [] }; });
+        _grpBlockMode = true; _grpBlockSlot = slots[0]; _grpBlockSlots = slots;
+        window.openGrpEditModal('Blocked', slots);
       });
   }
+
+
 
   _wire("swUnblockBtn", function() { _hideActionModal(); _openGrpEditForBlock(); });
 
@@ -5968,13 +5985,13 @@ function closeEditBPModal() {
       if (!window.confirm("Unblock this tee time?")) return;
       btn.disabled=true; btn.textContent="Unblocking...";
       var overlay=document.getElementById("grpEditModal"); if(overlay) overlay.style.display="none";
-      var id=_grpBlockSlot.id||_grpBlockSlot._sb_id;
-      if (!id) { alert("Could not identify tee time."); return; }
-      fetch(_SB+"/rest/v1/tee_times?id=eq."+id,{
+      var ids=(_grpBlockSlots||[_grpBlockSlot]).map(function(s){return s&&(s.id||s._sb_id);}).filter(Boolean);
+      if (!ids.length) { alert("Could not identify tee times."); return; }
+      fetch(_SB+"/rest/v1/tee_times?id=in.("+ids.join(",")+")",{
         method:"PATCH",
         headers:Object.assign({},_SH,{"Content-Type":"application/json","Prefer":"return=minimal"}),
         body:JSON.stringify({status:"available"})
-      }).then(function(){ _grpBlockMode=false; _grpBlockSlot=null; location.reload(); })
+      }).then(function(){ _grpBlockMode=false; _grpBlockSlot=null; _grpBlockSlots=null; location.reload(); })
         .catch(function(err){ alert("Unblock error: "+err.message); });
       return;
     }
@@ -5994,10 +6011,8 @@ function closeEditBPModal() {
     e.stopImmediatePropagation();
     document.getElementById("grpEditModal").classList.remove("open");
     _grpBlockMode=false;
-    var sl=_grpBlockSlot; _grpBlockSlot=null;
-    var srRow=document.getElementById("grpEditStatusRateRow");
-    if(srRow) srRow.style.display="";
-    _realOpenMultiBook([sl]);
+    var sls=_grpBlockSlots||[_grpBlockSlot]; _grpBlockSlot=null; _grpBlockSlots=null;
+    _realOpenMultiBook(sls);
     _relabelBookBtn();
   }, true);
 
@@ -6013,9 +6028,7 @@ function closeEditBPModal() {
   (function(){
     var _realClose=window.closeGrpEditModal;
     window.closeGrpEditModal=function(){
-      _grpBlockMode=false; _grpBlockSlot=null;
-      var srRow=document.getElementById("grpEditStatusRateRow");
-      if(srRow) srRow.style.display="";
+      _grpBlockMode=false; _grpBlockSlot=null; _grpBlockSlots=null;
       if(_realClose) _realClose();
     };
   })();
