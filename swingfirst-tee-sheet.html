@@ -3320,6 +3320,14 @@ document.getElementById("addSave").addEventListener("click", async () => {
       names.push("");
     }
   }
+  // Collect notes + q18 customers before modal closes
+  const _singleNotes = [];
+  const _singleCusts = [];
+  for (let i = 0; i < addCount; i++) {
+    const _sinp = document.getElementById(`addName${i}`);
+    _singleNotes.push((document.getElementById(`addNotes${i}`)?.value || '').trim());
+    _singleCusts.push(_sinp && _sinp._q18Customer ? _sinp._q18Customer : null);
+  }
   if (!names[0]) { document.getElementById("addName0")?.focus(); return; }
 
   // Fill empty names with "Guest"
@@ -3402,6 +3410,18 @@ document.getElementById("addSave").addEventListener("click", async () => {
         // Store bpId on the player object so moves can be persisted later
         const playerObj = slot.players[emptyIndices[i]];
         if (playerObj && newBp?.id) { playerObj.bpId = newBp.id; playerObj.bookingId = bookingId; }
+      }
+      // Save notes back to customer profiles
+      for (let _ni = 0; _ni < _singleCusts.length; _ni++) {
+        const _scust = _singleCusts[_ni];
+        const _snote = _singleNotes[_ni];
+        if (_scust && _scust.q18_id && _snote) {
+          await fetch(`${SB_URL}/rest/v1/q18_customers?q18_id=eq.${_scust.q18_id}`, {
+            method: 'PATCH',
+            headers: { ...SB_H, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+            body: JSON.stringify({ notes: _snote })
+          }).catch(() => {});
+        }
       }
     } catch (err) {
       console.error('Walk-in save failed:', err);
