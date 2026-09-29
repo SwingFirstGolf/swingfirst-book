@@ -727,6 +727,7 @@ function applyCourseBanner(slug, name) {
 
 const state = { slots: [], dayOffset: _readDayOffset() };
 let courseMap         = {};
+let stripeAccountMap  = {};
 let dbCourses         = [];   // active courses from DB — drives the nav
 let currentCourseId   = null;
 let currentCourseName = 'Palmbrook Golf Club';
@@ -899,10 +900,11 @@ function setSheetMode(mode) {
 
 async function initCourses() {
   try {
-    const data = await sbGet('courses', 'select=id,slug,name,back_nine_cutoff,back_nine_rate_cents,address,phone,par,yards,year_built,architect,cart_policy&active=eq.true&order=name.asc');
+    const data = await sbGet('courses', 'select=id,slug,name,stripe_account_id,back_nine_cutoff,back_nine_rate_cents,address,phone,par,yards,year_built,architect,cart_policy&active=eq.true&order=name.asc');
     dbCourses = data;   // ← drives the nav; only real DB courses shown
     data.forEach(c => {
       courseMap[c.slug] = c.id;
+      stripeAccountMap[c.id] = c.stripe_account_id || '';
       if (c.back_nine_cutoff) {
         const [bh, bm] = c.back_nine_cutoff.split(':').map(Number);
         courseB9[c.id] = { cutoffMin: bh * 60 + bm, rateCents: c.back_nine_rate_cents || 0 };
@@ -1799,6 +1801,9 @@ document.getElementById('bookSave').addEventListener('click', async () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           amountCents: totalCents,
+          connectedAccountId: stripeAccountMap[currentCourseId] || '',
+          customerEmail: email,
+          customerName: name,
           metadata: {
             booking_ref: ref,
             lead_name:   name,
@@ -2252,5 +2257,6 @@ async function _executeCancel() {
   }
 }
 </script>
+<!-- sf-stripe-v1 -->
 </body>
 </html>
