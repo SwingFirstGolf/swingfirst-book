@@ -941,6 +941,7 @@ let lastTxn    = null;         // last completed transaction for receipt
 let customItemCategory = 'merch';
 let courses    = [];
 let currentCourseId = null;
+let stripeAccountMap = {};
 
 // ─── Init ────────────────────────────────────────────────────────
 (async function init() {
@@ -953,8 +954,9 @@ let currentCourseId = null;
 
   // Load courses, default to palmbrook
   try {
-    const r = await fetch(`${SB_URL}/rest/v1/courses?select=id,name,slug&order=name.asc`, { headers: SB_H });
+    const r = await fetch(`${SB_URL}/rest/v1/courses?select=id,name,slug,stripe_account_id&order=name.asc`, { headers: SB_H });
     courses = await r.json();
+    courses.forEach(c => { stripeAccountMap[c.id] = c.stripe_account_id || ''; });
     const pb = courses.find(c => c.slug === 'palmbrook') || courses[0];
     if (pb) currentCourseId = pb.id;
   } catch(e) { console.warn('Could not load courses', e); }
@@ -1559,7 +1561,7 @@ async function startPhonePayment() {
     const res = await fetch(SUPABASE_FN_URL + '/create-payment-intent', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ amountCents: sub, description: 'SwingFirst POS — phone payment' }),
+      body:    JSON.stringify({ amountCents: sub, description: 'SwingFirst POS — phone payment', connectedAccountId: stripeAccountMap[currentCourseId] || '', customerName: getPlayerNames()[0] || '' }),
     });
     const data = await res.json();
     if (!res.ok || !data.clientSecret) throw new Error(data.error || 'Could not create payment');
