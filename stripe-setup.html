@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SwingFirst — Stripe Payments Setup</title>
+  <style>
+    :root {
+      --ink:        #0d1f17;
+      --ink-soft:   #3b4a42;
+      --ink-muted:  #6b7a72;
+      --line:       #e4e9e6;
+      --paper:      #fbfaf7;
+      --card:       #ffffff;
+      --green-900:  #0b3d2e;
+      --green-700:  #1b6b4f;
+      --green-600:  #2a8a6a;
+      --green-200:  #a8d5bc;
+      --green-100:  #e3f2ec;
+      --green-50:   #f2f9f5;
+      --amber-700:  #B45309;
+      --amber-100:  #FEF3C7;
+      --gray-400:   #9ca3af;
+      --gray-100:   #f3f4f6;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, "system-ui", "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+      min-height: 100vh;
+    }
+    header {
+      background: var(--green-900);
+      color: #fff;
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .header-brand { font-weight: 700; font-size: 1rem; letter-spacing: .02em; }
+    .header-title { font-size: .875rem; color: var(--green-200); }
+    .header-link {
+      font-size: .8rem;
+      color: var(--green-200);
+      text-decoration: none;
+      opacity: .75;
+    }
+    .header-link:hover { opacity: 1; }
+
+    main {
+      max-width: 560px;
+      margin: 40px auto;
+      padding: 0 16px;
+    }
+
+    .banner {
+      background: var(--green-100);
+      border: 1px solid var(--green-200);
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin-bottom: 24px;
+      font-size: .9rem;
+      color: var(--green-700);
+      display: none;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 28px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.06);
+    }
+    .card-header {
+      margin-bottom: 20px;
+    }
+    .card-header h2 {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--ink);
+    }
+    .card-header p {
+      margin-top: 6px;
+      font-size: .875rem;
+      color: var(--ink-muted);
+    }
+
+    label {
+      display: block;
+      font-size: .8rem;
+      font-weight: 600;
+      color: var(--ink-soft);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin-bottom: 6px;
+    }
+    select {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--paper);
+      color: var(--ink);
+      font-size: .9rem;
+      font-family: inherit;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b7a72' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      padding-right: 36px;
+      cursor: pointer;
+    }
+    select:focus { outline: none; border-color: var(--green-600); box-shadow: 0 0 0 3px var(--green-100); }
+
+    .status-panel {
+      margin-top: 24px;
+      padding-top: 24px;
+      border-top: 1px solid var(--line);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      border-radius: 100px;
+      font-size: .8rem;
+      font-weight: 600;
+    }
+    .badge-green  { background: var(--green-100); color: var(--green-700); }
+    .badge-amber  { background: var(--amber-100); color: var(--amber-700); }
+    .badge-gray   { background: var(--gray-100);  color: var(--ink-muted); }
+
+    .status-label {
+      font-size: .8rem;
+      font-weight: 600;
+      color: var(--ink-soft);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin-bottom: 10px;
+    }
+
+    .hint {
+      font-size: .84rem;
+      color: var(--ink-muted);
+      margin-top: 12px;
+      line-height: 1.5;
+    }
+    .account-id {
+      font-family: monospace;
+      font-size: .78rem;
+      background: var(--gray-100);
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: var(--ink-soft);
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 16px;
+      padding: 12px 22px;
+      background: var(--green-700);
+      color: #fff;
+      border: none;
+      border-radius: 9px;
+      font-size: .9rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .btn-primary:hover:not(:disabled) { background: var(--green-900); }
+    .btn-primary:disabled { opacity: .55; cursor: default; }
+
+    .stripe-logo {
+      display: inline-block;
+      background: #635BFF;
+      color: #fff;
+      font-size: .7rem;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      letter-spacing: .04em;
+      vertical-align: middle;
+    }
+
+    .error-msg {
+      margin-top: 14px;
+      padding: 10px 14px;
+      background: #fee2e2;
+      border: 1px solid #fca5a5;
+      border-radius: 8px;
+      font-size: .85rem;
+      color: #b91c1c;
+      display: none;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="header-brand">⛳ SwingFirst</div>
+    <div class="header-title">Payments Setup</div>
+  </div>
+  <a class="header-link" href="/swingfirst-tee-sheet.html">← Tee Sheet</a>
+</header>
+
+<main>
+  <div class="banner" id="completeBanner">
+    ✓ Stripe onboarding submitted. Your account status will update once Stripe verifies your information.
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h2>💳 Connect with <span class="stripe-logo">stripe</span></h2>
+      <p>Accept online bookings and phone payments at your course. Setup takes about 5 minutes.</p>
+    </div>
+
+    <label for="courseSelect">Golf Course</label>
+    <select id="courseSelect" onchange="onCourseChange()">
+      <option value="">Loading courses…</option>
+    </select>
+
+    <div class="status-panel" id="statusPanel" style="display:none">
+      <div class="status-label">Payment Status</div>
+      <div id="statusBadge"></div>
+      <div id="actionArea"></div>
+      <div class="error-msg" id="errorMsg"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+  const SB_URL  = 'https://ojgxfeaesnaohskxdvam.supabase.co';
+  const SB_KEY  = 'sb_publishable_4UVFMXQWGOt4XNgHVNzWoQ_Id6TBqcu';
+  const SB_H    = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` };
+  const FN_URL  = SB_URL + '/functions/v1';
+  const SECRET  = 'sf-onboard-2026';
+
+  let courses = [];
+
+  async function init() {
+    if (location.search.includes('status=complete')) {
+      document.getElementById('completeBanner').style.display = 'block';
+    }
+    try {
+      const r = await fetch(
+        `${SB_URL}/rest/v1/courses?select=id,name,slug,stripe_account_id,stripe_onboarding_status&active=eq.true&order=name.asc`,
+        { headers: SB_H }
+      );
+      courses = await r.json();
+      const sel = document.getElementById('courseSelect');
+      sel.innerHTML = courses.length
+        ? '<option value="">Select a course…</option>'
+        : '<option value="">No courses found</option>';
+      courses.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.id;
+        opt.textContent = c.name;
+        sel.appendChild(opt);
+      });
+      if (courses.length === 1) { sel.value = courses[0].id; onCourseChange(); }
+    } catch (e) {
+      document.getElementById('courseSelect').innerHTML = '<option value="">Error loading courses</option>';
+    }
+  }
+
+  function getCourse() {
+    const id = document.getElementById('courseSelect').value;
+    return courses.find(c => c.id === id) || null;
+  }
+
+  function onCourseChange() {
+    const course = getCourse();
+    const panel = document.getElementById('statusPanel');
+    if (!course) { panel.style.display = 'none'; return; }
+    panel.style.display = 'block';
+
+    const badge   = document.getElementById('statusBadge');
+    const actions = document.getElementById('actionArea');
+    const status  = course.stripe_onboarding_status || 'not_started';
+
+    document.getElementById('errorMsg').style.display = 'none';
+
+    if (status === 'active') {
+      badge.innerHTML = '<span class="badge badge-green">✓ Payments Active</span>';
+      actions.innerHTML = `
+        <p class="hint">Online and phone payments are enabled for this course.<br>
+        Stripe account: <span class="account-id">${course.stripe_account_id}</span></p>`;
+    } else if (course.stripe_account_id && status === 'pending') {
+      badge.innerHTML = '<span class="badge badge-amber">⏳ Onboarding Pending</span>';
+      actions.innerHTML = `
+        <p class="hint">Stripe account created — <span class="account-id">${course.stripe_account_id}</span><br>
+        Complete Stripe's verification to activate payments.</p>
+        <button class="btn-primary" id="setupBtn" onclick="startOnboarding()">
+          Resume Stripe Setup →
+        </button>`;
+    } else {
+      badge.innerHTML = '<span class="badge badge-gray">Not Connected</span>';
+      actions.innerHTML = `
+        <button class="btn-primary" id="setupBtn" onclick="startOnboarding()">
+          Connect with Stripe →
+        </button>
+        <p class="hint">You'll be redirected to Stripe to complete identity and bank verification.</p>`;
+    }
+  }
+
+  async function startOnboarding() {
+    const course = getCourse();
+    if (!course) return;
+
+    const btn = document.getElementById('setupBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Setting up…';
+    document.getElementById('errorMsg').style.display = 'none';
+
+    try {
+      // Step 1: Create connected account if none exists
+      if (!course.stripe_account_id) {
+        const r = await fetch(`${FN_URL}/create-connected-account`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ courseId: course.id, businessName: course.name, secret: SECRET }),
+        });
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error || 'Could not create Stripe account');
+        course.stripe_account_id = d.stripeAccountId;
+        course.stripe_onboarding_status = 'pending';
+      }
+
+      // Step 2: Generate onboarding link
+      const r2 = await fetch(`${FN_URL}/create-onboarding-link`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ courseId: course.id, secret: SECRET }),
+      });
+      const d2 = await r2.json();
+      if (!r2.ok) throw new Error(d2.error || 'Could not generate onboarding link');
+
+      // Step 3: Redirect to Stripe
+      window.location.href = d2.url;
+
+    } catch (e) {
+      const err = document.getElementById('errorMsg');
+      err.textContent = e.message;
+      err.style.display = 'block';
+      btn.disabled = false;
+      btn.innerHTML = 'Try Again →';
+    }
+  }
+
+  init();
+</script>
+</body>
+</html>
