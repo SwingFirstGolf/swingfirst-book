@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SwingFirst — Stripe Link Expired</title>
+  <style>
+    :root {
+      --ink: #0d1f17; --amber-700: #B45309; --amber-100: #FEF3C7;
+      --green-700: #1b6b4f; --paper: #fbfaf7;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, "system-ui", Inter, sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      text-align: center;
+    }
+    .icon { font-size: 3rem; margin-bottom: 16px; }
+    h1 { font-size: 1.4rem; font-weight: 700; margin-bottom: 10px; }
+    p { font-size: .9rem; color: #6b7a72; line-height: 1.5; max-width: 380px; }
+    .btn {
+      display: inline-block;
+      margin-top: 24px;
+      padding: 12px 22px;
+      background: var(--green-700);
+      color: #fff;
+      border-radius: 9px;
+      font-size: .9rem;
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .btn:hover { background: #0b3d2e; }
+  </style>
+</head>
+<body>
+  <div class="icon">⏰</div>
+  <h1>Onboarding Link Expired</h1>
+  <p>Stripe onboarding links expire after a few minutes. Go back to the setup page to generate a fresh link.</p>
+  <a class="btn" href="/stripe-setup.html">← Back to Stripe Setup</a>
+</body>
+</html>
