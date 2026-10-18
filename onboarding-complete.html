@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SwingFirst — Stripe Setup Complete</title>
+  <style>
+    :root {
+      --ink: #0d1f17; --green-900: #0b3d2e; --green-700: #1b6b4f;
+      --green-100: #e3f2ec; --green-200: #a8d5bc; --paper: #fbfaf7;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, "system-ui", Inter, sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      text-align: center;
+    }
+    .icon { font-size: 3rem; margin-bottom: 16px; }
+    h1 { font-size: 1.4rem; font-weight: 700; margin-bottom: 10px; }
+    p { font-size: .9rem; color: var(--green-700); line-height: 1.5; max-width: 380px; }
+    .redirect-note { font-size: .8rem; color: #6b7a72; margin-top: 20px; }
+    a { color: var(--green-700); font-weight: 600; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .spinner {
+      width: 20px; height: 20px;
+      border: 2px solid var(--green-200);
+      border-top-color: var(--green-700);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      margin: 20px auto 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="icon">✅</div>
+  <h1>Stripe Setup Submitted</h1>
+  <p>Thank you! Stripe has received your information. Your account will be reviewed and payments enabled shortly.</p>
+  <div class="redirect-note">Redirecting back to setup page… <a href="/stripe-setup.html?status=complete">Click here if not redirected.</a></div>
+  <div class="spinner"></div>
+  <script>
+    setTimeout(() => { window.location.href = '/stripe-setup.html?status=complete'; }, 2500);
+  </script>
+</body>
+</html>
