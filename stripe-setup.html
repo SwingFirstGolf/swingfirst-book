@@ -73,19 +73,9 @@
       padding: 28px;
       box-shadow: 0 1px 4px rgba(0,0,0,.06);
     }
-    .card-header {
-      margin-bottom: 20px;
-    }
-    .card-header h2 {
-      font-size: 1.2rem;
-      font-weight: 700;
-      color: var(--ink);
-    }
-    .card-header p {
-      margin-top: 6px;
-      font-size: .875rem;
-      color: var(--ink-muted);
-    }
+    .card-header { margin-bottom: 20px; }
+    .card-header h2 { font-size: 1.2rem; font-weight: 700; color: var(--ink); }
+    .card-header p { margin-top: 6px; font-size: .875rem; color: var(--ink-muted); }
 
     label {
       display: block;
@@ -215,26 +205,26 @@
 
 <header>
   <div>
-    <div class="header-brand">⛳ SwingFirst</div>
+    <div class="header-brand">&#9971; SwingFirst</div>
     <div class="header-title">Payments Setup</div>
   </div>
-  <a class="header-link" href="/swingfirst-tee-sheet.html">← Tee Sheet</a>
+  <a class="header-link" href="/swingfirst-tee-sheet.html">&#8592; Tee Sheet</a>
 </header>
 
 <main>
   <div class="banner" id="completeBanner">
-    ✓ Stripe onboarding submitted. Your account status will update once Stripe verifies your information.
+    &#10003; Stripe onboarding submitted. Your account status will update once Stripe verifies your information.
   </div>
 
   <div class="card">
     <div class="card-header">
-      <h2>💳 Connect with <span class="stripe-logo">stripe</span></h2>
-      <p>Accept online bookings and phone payments at your course. Setup takes about 5 minutes.</p>
+      <h2>&#128179; Connect with <span class="stripe-logo">stripe</span></h2>
+      <p>Accept online bookings and phone payments at your facility. Setup takes about 5 minutes.</p>
     </div>
 
-    <label for="courseSelect">Golf Course</label>
-    <select id="courseSelect" onchange="onCourseChange()">
-      <option value="">Loading courses…</option>
+    <label for="facilitySelect">Golf Facility</label>
+    <select id="facilitySelect" onchange="onFacilityChange()">
+      <option value="">Loading facilities&hellip;</option>
     </select>
 
     <div class="status-panel" id="statusPanel" style="display:none">
@@ -253,7 +243,7 @@
   const FN_URL  = SB_URL + '/functions/v1';
   const SECRET  = 'sf-onboard-2026';
 
-  let courses = [];
+  let facilities = [];
 
   async function init() {
     if (location.search.includes('status=complete')) {
@@ -261,94 +251,94 @@
     }
     try {
       const r = await fetch(
-        `${SB_URL}/rest/v1/courses?select=id,name,slug,stripe_account_id,stripe_onboarding_status&active=eq.true&order=name.asc`,
+        `${SB_URL}/rest/v1/facilities?select=id,name,stripe_account_id,stripe_onboarding_status&order=name.asc`,
         { headers: SB_H }
       );
-      courses = await r.json();
-      const sel = document.getElementById('courseSelect');
-      sel.innerHTML = courses.length
-        ? '<option value="">Select a course…</option>'
-        : '<option value="">No courses found</option>';
-      courses.forEach(c => {
+      facilities = await r.json();
+      const sel = document.getElementById('facilitySelect');
+      sel.innerHTML = facilities.length
+        ? '<option value="">Select a facility&hellip;</option>'
+        : '<option value="">No facilities found</option>';
+      facilities.forEach(f => {
         const opt = document.createElement('option');
-        opt.value = c.id;
-        opt.textContent = c.name;
+        opt.value = f.id;
+        opt.textContent = f.name;
         sel.appendChild(opt);
       });
-      if (courses.length === 1) { sel.value = courses[0].id; onCourseChange(); }
+      if (facilities.length === 1) { sel.value = facilities[0].id; onFacilityChange(); }
     } catch (e) {
-      document.getElementById('courseSelect').innerHTML = '<option value="">Error loading courses</option>';
+      document.getElementById('facilitySelect').innerHTML = '<option value="">Error loading facilities</option>';
     }
   }
 
-  function getCourse() {
-    const id = document.getElementById('courseSelect').value;
-    return courses.find(c => c.id === id) || null;
+  function getFacility() {
+    const id = document.getElementById('facilitySelect').value;
+    return facilities.find(f => f.id === id) || null;
   }
 
-  function onCourseChange() {
-    const course = getCourse();
+  function onFacilityChange() {
+    const facility = getFacility();
     const panel = document.getElementById('statusPanel');
-    if (!course) { panel.style.display = 'none'; return; }
+    if (!facility) { panel.style.display = 'none'; return; }
     panel.style.display = 'block';
 
     const badge   = document.getElementById('statusBadge');
     const actions = document.getElementById('actionArea');
-    const status  = course.stripe_onboarding_status || 'not_started';
+    const status  = facility.stripe_onboarding_status || 'not_started';
 
     document.getElementById('errorMsg').style.display = 'none';
 
     if (status === 'active') {
-      badge.innerHTML = '<span class="badge badge-green">✓ Payments Active</span>';
+      badge.innerHTML = '<span class="badge badge-green">&#10003; Payments Active</span>';
       actions.innerHTML = `
-        <p class="hint">Online and phone payments are enabled for this course.<br>
-        Stripe account: <span class="account-id">${course.stripe_account_id}</span></p>`;
-    } else if (course.stripe_account_id && status === 'pending') {
-      badge.innerHTML = '<span class="badge badge-amber">⏳ Onboarding Pending</span>';
+        <p class="hint">Online and phone payments are enabled for this facility.<br>
+        Stripe account: <span class="account-id">${facility.stripe_account_id}</span></p>`;
+    } else if (facility.stripe_account_id && status === 'pending') {
+      badge.innerHTML = '<span class="badge badge-amber">&#8987; Onboarding Pending</span>';
       actions.innerHTML = `
-        <p class="hint">Stripe account created — <span class="account-id">${course.stripe_account_id}</span><br>
-        Complete Stripe's verification to activate payments.</p>
+        <p class="hint">Stripe account created &mdash; <span class="account-id">${facility.stripe_account_id}</span><br>
+        Complete Stripe&rsquo;s verification to activate payments.</p>
         <button class="btn-primary" id="setupBtn" onclick="startOnboarding()">
-          Resume Stripe Setup →
+          Resume Stripe Setup &rarr;
         </button>`;
     } else {
       badge.innerHTML = '<span class="badge badge-gray">Not Connected</span>';
       actions.innerHTML = `
         <button class="btn-primary" id="setupBtn" onclick="startOnboarding()">
-          Connect with Stripe →
+          Connect with Stripe &rarr;
         </button>
-        <p class="hint">You'll be redirected to Stripe to complete identity and bank verification.</p>`;
+        <p class="hint">You&rsquo;ll be redirected to Stripe to complete identity and bank verification.</p>`;
     }
   }
 
   async function startOnboarding() {
-    const course = getCourse();
-    if (!course) return;
+    const facility = getFacility();
+    if (!facility) return;
 
     const btn = document.getElementById('setupBtn');
     btn.disabled = true;
-    btn.innerHTML = '<span class="spinner"></span> Setting up…';
+    btn.innerHTML = '<span class="spinner"></span> Setting up&hellip;';
     document.getElementById('errorMsg').style.display = 'none';
 
     try {
       // Step 1: Create connected account if none exists
-      if (!course.stripe_account_id) {
+      if (!facility.stripe_account_id) {
         const r = await fetch(`${FN_URL}/create-connected-account`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ courseId: course.id, businessName: course.name, secret: SECRET }),
+          body: JSON.stringify({ facilityId: facility.id, businessName: facility.name, secret: SECRET }),
         });
         const d = await r.json();
         if (!r.ok) throw new Error(d.error || 'Could not create Stripe account');
-        course.stripe_account_id = d.stripeAccountId;
-        course.stripe_onboarding_status = 'pending';
+        facility.stripe_account_id = d.stripeAccountId;
+        facility.stripe_onboarding_status = 'pending';
       }
 
       // Step 2: Generate onboarding link
       const r2 = await fetch(`${FN_URL}/create-onboarding-link`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ courseId: course.id, secret: SECRET }),
+        body: JSON.stringify({ facilityId: facility.id, secret: SECRET }),
       });
       const d2 = await r2.json();
       if (!r2.ok) throw new Error(d2.error || 'Could not generate onboarding link');
@@ -361,7 +351,7 @@
       err.textContent = e.message;
       err.style.display = 'block';
       btn.disabled = false;
-      btn.innerHTML = 'Try Again →';
+      btn.innerHTML = 'Try Again &rarr;';
     }
   }
 
